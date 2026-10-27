@@ -184,6 +184,7 @@ set_source_files_properties(
 target_include_directories(betterendfieldnext_android PRIVATE
     .
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/android_compat"
+    "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/host"
     "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/include")
 
 target_compile_features(betterendfieldnext_android PRIVATE cxx_std_20)

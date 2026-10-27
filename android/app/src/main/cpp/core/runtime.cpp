@@ -1,6 +1,7 @@
 #include "runtime.h"
 #include "loaded_il2cpp.h"
 #include "log.h"
+#include "type_name_contract.h"
 
 #include <dlfcn.h>
 #include <link.h>
@@ -433,7 +434,7 @@ ResolvedMethod Il2CppRuntime::ResolveMethodExact(
         bool matches = true;
         for (uint32_t index = 0; index < expected_parameters.size(); ++index) {
             char* actual = type_get_name_(method_get_parameter_(candidate, index));
-            const bool equal = actual != nullptr && expected_parameters[index] == actual;
+            const bool equal = BetterEndfieldNext::Host::SameTypeText(actual, expected_parameters[index]);
             if (actual && free_) free_(actual);
             if (!equal) {
                 matches = false;
@@ -442,7 +443,7 @@ ResolvedMethod Il2CppRuntime::ResolveMethodExact(
         }
         if (matches && return_type != nullptr && *return_type != '\0') {
             char* actual = type_get_name_(method_get_return_type_(candidate));
-            matches = actual != nullptr && std::string_view(actual) == return_type;
+            matches = BetterEndfieldNext::Host::SameTypeText(actual, return_type);
             if (actual && free_) free_(actual);
         }
         if (!matches) {

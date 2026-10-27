@@ -239,6 +239,7 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
             }
         }
         target.custom_materials=source.custom_materials;
+        target.material_overrides=source.material_overrides;
         if (!target.custom_materials) return refuse("UI custom materials unavailable: "+source_path);
         if (generated_mesh) {
             target.change_shadow=true;

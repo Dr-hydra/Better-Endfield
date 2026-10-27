@@ -47,7 +47,8 @@ std::string SharedRegistryText(std::string_view config,const std::vector<std::fi
         std::string(ConfigValue(config,"skip_validation")=="1"?"true":"false")+
         "\nhot_switch="+(ConfigValue(config,"hot_switch")=="1"?"true":"false")+
         "\nfast_loading="+(ConfigValue(config,"fast_loading")=="1"?"true":"false")+
-        "\nclone_support="+(ConfigValue(config,"clone_support")=="1"?"true":"false")+"\n";
+        "\nclone_support="+(ConfigValue(config,"clone_support")=="1"?"true":"false")+
+        "\nrelease_retired_resources="+(ConfigValue(config,"release_retired_resources")=="1"?"true":"false")+"\n";
     const auto appearances=ConfigStrings(ConfigValue(config,"appearances"));
     const auto options=ConfigStrings(ConfigValue(config,"options"));
     const auto parameters=ConfigStrings(ConfigValue(config,"parameters"));

@@ -9,4 +9,5 @@
     <string name="bem_keep_local_copies">ローカルコピーを保持</string>
     <string name="bem_clean_unused">未使用データを削除</string>
     <string name="bem_clone_support">実験：複製モデル対応</string>
+    <string name="bem_release_retired_resources">実験：旧モデルリソースの解放</string>
 </resources>

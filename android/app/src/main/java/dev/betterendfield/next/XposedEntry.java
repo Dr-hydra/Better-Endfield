@@ -59,13 +59,14 @@ public final class XposedEntry extends XposedModule {
                         boolean skipValidation=settings.getBoolean(BemInstaller.SKIP_VALIDATION,false);
                         boolean hotSwitch=settings.getBoolean(BemInstaller.HOT_SWITCH,false);
                         boolean cloneSupport=settings.getBoolean(BemInstaller.CLONE_SUPPORT,false);
+                        boolean releaseRetiredResources=settings.getBoolean(BemInstaller.RELEASE_RETIRED_RESOURCES,false);
                         boolean fastLoading=settings.getBoolean(BemInstaller.FAST_LOADING,false);
                         boolean installedPrepared=false;
                         BemInstalledResources.Source modelSource=
                             name -> new ParcelFileDescriptor.AutoCloseInputStream(openRemoteFile(name));
                         try {
                             BemInstalledResources.configuration=BemInstalledResources.prepare(context,
-                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,fastLoading,true,cloneSupport);
+                                initialIndex,modelSource,this::report,skipValidation,hotSwitch,fastLoading,true,cloneSupport,releaseRetiredResources);
                             installedPrepared=true;
                         } catch(Exception error) {report("Installed BEM preparation failed: "+error);}
                         MediaScreenFiles.prepare(context, settings.getString(ModuleSettings.MEDIA_CONFIGURATION, ""),
@@ -78,7 +79,7 @@ public final class XposedEntry extends XposedModule {
                         GlobalFovUpdater.start(()->getRemotePreferences("module_settings"));
                         if(installedPrepared) BemHotSwitchUpdater.start(context,
                             ()->getRemotePreferences("module_settings"),modelSource,initialIndex,
-                            skipValidation,hotSwitch,fastLoading,cloneSupport,this::report);
+                            skipValidation,hotSwitch,fastLoading,cloneSupport,releaseRetiredResources,this::report);
                     },"BetterEndfieldNext-InstalledModels").start();
                 } catch (Throwable error) { report("bootstrap failed: " + error); }
                 return result;

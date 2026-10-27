@@ -65,6 +65,48 @@ int main(){
     assert(rt.ReadFieldObject(&literal,nullptr)==&boxed&&parseCalls==1);
     parseThrows=true;assert(!rt.ReadFieldObject(&literal,nullptr)&&parseCalls==2);
     parseThrows=false;assert(rt.ReadFieldObject(&literal,nullptr)==&boxed&&parseCalls==3);
+    // il2cpp_type_get_name uses '.' for nested types in IL format. Package
+    // descriptors also use '/' and '+', but suffixes and names stay exact.
+    rt.image_get_name_=[](const Il2CppImage*){return "Rendering.Beyond.dll";};
+    rt.method_get_name_=[](const MethodInfo*){return "ApplySharedMaterialArray";};
+    rt.method_get_parameter_count_=[](const MethodInfo*)->uint32_t{return 1;};
+    rt.method_get_parameter_=[](const MethodInfo*,uint32_t)->const Il2CppType*{return &type;};
+    type.name="Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo";obj.name="System.Void";
+    const char* dotted="Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo";
+    const char* slashed="Beyond.Rendering.EntityRenderHelperMaterialController/RendererInfo";
+    const char* plus="Beyond.Rendering.EntityRenderHelperMaterialController+RendererInfo";
+    auto resolve=[&](const char* name,const char* parameter,const char* result) {
+        return rt.ResolveMethodExact("Rendering.Beyond.dll","Beyond.Rendering",
+            "EntityRenderHelperMaterialController/AddedMaterialController",name,parameter,result,1);
+    };
+    for(const char* parameter:{dotted,slashed,plus}) {
+        const auto found=resolve("ApplySharedMaterialArray",parameter,"System.Void");
+        assert(found.info==&method && found.entry==reinterpret_cast<void*>(&ParseEntry));
+    }
+    const char* invalid[]{
+        "Beyond.Rendering.EntityRenderHelperMaterialController/OtherRendererInfo",
+        "Other.Rendering.EntityRenderHelperMaterialController/RendererInfo",
+        "Beyond.Rendering.EntityRenderHelperMaterialController/RendererInfo&",
+        "Beyond.Rendering.EntityRenderHelperMaterialController/RendererInfo[]"
+    };
+    for(const char* parameter:invalid)assert(!resolve("ApplySharedMaterialArray",parameter,"System.Void").info);
+    assert(!resolve("WrongMethodName",slashed,"System.Void").info);
+    assert(!resolve("ApplySharedMaterialArray",slashed,"System.Boolean").info);
+    for(const char* actual:{"Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo&",
+            "Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo[]"}) {
+        type.name=actual;assert(!resolve("ApplySharedMaterialArray",slashed,"System.Void").info);
+    }
+    type.name=dotted;obj.name=dotted;
+    rt.method_get_name_=[](const MethodInfo*){return "NestedIdentity";};
+    for(const char* result:{dotted,slashed,plus}) {
+        const auto found=resolve("NestedIdentity",slashed,result);
+        assert(found.info==&method && found.entry==reinterpret_cast<void*>(&ParseEntry));
+    }
+    for(const char* result:invalid)assert(!resolve("NestedIdentity",slashed,result).info);
+    for(const char* actual:{"Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo&",
+            "Beyond.Rendering.EntityRenderHelperMaterialController.RendererInfo[]"}) {
+        obj.name=actual;assert(!resolve("NestedIdentity",slashed,slashed).info);
+    }
     rt.library_=nullptr; // Synthetic fixture, not a real dlopen handle.
-    std::cout<<"PASS static/null field contract, named enum fallback, isolated failure, loaded images, nested thread scope\n";
+    std::cout<<"PASS static/null field contract, named enum fallback, isolated failure, loaded images, nested thread scope, exact nested parameter/return normalization and name/byref/array rejection\n";
 }

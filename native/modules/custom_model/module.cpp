@@ -58,6 +58,7 @@ constexpr char kModuleId[]="betterendfieldnext.custom_model";
 const BE_HostApiV1* g_host=nullptr;
 std::atomic_bool g_hot_switch_runtime{false};
 std::atomic_bool g_clone_support_runtime{false};
+std::atomic_bool g_release_retired_resources_runtime{false};
 void WatchModelCloneSource(void* asset);
 std::atomic<DWORD> g_pump_thread{0};
 uint64_t g_registry_generation = 0;
@@ -67,6 +68,8 @@ ModelOverlayHost g_model_overlay;
 AnimationDriverHost g_animation_driver;
 std::string PackagePathUtf8(const std::filesystem::path& path);
 void EnsureAnimationDriverLoaded();
+void UnloadAnimationDriver(const char* reason);
+std::string g_driver_applied_overrides;
 void MaterializeDriverSounds(const std::filesystem::path& package);
 void SyncDriverSounds();
 void PollAnimationDriverControls();
@@ -96,6 +99,7 @@ std::unordered_set<std::string> g_sounding_drivers;
 
 #if defined(__ANDROID__)
 void ReapplyAndroidDriverOverrides();
+void ClearAndroidDriverOverrides();
 #endif
 BE_ResolvedClassV1 g_skinned_renderer_class{},g_mesh_class{},g_texture2d_class{},g_material_class{},g_vector3_class{};
 using ArrayNewFn = void* (*)(void* elementTypeInfo, uintptr_t length);
@@ -224,7 +228,11 @@ constexpr int32_t kIndexFormatUInt32 = 1;
 constexpr int32_t kMeshUpdateDefault = 0;
 
 MethodContract g_methods[]{
+    {"material_cache.helper", {"UnityEngine.CoreModule.dll","UnityEngine","Component","GetComponentInParent","System.Type|System.Boolean","UnityEngine.Component",2},false},
+    {"material_cache.apply", {"Rendering.Beyond.dll","Beyond.Rendering","EntityRenderHelperMaterialController/AddedMaterialController","ApplySharedMaterialArray","Beyond.Rendering.EntityRenderHelperMaterialController/RendererInfo","System.Void",1},false},
     {"game_object.get_transform", {"UnityEngine.CoreModule.dll","UnityEngine","GameObject","get_transform",nullptr,"UnityEngine.Transform",0},true},
+    {"audit.active_self", {"UnityEngine.CoreModule.dll","UnityEngine","GameObject","get_activeSelf",nullptr,"System.Boolean",0},false},
+    {"audit.active_hierarchy", {"UnityEngine.CoreModule.dll","UnityEngine","GameObject","get_activeInHierarchy",nullptr,"System.Boolean",0},false},
     {"time.frame_count", {"UnityEngine.CoreModule.dll","UnityEngine","Time","get_frameCount",nullptr,"System.Int32",0},true},
     // Clone observation for frame-sliced template delivery. Optional: only
     // installed when g_model_clone_hooks_requested (Host hook chaining), see
@@ -346,6 +354,9 @@ MethodContract g_methods[]{
     {"skinned.get_bones",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_bones", nullptr, "UnityEngine.Transform[]", 0}, true},
+    {"skinned.get_root_bone",
+        {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
+            "get_rootBone", nullptr, "UnityEngine.Transform", 0}, false},
     {"mesh.ctor",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "Mesh", ".ctor",
             nullptr, "System.Void", 0}, true},
@@ -509,6 +520,16 @@ MethodContract g_methods[]{
     {"material.set_vector", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetVector","System.String|UnityEngine.Vector4","System.Void",2},false},
     {"material.disable_keyword", {"UnityEngine.CoreModule.dll","UnityEngine","Material","DisableKeyword","System.String","System.Void",1},false},
     {"material.enable_keyword", {"UnityEngine.CoreModule.dll","UnityEngine","Material","EnableKeyword","System.String","System.Void",1},false},
+    {"cache.has_property", {"UnityEngine.CoreModule.dll","UnityEngine","Material","HasProperty","System.Int32","System.Boolean",1},false},
+    {"cache.get_float", {"UnityEngine.CoreModule.dll","UnityEngine","Material","GetFloat","System.Int32","System.Single",1},false},
+    {"cache.set_float", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetFloat","System.Int32|System.Single","System.Void",2},false},
+    {"cache.get_vector", {"UnityEngine.CoreModule.dll","UnityEngine","Material","GetVector","System.Int32","UnityEngine.Vector4",1},false},
+    {"cache.get_color", {"UnityEngine.CoreModule.dll","UnityEngine","Material","GetColorImpl","System.Int32","UnityEngine.Color",1},false},
+    {"cache.set_vector", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetVector","System.Int32|UnityEngine.Vector4","System.Void",2},false},
+    {"cache.keyword_enabled", {"UnityEngine.CoreModule.dll","UnityEngine","Material","IsKeywordEnabled","System.String","System.Boolean",1},false},
+    {"cache.get_pass", {"UnityEngine.CoreModule.dll","UnityEngine","Material","GetShaderPassEnabledAndExisted","System.String","System.Boolean",1},false},
+    {"cache.set_pass", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetShaderPassEnabled","System.String|System.Boolean","System.Void",2},false},
+    {"cache.property_id", {"UnityEngine.CoreModule.dll","UnityEngine","Shader","PropertyToID","System.String","System.Int32",1},false},
     {"visual.get_local_position", {"UnityEngine.CoreModule.dll","UnityEngine","Transform","get_localPosition",nullptr,"UnityEngine.Vector3",0},false},
     {"visual.set_local_position", {"UnityEngine.CoreModule.dll","UnityEngine","Transform","set_localPosition","UnityEngine.Vector3","System.Void",1},false},
     {"material.copy", {"UnityEngine.CoreModule.dll","UnityEngine","Material",".ctor","UnityEngine.Material","System.Void",1},true},
@@ -640,10 +661,10 @@ void* Invoke(const MethodContract* method, void* instance, void** parameters,
     }
     return exception ? nullptr : RootTemporary(result);
 }
-bool ReadNullableObject(const MethodContract* method,void* instance,void*& value) {
+bool ReadNullableObject(const MethodContract* method,void* instance,void*& value,void** parameters=nullptr) {
     value=nullptr;
     if (!method || !method->resolved || !method->method_info || !g_host || !g_host->runtime_invoke) return false;
-    void* exception=nullptr;void* result=g_host->runtime_invoke(g_host->context,method->method_info,instance,nullptr,&exception);
+    void* exception=nullptr;void* result=g_host->runtime_invoke(g_host->context,method->method_info,instance,parameters,&exception);
     if (exception) return false;
     value=RootTemporary(result);return !result || value;
 }
@@ -2171,7 +2192,9 @@ ConstructionScope::~ConstructionScope() {
     g_construction = restore;
 }
 struct SavedOriginalBinding;
+struct RendererMaterialCacheSnapshot;
 struct PreparedBinding {
+    mutable std::shared_ptr<RendererMaterialCacheSnapshot> material_cache;
     GenericMatching::ReceiverKey receiver_key;
     uint32_t component_id=0;
     void* renderer=nullptr;
@@ -2179,6 +2202,7 @@ struct PreparedBinding {
     void* custom_mesh=nullptr;
     void* original_materials=nullptr;
     void* custom_materials=nullptr;
+    bool copied_donor_materials=false;
     void* original_bones=nullptr;
     void* custom_bones=nullptr;
     // Rollback fields above describe the currently bound package. Construction
@@ -2217,6 +2241,28 @@ struct PreparedBinding {
 void* DonorMesh(const PreparedBinding& b) { return b.donor_mesh?b.donor_mesh:b.original_mesh; }
 void* DonorMaterials(const PreparedBinding& b) { return b.donor_materials?b.donor_materials:b.original_materials; }
 void* DonorBones(const PreparedBinding& b) { return b.donor_bones?b.donor_bones:b.original_bones; }
+bool ResolveMaterialCopyDonor(const PreparedBinding& binding,void*& donor);
+std::string DescribeBindingObject(void* object) {
+    if (!object) return "null";
+    if (!IsNativeObjectAlive(object)) return "dead";
+    int32_t id=0;
+    InvokeValue(Contract("object.instance_id"),object,nullptr,id);
+    return std::to_string(id)+":"+ObjectName(object).substr(0,120);
+}
+std::string DescribeRendererVisibility(void* renderer) {
+    bool enabled=false;
+    std::string state=" enabled=";
+    state+=GetRendererEnabled(renderer,enabled)?(enabled?"1":"0"):"unavailable";
+    void* object=Invoke(Contract("component.get_game_object"),renderer,nullptr,false);
+    for (const auto& entry:{std::pair{" activeSelf=","audit.active_self"},
+            std::pair{" activeHierarchy=","audit.active_hierarchy"}}) {
+        uint8_t active=0;
+        state+=entry.first;
+        state+=object && InvokeValue(Contract(entry.second),object,nullptr,active)?
+            (active?"1":"0"):"unavailable";
+    }
+    return state;
+}
 bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_materials=true,bool restoring_original=false);
 struct GenericRendererCandidate;
 bool ReadGenericPristineMesh(const CharacterAdapter&,void*,const GenericRendererCandidate&,GenericMatching::MeshIdentity&);
@@ -2330,7 +2376,8 @@ bool ApplyMaterialOverrides(void* material, const BemMaterialOverrides& p, bool 
 }
 bool CopyMaterials(PreparedBinding& binding,bool skip_validation=false) {
     if (!binding.original_materials) binding.original_materials=Invoke(Contract("renderer.get_shared_materials"),binding.renderer,nullptr);
-    void* donor=DonorMaterials(binding);
+    void* donor=nullptr;
+    if (!ResolveMaterialCopyDonor(binding,donor)) return false;
     const int count=ArrayLength(donor);
     if (count<=0 || (!skip_validation && count>256)) return false;
     binding.custom_materials=Invoke(Contract("array.clone"),donor,nullptr);
@@ -2348,6 +2395,7 @@ bool CopyMaterials(PreparedBinding& binding,bool skip_validation=false) {
         if (!InvokeVoid(Contract("array.set_value"),binding.custom_materials,slot) ||
             ArrayValue(binding.custom_materials,i)!=copy) return false;
     }
+    binding.copied_donor_materials=true;
     return true;
 }
 void* NewArrayLike(void* original, int count,bool skip_validation=false) {
@@ -2581,25 +2629,47 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
     TextureTransactionCache* transaction_textures=nullptr) {
     TextureTransactionCache local_textures;
     auto& texture_cache=transaction_textures?*transaction_textures:local_textures;
-    target.custom_materials=NewArrayLike(DonorMaterials(target),static_cast<int>(component.draws.size()),bem.skip_validation);
-    if (!target.custom_materials) return false;
+    auto fail=[&](const char* reason,size_t draw_index,const PreparedBinding* =nullptr,
+            void* =nullptr,void* =nullptr) {
+        Log(std::string("Material preparation failed: reason=")+reason+
+            " component="+std::to_string(component.info.component_id)+" draw="+std::to_string(draw_index));
+        return false;
+    };
+    void* target_base=nullptr;
+    if (!ResolveMaterialCopyDonor(target,target_base)) return fail("donor-base",component.draws.size());
+    target.custom_materials=NewArrayLike(target_base,static_cast<int>(component.draws.size()),bem.skip_validation);
+    if (!target.custom_materials) return fail("new-array",component.draws.size());
+    std::unordered_map<const PreparedBinding*,void*> donor_bases;
     size_t override_draws=0,override_properties=0;
     for (size_t i=0;i<component.draws.size();++i) {
         const auto& draw=component.draws[i]; const auto* donor=FindPrepared(bindings,draw.material_component);
-        if (!donor || draw.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(*donor)))) return false;
-        void* material=ArrayValue(DonorMaterials(*donor),draw.material_slot);
-        if (!material || (!bem.skip_validation && ObjectName(material)!=component.material_names[i])) return false;
+        if (!donor) return fail("donor-component",i);
+        void* donor_base=nullptr;
+        if (const auto cached=donor_bases.find(donor);cached!=donor_bases.end()) donor_base=cached->second;
+        else {
+            if (!ResolveMaterialCopyDonor(*donor,donor_base)) return fail("donor-base",i,donor);
+            donor_bases.emplace(donor,donor_base);
+        }
+        if (draw.material_slot>=static_cast<uint32_t>(ArrayLength(donor_base)))
+            return fail("donor-slot",i,donor);
+        void* material=ArrayValue(donor_base,draw.material_slot);
+        if (!material) return fail("null-material",i,donor);
+        if (!bem.skip_validation && ObjectName(material)!=component.material_names[i])
+            return fail("material-name",i,donor,material);
         void* copy=NewAsset(g_material_class.class_info); void* ctor[]{material};
-        if (!copy || !InvokeVoid(Contract("material.copy"),copy,ctor) || !MaterialCopyCompatible(material,copy) ||
-            !SetArrayValue(target.custom_materials,static_cast<int>(i),copy)) return false;
+        if (!copy) return fail("new-material",i,donor,material);
+        if (!InvokeVoid(Contract("material.copy"),copy,ctor)) return fail("copy-constructor",i,donor,material,copy);
+        if (!MaterialCopyCompatible(material,copy)) return fail("copy-shader",i,donor,material,copy);
+        if (!SetArrayValue(target.custom_materials,static_cast<int>(i),copy))
+            return fail("set-array",i,donor,material,copy);
 #if defined(__ANDROID__)
-        if (!betterendfieldnext::AndroidAuditMaterialCopy(material,copy)) return false;
+        if (!betterendfieldnext::AndroidAuditMaterialCopy(material,copy)) return fail("android-copy",i,donor,material,copy);
 #endif
-        if (!ApplyTextureMask(copy,draw.textures,bem,texture_cache)) return false;
+        if (!ApplyTextureMask(copy,draw.textures,bem,texture_cache)) return fail("texture-mask",i,donor,material,copy);
         if (i < component.draw_material_overrides.size() && !component.draw_material_overrides[i].empty()) {
             const auto& overrides=component.draw_material_overrides[i];
             if (!ApplyMaterialOverrides(copy, overrides, bem.skip_validation)) {
-                if (!bem.skip_validation) return false;
+                if (!bem.skip_validation) return fail("material-overrides",i,donor,material,copy);
             }
             ++override_draws;
             override_properties+=OverridePropertyCount(overrides);
@@ -2614,13 +2684,15 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
 bool PrepareKeepMaterials(const BemComponent& component,PreparedBinding& target,const BemPocData& bem,
     TextureTransactionCache* transaction_textures=nullptr) {
     if (!CopyMaterials(target,bem.skip_validation)) return false;
+    void* donor_base=nullptr;
+    if (!ResolveMaterialCopyDonor(target,donor_base)) return false;
     TextureTransactionCache local_textures;
     auto& texture_cache=transaction_textures?*transaction_textures:local_textures;
     for (size_t i=0;i<component.keep_material_overrides.size();++i) {
         const auto& override=component.keep_material_overrides[i];
-        if (override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(target))) ||
+        if (override.material_slot>=static_cast<uint32_t>(ArrayLength(donor_base)) ||
             override.material_slot>=static_cast<uint32_t>(ArrayLength(target.custom_materials))) return false;
-        void* source=ArrayValue(DonorMaterials(target),override.material_slot);
+        void* source=ArrayValue(donor_base,override.material_slot);
         void* copy=ArrayValue(target.custom_materials,override.material_slot);
         if (!source || !copy || (!bem.skip_validation && ObjectName(source)!=component.keep_material_names[i]) ||
             !ApplyTextureMask(copy,override.textures,bem,texture_cache)) return false;
@@ -2649,6 +2721,9 @@ bool SetRendererBones(void* renderer,void* bones) {
 }
 bool SetVisualPosition(void* root,const Float3& position);
 bool PrepareVisualRoot(void* asset,const BemPocData& bem,std::vector<PreparedBinding>& bindings);
+bool PrepareRendererMaterialCache(const PreparedBinding& binding,bool inspect_only=false);
+bool ApplyRendererMaterialCache(const PreparedBinding& binding);
+bool RestoreRendererMaterialCache(const PreparedBinding& binding);
 bool ApplyPreparedBinding(PreparedBinding& binding) {
 #if defined(__ANDROID__)
     if (binding.change_shadow) {
@@ -2662,6 +2737,7 @@ bool ApplyPreparedBinding(PreparedBinding& binding) {
     if (binding.custom_bones && !SetRendererBones(binding.renderer,binding.custom_bones)) return false;
     if (binding.custom_mesh!=binding.original_mesh && !SetSharedMesh(binding.renderer,binding.custom_mesh)) return false;
     if (!ApplyRendererMaterials(binding.renderer,binding.custom_materials)) return false;
+    if (!ApplyRendererMaterialCache(binding)) return false;
     if (!SetVisualPosition(binding.visual_root,binding.visual_custom)) return false;
 #if defined(__ANDROID__)
     for (const auto& sibling:binding.sibling_renderers) {
@@ -2684,6 +2760,7 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
     const bool mesh=SetSharedMesh(binding.renderer,binding.original_mesh);
     const bool bones=!binding.custom_bones || SetRendererBones(binding.renderer,binding.original_bones);
     const bool materials=ApplyRendererMaterials(binding.renderer,binding.original_materials);
+    const bool material_cache=RestoreRendererMaterialCache(binding);
     bool read=false;
     const bool enabled=SetRendererEnabled(binding.renderer,binding.original_enabled) &&
         GetRendererEnabled(binding.renderer,read) && read==binding.original_enabled;
@@ -2709,7 +2786,7 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
     }
 #endif
     const bool visual=SetVisualPosition(binding.visual_root,binding.visual_original);
-    return mesh && bones && materials && enabled && shadow && visual;
+    return mesh && bones && materials && material_cache && enabled && shadow && visual;
 }
 bool ValidatePayloadAdapter(const CharacterAdapter& adapter,const BemPocData& bem) {
     if (adapter.explicit_resource && std::any_of(adapter.components.begin(),adapter.components.end(),[&](const auto& c){
@@ -2904,6 +2981,12 @@ struct StrongReference {
     uint32_t handle=0;
     StrongReference()=default;
     StrongReference(const StrongReference&)=delete;
+    StrongReference& operator=(const StrongReference&)=delete;
+    StrongReference(StrongReference&& other) noexcept { std::swap(handle,other.handle); }
+    StrongReference& operator=(StrongReference&& other) noexcept {
+        if (this!=&other) { Set(nullptr);std::swap(handle,other.handle); }
+        return *this;
+    }
     ~StrongReference() { if (handle && g_host && !g_process_terminating.load()) g_host->gchandle_free(g_host->context,handle); }
     bool Set(void* object) {
         if (handle && g_host && !g_process_terminating.load()) g_host->gchandle_free(g_host->context,handle);
@@ -2964,6 +3047,9 @@ std::shared_ptr<OriginalMeshPin> AcquireOriginalMeshPin(void* mesh) {
     return pin;
 }
 struct SavedOriginalBinding {
+    // Updating the game's base-material cache replaces its references to the
+    // pristine materials. Retain those references for this Original's lifetime.
+    StrongReference material_cache_materials;
     WeakObject mesh;                              // identity
     std::shared_ptr<OriginalMeshPin> mesh_pin;    // only while generated geometry is shown
     std::vector<WeakObject> materials;            // weak; never pins original textures
@@ -3058,6 +3144,7 @@ struct WeakManagedReference {
     bool Set(void* object) { Reset(); handle=object && g_weak_new?g_weak_new(object,false):0; return handle!=0; }
     void* Get() const { return handle && g_weak_target?RootTemporary(g_weak_target(handle)):nullptr; }
 };
+#include "model_material_cache.inc"
 using StaticFieldFn=void(*)(const void*,void*);
 StaticFieldFn g_static_get=nullptr,g_static_set=nullptr;
 bool SafeStaticField(StaticFieldFn call,const void* field,void* value) {
@@ -3112,6 +3199,32 @@ void AndroidRegisterLodBias(void* pipeline,void* method) {
 #endif
 #include "model_lod_state.inc"
 
+// Diagnostic copies contain no new strong Unity references. They never repair
+// the receiver: a game-side palette overwrite must remain observable.
+struct SkinBindingAudit {
+    bool root_known=false,poses_known=false;
+    WeakObject root_bone;
+    std::vector<Matrix4x4Raw> poses;
+    std::string last_state;
+    uint32_t reports=0;
+};
+bool ReadAuditBindposes(void* mesh,std::vector<Matrix4x4Raw>& result) {
+    result.clear();
+    if (!mesh) return false;
+    void* poses=Invoke(Contract("mesh.get_bindposes"),mesh,nullptr,false);
+    const int count=ArrayLength(poses);
+    if (!poses || count<0 || count>1024) return false;
+    result.resize(static_cast<size_t>(count));
+    for (int i=0;i<count;++i)
+        if (!Unbox(ArrayValue(poses,i),result[static_cast<size_t>(i)])) {result.clear();return false;}
+    return true;
+}
+void CaptureSkinBindingAudit(void* renderer,void* mesh,SkinBindingAudit& audit) {
+    void* root=nullptr;
+    audit.root_known=ReadNullableObject(Contract("skinned.get_root_bone"),renderer,root);
+    if (root && !audit.root_bone.Set(root)) audit.root_known=false;
+    audit.poses_known=ReadAuditBindposes(mesh,audit.poses);
+}
 struct CompletedBinding {
     GenericMatching::ReceiverKey receiver_key;
     uint32_t component_id=0;
@@ -3139,6 +3252,7 @@ struct CompletedBinding {
     std::vector<std::string> bone_paths;
     std::vector<WeakObject> bones;
     std::shared_ptr<SavedOriginalBinding> original;
+    SkinBindingAudit skin_audit;
 };
 struct CompletedResource {
     const CharacterAdapter* adapter=nullptr;
@@ -3146,6 +3260,7 @@ struct CompletedResource {
     std::string selection_key;
     WeakObject root;
     std::vector<CompletedBinding> bindings;
+    std::vector<WeakObject> experimental_assets; // Only objects created by this module.
     uint64_t last_seen_ms=GetTickCount64();
     bool retired_drop=false; // pruning mark (hot switch retired-generation bound)
 };
@@ -3157,6 +3272,31 @@ bool SameAdapter(const CharacterAdapter& a,const CharacterAdapter& b) {
         std::string_view(a.ui_resource)==b.ui_resource && std::string_view(a.resource_id)==b.resource_id &&
         a.explicit_resource==b.explicit_resource && a.receiver_lod==b.receiver_lod;
 }
+// The clock is single-package. Keep the adapter alive across registry swaps,
+// and retain its selection until the old targets have been restored.
+struct DriverResourceOwner {
+    const CharacterAdapter* adapter=nullptr;
+    std::shared_ptr<OwnedCharacterAdapter> adapter_owner;
+    std::string selection_key;
+};
+std::vector<DriverResourceOwner> g_driver_resources;
+bool IsDriverResource(const CompletedResource& resource) {
+    return resource.adapter && std::any_of(g_driver_resources.begin(),g_driver_resources.end(),[&](const auto& owner) {
+        return SameAdapter(*resource.adapter,*owner.adapter) && resource.selection_key==owner.selection_key;
+    });
+}
+bool DriverOwnerMatchesRegistry(const ModRegistry& registry) {
+    if (g_driver_resources.empty() || g_animation_driver.DriverCount()==0) return false;
+    const auto& path=g_animation_driver.LoadedPath();
+    size_t count=0;
+    for (const auto& mod:registry.enabled) if (PackagePathUtf8(mod.package)==path) {
+        ++count;
+        if (std::none_of(g_driver_resources.begin(),g_driver_resources.end(),[&](const auto& owner) {
+            return SameAdapter(*owner.adapter,*mod.adapter) && owner.selection_key==mod.selection_key;
+        })) return false;
+    }
+    return count==g_driver_resources.size();
+}
 // ---- Section 10/13 driver morph application ----
 struct DriverMorphValue {
     std::string parameter;
@@ -3167,6 +3307,7 @@ struct DriverMorphValue {
 template <typename Fn>
 void ForEachMorphedMesh(Fn&& visit) {
     for (const auto& completed:g_completed) {
+        if (!IsDriverResource(completed)) continue;
         void* root=completed.root.Get();
         if (!root || !IsNativeObjectAlive(root)) continue;
         for (const auto& binding:completed.bindings) {
@@ -3176,7 +3317,9 @@ void ForEachMorphedMesh(Fn&& visit) {
             if (found==g_dynamic_meshes.end() || !found->second.morph) continue;
             void* mesh=binding.mesh.Get();
             if (!mesh || !IsNativeObjectAlive(mesh)) continue;
-            visit(mesh,*found->second.morph,binding.renderer.Get());
+            void* renderer=binding.renderer.Get();
+            if (!renderer || !IsNativeObjectAlive(renderer) || GetRendererMesh(renderer)!=mesh) continue;
+            visit(mesh,*found->second.morph,renderer);
         }
     }
 }
@@ -3352,14 +3495,32 @@ uint64_t DriverMaterialKey(DriverMaterialKind kind,uint32_t component,uint32_t s
     return h;
 }
 template <typename Fn>
+void ForEachOwnedMaterial(const CompletedBinding& binding,uint32_t slot,Fn&& visit) {
+    if (size_t(slot)>=binding.materials.size()) return;
+    void* renderer=binding.renderer.Get();
+    if (!renderer || !IsNativeObjectAlive(renderer) || !binding.mesh.Is(GetRendererMesh(renderer))) return;
+    void* material=binding.materials[slot].Get();
+    if (!material || !IsNativeObjectAlive(material)) return;
+    void* current=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
+    void* live=ArrayValue(current,static_cast<int>(slot));
+    if (live!=material) {
+        // A live game copy is owned only when its controller still identifies
+        // this exact package source. Never drive an unrelated replacement or FX.
+        void* source=RendererMaterialIdentityBase(renderer,current);
+        if (ArrayValue(source,static_cast<int>(slot))!=material || !live || !IsNativeObjectAlive(live)) return;
+    }
+    visit(material,binding);
+    if (live!=material) visit(live,binding);
+}
+template <typename Fn>
 void ForEachDriverMaterial(uint32_t component,uint32_t slot,Fn&& visit) {
     for (const auto& completed:g_completed) {
+        if (!IsDriverResource(completed)) continue;
         void* root=completed.root.Get();
         if (!root || !IsNativeObjectAlive(root)) continue;
         for (const auto& binding:completed.bindings) {
             if (binding.component_id!=component || size_t(slot)>=binding.materials.size()) continue;
-            void* material=binding.materials[slot].Get();
-            if (material && IsNativeObjectAlive(material)) visit(material,binding);
+            ForEachOwnedMaterial(binding,slot,visit);
         }
     }
 }
@@ -3388,34 +3549,26 @@ void ApplyDriverMaterialValue(const DriverMaterialWrite& write,float value,
 // Restores the package's own static value for this property when it has one.
 // Returns false when the package never authored the property, where the
 // binding's lower endpoint is the rest state by definition of section 13.
-bool ReplayDriverMaterialRest(const DriverMaterialWrite& write) {
-    bool applied=false;
-    ForEachDriverMaterial(write.component,write.slot,
-        [&](void* material,const CompletedBinding& binding){
-            if (size_t(write.slot)>=binding.material_overrides.size()) return;
-            const auto& overrides=binding.material_overrides[write.slot];
-            if (write.kind==DriverMaterialKind::Float) {
-                for (const auto& entry:overrides.floats) if (entry.first==write.name) {
-                    SetDriverMaterialProperty(material,write.kind,write.name,entry.second,{},false);
-                    applied=true; return;
-                }
-            } else if (write.kind==DriverMaterialKind::Color) {
-                for (const auto& entry:overrides.colors) if (entry.first==write.name) {
-                    SetDriverMaterialProperty(material,write.kind,write.name,0.0f,entry.second,false);
-                    applied=true; return;
-                }
-            } else {
-                for (const auto& name:overrides.enable_keywords) if (name==write.name) {
-                    SetDriverMaterialProperty(material,write.kind,write.name,0.0f,{},true);
-                    applied=true; return;
-                }
-                for (const auto& name:overrides.disable_keywords) if (name==write.name) {
-                    SetDriverMaterialProperty(material,write.kind,write.name,0.0f,{},false);
-                    applied=true; return;
-                }
-            }
-        });
-    return applied;
+bool ReplayDriverMaterialRest(const DriverMaterialWrite& write,void* material,const CompletedBinding& binding) {
+    if (size_t(write.slot)>=binding.material_overrides.size()) return false;
+    const auto& overrides=binding.material_overrides[write.slot];
+    if (write.kind==DriverMaterialKind::Float) {
+        for (const auto& entry:overrides.floats) if (entry.first==write.name) {
+            SetDriverMaterialProperty(material,write.kind,write.name,entry.second,{},false); return true;
+        }
+    } else if (write.kind==DriverMaterialKind::Color) {
+        for (const auto& entry:overrides.colors) if (entry.first==write.name) {
+            SetDriverMaterialProperty(material,write.kind,write.name,0.0f,entry.second,false); return true;
+        }
+    } else {
+        for (const auto& name:overrides.enable_keywords) if (name==write.name) {
+            SetDriverMaterialProperty(material,write.kind,write.name,0.0f,{},true); return true;
+        }
+        for (const auto& name:overrides.disable_keywords) if (name==write.name) {
+            SetDriverMaterialProperty(material,write.kind,write.name,0.0f,{},false); return true;
+        }
+    }
+    return false;
 }
 void ReleaseDriverMaterials(const std::unordered_set<uint64_t>* keep) {
     if (g_driver_material_writes.empty()) return;
@@ -3423,18 +3576,47 @@ void ReleaseDriverMaterials(const std::unordered_set<uint64_t>* keep) {
     for (auto it=g_driver_material_writes.begin();it!=g_driver_material_writes.end();) {
         if (keep && keep->count(it->first)) {++it;continue;}
         const DriverMaterialWrite& write=it->second;
-        if (ReplayDriverMaterialRest(write)) ++restored;
-        else {
-            // No authored value: fall back to the binding's lower endpoint, which
-            // is exactly the pose phase 0 sits on while a driver is paused.
-            ApplyDriverMaterialValue(write,write.rest_float,write.rest_color,false);
-            ++given_back;
-        }
+        // Each target can have its own authored baseline. An override on one
+        // material must not suppress the lower-bound restore on another.
+        ForEachDriverMaterial(write.component,write.slot,[&](void* material,const CompletedBinding& binding) {
+            if (ReplayDriverMaterialRest(write,material,binding)) ++restored;
+            else {
+                SetDriverMaterialProperty(material,write.kind,write.name,write.rest_float,write.rest_color,false);
+                ++given_back;
+            }
+        });
         it=g_driver_material_writes.erase(it);
     }
     if (restored||given_back) Log("[AnimDriver] Released material modulation: "+
         std::to_string(restored)+" restored to authored value, "+
         std::to_string(given_back)+" to binding lower bound.");
+}
+
+void UnloadAnimationDriver(const char* reason) {
+    const bool loaded=g_animation_driver.DriverCount()!=0 || !g_driver_resources.empty();
+    if (!loaded && !g_driver_morph_active && g_driver_dirty_meshes.empty() &&
+        g_driver_material_writes.empty() && g_sounding_drivers.empty()) return;
+    const auto package=g_animation_driver.LoadedPath();
+    const auto resources=g_driver_resources.size();
+    // Restore while the old owner and completed bindings are still available.
+    g_animation_driver.SetAllPlaying(false);
+    if (!g_driver_dirty_meshes.empty()) g_driver_morph_active=true;
+    ApplyDriverMorph({});
+    ReleaseDriverMaterials(nullptr);
+    StopAllDriverSounds();
+    g_sounding_drivers.clear();
+    g_driver_dirty_meshes.clear();
+    g_driver_morph_active=false;
+    g_animation_driver.Reset();
+    g_driver_applied_overrides.clear();
+    g_driver_resources.clear();
+#if defined(_WIN32)
+    g_model_overlay.PublishDrivers({},{});
+#elif defined(__ANDROID__)
+    ClearAndroidDriverOverrides();
+#endif
+    if (loaded) Log("[AnimDriver] Unloaded: package="+package+" resources="+
+        std::to_string(resources)+" reason="+reason);
 }
 void WriteDriverMaterial(DriverMaterialKind kind,uint32_t component,uint32_t slot,
                          const std::string& name,float value,const std::array<float,4>& color,
@@ -3554,10 +3736,11 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
             const bool mesh_proves=old.generated_mesh ||
                 (restoring_original && old.original && old.original->mesh.Is(binding.original_mesh));
             if (!same_root && !mesh_proves) {
-                if (ArrayLength(binding.original_materials)!=static_cast<int>(old.materials.size())) continue;
+                void* identity_materials=RendererMaterialIdentityBase(binding.renderer,binding.original_materials);
+                if (ArrayLength(identity_materials)!=static_cast<int>(old.materials.size())) continue;
                 bool matches=true;
                 for (size_t i=0;i<old.materials.size();++i)
-                    if (!old.materials[i].Is(ArrayValue(binding.original_materials,static_cast<int>(i)))) { matches=false; break; }
+                    if (!old.materials[i].Is(ArrayValue(identity_materials,static_cast<int>(i)))) { matches=false; break; }
                 if (!matches) continue;
             }
             binding.saved_original=old.original;
@@ -3626,6 +3809,13 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
     record.adapter_owner=OwnAdapter(adapter); record.selection_key=std::move(selection_key);
     if (!record.root.Set(asset)) return false;
     for (const auto& binding:bindings) {
+        if (!PrepareRendererMaterialCache(binding)) return false;
+        // First capture must retain the game's base cache, not a renderer
+        // array with transient additive VFX appended. Rollback still uses
+        // binding.original_materials, which is the complete live array.
+        void* original_base_materials=DonorMaterials(binding);
+        if (!binding.saved_original && binding.material_cache)
+            original_base_materials=binding.material_cache->source.Get();
         CompletedBinding completed;
         if (!MakeReceiverKey(adapter,asset,binding.renderer,completed.receiver_key)) return false;
         completed.renderer_name=ObjectName(binding.renderer);
@@ -3640,7 +3830,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
         // unchanged hide/keep Mesh is mistaken for an unknown generated Mesh.
         if (!completed.original && (retain_original || g_hot_switch_runtime.load() || g_clone_support_runtime.load() || !record.selection_key.empty())) {
             auto original=std::make_shared<SavedOriginalBinding>();
-            if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(DonorMaterials(binding)) ||
+            if (!original->mesh.Set(DonorMesh(binding)) || !original->SetMaterials(original_base_materials) ||
                 (!IsStaticRenderer(binding.renderer) && !original->bones.Set(DonorBones(binding)))) return false;
             original->enabled=binding.original_enabled;
             original->visual_root_path=binding.visual_root_path; original->visual_pristine=binding.visual_pristine;
@@ -3659,6 +3849,9 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
 #endif
             completed.original=std::move(original);
         }
+        if (binding.material_cache && completed.original &&
+            !completed.original->material_cache_materials.handle &&
+            !completed.original->material_cache_materials.Set(original_base_materials)) return false;
         // Pin only an Original the receiver is about to stop referencing.
         if (completed.original && binding.custom_mesh!=DonorMesh(binding)) completed.original->EnsurePinned(DonorMesh(binding));
 #if defined(__ANDROID__)
@@ -3751,6 +3944,7 @@ bool IsCompletedResource(const CharacterAdapter& adapter,void* asset,std::string
                 if (!matches) break;
             }
             void* materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
+            materials=RendererMaterialIdentityBase(renderer,materials);
             if (ArrayLength(materials)!=static_cast<int>(binding.materials.size())) { matches=false; break; }
             for (size_t i=0;i<binding.materials.size();++i)
                 if (!binding.materials[i].Is(ArrayValue(materials,static_cast<int>(i)))) { matches=false; break; }
@@ -3792,6 +3986,64 @@ void IndexLivePublishedTextures(const CharacterAdapter& adapter,std::unordered_m
         }
     }
 }
+std::string DescribeSkinBindingState(const CompletedBinding& binding,void* renderer) {
+    auto id=[](void* object) {
+        int32_t value=0;
+        if (object) InvokeValue(Contract("object.instance_id"),object,nullptr,value);
+        return value;
+    };
+    void* mesh=GetRendererMesh(renderer);
+    void* bones=GetRendererBones(renderer);
+    const int count=ArrayLength(bones);
+    size_t mismatches=0;int first=-1;int32_t first_id=0;
+    if (bones && count>=0 && count<=1024) for (int i=0;i<count;++i) {
+        const auto actual=id(ArrayValue(bones,i));
+        if (static_cast<size_t>(i)>=binding.bones.size() || actual!=binding.bones[i].instance_id) {
+            ++mismatches;if (first<0) {first=i;first_id=actual;}
+        }
+    }
+    std::string state="mesh="+std::to_string(id(mesh))+" expectedMesh="+std::to_string(binding.mesh.instance_id)+
+        " bones="+std::to_string(count)+"/"+std::to_string(binding.bones.size())+
+        " boneMismatches="+std::to_string(mismatches);
+    if (!bones || count<0 || count>1024) state+=" bonesRead=unavailable";
+    if (first>=0) {
+        state+=" firstBone="+std::to_string(first)+" actualId="+std::to_string(first_id);
+        if (static_cast<size_t>(first)<binding.bones.size()) state+=
+            " expectedId="+std::to_string(binding.bones[first].instance_id)+" expectedPath="+binding.bone_paths[first];
+    }
+    void* root=nullptr;
+    if (ReadNullableObject(Contract("skinned.get_root_bone"),renderer,root))
+        state+=" rootBone="+std::to_string(id(root))+" expectedRoot="+
+            (binding.skin_audit.root_known?std::to_string(binding.skin_audit.root_bone.instance_id):"unavailable");
+    else state+=" rootBone=unavailable";
+    std::vector<Matrix4x4Raw> poses;
+    if (ReadAuditBindposes(mesh,poses) && binding.skin_audit.poses_known) {
+        size_t changed=0;int first_pose=-1;
+        for (size_t i=0;i<std::min(poses.size(),binding.skin_audit.poses.size());++i)
+            for (size_t j=0;j<16;++j) if (poses[i].m[j]!=binding.skin_audit.poses[i].m[j]) {
+                ++changed;if (first_pose<0) first_pose=static_cast<int>(i);break;
+            }
+        state+=" bindposes="+std::to_string(poses.size())+"/"+std::to_string(binding.skin_audit.poses.size())+
+            " changedPoses="+std::to_string(changed)+" firstPose="+std::to_string(first_pose);
+    } else state+=" bindposes=unavailable";
+    int32_t vertices=-1;
+    if (mesh) InvokeValue(Contract("mesh.get_vertex_count"),mesh,nullptr,vertices);
+    state+=" vertices="+std::to_string(vertices)+DescribeRendererVisibility(renderer)+
+        " expectedEnabled="+std::to_string(binding.enabled);
+    void* materials=Invoke(Contract("renderer.get_shared_materials"),renderer,nullptr);
+    const int material_count=ArrayLength(materials);
+    state+=" materialSlots="+std::to_string(material_count)+"/"+std::to_string(binding.materials.size());
+    for (int i=0;i<material_count && i<32;++i) {
+        void* material=ArrayValue(materials,i);
+        state+=" material["+std::to_string(i)+"]="+DescribeBindingObject(material)+
+            " expected="+(static_cast<size_t>(i)<binding.materials.size()?
+                std::to_string(binding.materials[size_t(i)].instance_id):"none");
+        if (material && IsNativeObjectAlive(material)) state+=" shader["+std::to_string(i)+"]="+
+            DescribeBindingObject(Invoke(Contract("material.get_shader"),material,nullptr,false));
+    }
+    return state;
+}
+#include "model_retired_resources.inc"
 void PruneCompletedResources() {
     const auto now=GetTickCount64();
     // Scene instances and pooled UI models can retain a retired generation
@@ -3887,6 +4139,7 @@ bool ReadCompletedAndroidDonor(const CharacterAdapter& adapter,const BemPocData&
         binding.original_materials=binding.custom_materials;
         binding.original_bones=GetRendererBones(binding.renderer);
         if (!UseSavedOriginal(asset,binding)) return false;
+        binding.material_overrides=component.draw_material_overrides;
         bindings.push_back(binding);
     }
     Log("Android donor reuses a verified committed UI resource");
@@ -3913,6 +4166,7 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     using Origin=GenericMatching::DonorOrigin;
     void* lineage_mesh=candidate.mesh;
     identity={};void* pristine=lineage_mesh;bool known_generated=false;
+    void* identity_materials=RendererMaterialIdentityBase(candidate.renderer,candidate.materials);
     // A receiver's own completed record is stronger evidence than another
     // template/clone sharing an unchanged Mesh. Retired records must not veto it.
     const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
@@ -3953,13 +4207,13 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
             continue;
         }
         if (!old.mesh.Get()) LogGenericLineageNote(candidate.key,"managed wrapper recycled; matched by instance ID");
-        const int count=ArrayLength(candidate.materials);
+        const int count=ArrayLength(identity_materials);
         bool custom_materials=count==static_cast<int>(old.materials.size());
         for (size_t i=0;custom_materials && i<old.materials.size();++i)
-            custom_materials=old.materials[i].Is(ArrayValue(candidate.materials,int(i)));
+            custom_materials=old.materials[i].Is(ArrayValue(identity_materials,int(i)));
         bool original_materials=old.original && static_cast<int>(old.original->materials.size())==count;
         for (int i=0;original_materials && i<count;++i) {
-            void* material=ArrayValue(candidate.materials,i);
+            void* material=ArrayValue(identity_materials,i);
             original_materials=old.original->material_present[size_t(i)]?
                 old.original->materials[size_t(i)].Is(material):material==nullptr;
         }
@@ -4161,14 +4415,8 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
         }
 #endif
         b.custom_mesh=DonorMesh(b);
-        for (size_t d = 0; d < component.draws.size(); ++d) {
-            if (d < component.draw_material_overrides.size() && !component.draw_material_overrides[d].empty()) {
-                uint32_t slot = component.draws[d].material_slot;
-                if (slot >= b.material_overrides.size())
-                    b.material_overrides.resize(slot + 1);
-                b.material_overrides[slot] = component.draw_material_overrides[d];
-            }
-        }
+        // Generated material slots follow output draw order, not donor slots.
+        b.material_overrides=component.draw_material_overrides;
         b.custom_enabled=(component.info.flags&kComponentFlagHidden)?false:
             (b.saved_original?b.donor_enabled:b.original_enabled);
         if (b.saved_original) b.custom_bones=DonorBones(b);
@@ -4309,7 +4557,8 @@ bool InstallRegistryUpdate(std::string_view text) {
     ModRegistry candidate; std::string error;
     if (!ParseModRegistry(text,g_registry_root,candidate,error)) { Log("Hot switch configuration rejected; previous selection retained: "+error); return false; }
     if (candidate.hot_switch!=g_registry.hot_switch || candidate.skip_validation!=g_registry.skip_validation ||
-        candidate.fast_loading!=g_registry.fast_loading || candidate.clone_support!=g_registry.clone_support) {
+        candidate.fast_loading!=g_registry.fast_loading || candidate.clone_support!=g_registry.clone_support ||
+        candidate.release_retired_resources!=g_registry.release_retired_resources) {
         Log("Hot switch flags changed; restart the game to apply experimental/validation settings."); return false;
     }
     for (const auto& diagnostic:candidate.diagnostics) if (!diagnostic.starts_with("Developer mode:")) {
@@ -4341,6 +4590,8 @@ bool InstallRegistryUpdate(std::string_view text) {
             return SameAdapter(*old.adapter,*mod.adapter);
         })) changed(old,"disabled");
     }
+    if (!g_driver_resources.empty() && !DriverOwnerMatchesRegistry(candidate))
+        UnloadAnimationDriver("registry-selection-retired");
     g_registry=std::move(candidate);
     // Overlay visibility, unknown fields and dormant selections do not invalidate
     // jobs/assets. Actual model edits keep the established generation path.
@@ -4402,6 +4653,8 @@ DeliveryFn g_original_finish=nullptr;
 PumpFn g_original_pump=nullptr;
 RetireHooksFn g_retire_hooks=nullptr;
 void PublishCompleted(CompletedResource&& record,void* asset) {
+    CaptureExperimentalGeneratedAssets(record);
+    for (auto& old:g_completed) if (old.root.Is(asset)) QueueExperimentalRetiredAssets(old,GetTickCount64());
     // Natural clones may still reference the preceding template generation.
     // Keep only its weak generated-asset lineage; never root old custom assets.
     for (auto& old:g_completed) if (!old.selection_key.empty() && old.root.Is(asset)) old.root.Reset();
@@ -4749,16 +5002,12 @@ void __fastcall ResourcePump(void* method) {
         if (dt > 0.1f) dt = 0.1f;
         s_anim_last_tick = now_ms;
 
-        EnsureAnimationDriverLoaded();
-        PollAnimationDriverControls();
+        if (!stop) {
+            EnsureAnimationDriverLoaded();
+            PollAnimationDriverControls();
+        }
         if (stop) {
-            // Leave nothing driver-owned behind on unload: a saved scene would
-            // otherwise keep the last animated frame as its authored look.
-            ApplyDriverMorph({});
-            g_driver_dirty_meshes.clear();
-            StopAllDriverSounds();
-            g_sounding_drivers.clear();
-            ReleaseDriverMaterials(nullptr);
+            UnloadAnimationDriver("module-stopping");
         }
         else if (g_animation_driver.HasActiveDrivers() && !g_completed.empty()) {
             DriverSink sink;
@@ -4831,6 +5080,7 @@ void __fastcall ResourcePump(void* method) {
 #endif
         ) { g_shutdown_ack.store(true); g_shutdown_cv.notify_all(); }
         const uint64_t now=GetTickCount64();
+        if (!stop) TickExperimentalRetiredResources(now,!g_model_jobs.empty());
         if (now>=g_next_prune) {
             TickNativeProbe();
             PrunePayloadCache(now);
@@ -4946,67 +5196,55 @@ void MaterializeDriverSounds(const std::filesystem::path& package) {
 }
 
 void EnsureAnimationDriverLoaded() {
-    if (g_registry.enabled.empty()) return;
-    static std::string applied_overrides;
-    static uint64_t s_last_registry_gen = 0;
-    static std::unordered_set<std::string> s_driverless_packages;
-    static std::string failed_package;
-    static uint64_t retry_at = 0;
-
-    if (s_last_registry_gen != g_registry_generation) {
-        s_last_registry_gen = g_registry_generation;
-        s_driverless_packages.clear();
-        failed_package.clear();
+    static uint64_t last_registry_gen=0;
+    static std::unordered_set<std::string> driverless_packages;
+    static std::unordered_map<std::string,uint64_t> retry_at;
+    if (last_registry_gen!=g_registry_generation) {
+        last_registry_gen=g_registry_generation;
+        driverless_packages.clear(); retry_at.clear();
     }
-
-    // 1. Fast path: if a package with drivers is already loaded and is still enabled,
-    // do not re-scan or reload from disk.
-    if (g_animation_driver.DriverCount() > 0) {
-        const std::string& current_loaded = g_animation_driver.LoadedPath();
-        for (const auto& mod : g_registry.enabled) {
-            if (mod.package.string() == current_loaded) {
-                ApplyModDriverOverrides(current_loaded, mod.drivers, applied_overrides);
-                return;
-            }
+    if (DriverOwnerMatchesRegistry(g_registry)) {
+        const auto& path=g_animation_driver.LoadedPath();
+        for (const auto& mod:g_registry.enabled) if (PackagePathUtf8(mod.package)==path) {
+            ApplyModDriverOverrides(path,mod.drivers,g_driver_applied_overrides);
+            return;
         }
     }
-
-    // 2. Slow path: scan enabled mods once to find an authored driver package.
-    for (const auto& mod : g_registry.enabled) {
-        const std::string package = mod.package.string();
-        if (s_driverless_packages.count(package)) continue;
-        if (g_animation_driver.LoadedPath() == package) {
-            if (g_animation_driver.DriverCount() > 0) {
-                ApplyModDriverOverrides(package, mod.drivers, applied_overrides);
-                break;
-            }
+    UnloadAnimationDriver(g_registry.enabled.empty()?"all-models-disabled":"owner-changed");
+    // Parse into a candidate: probing an ordinary or invalid package must never
+    // mutate the active clock, controls, audio or ownership.
+    const uint64_t now=GetTickCount64();
+    for (const auto& mod:g_registry.enabled) {
+        const std::string package=PackagePathUtf8(mod.package);
+        if (driverless_packages.contains(package)) continue;
+        const auto retry=retry_at.find(package);
+        if (retry!=retry_at.end() && now<retry->second) continue;
+        BemPackageInfo info; std::string why;
+        if (!ReadBemManagementInfo(mod.package,info,why,true) || info.manifest_json.empty()) {
+            retry_at[package]=now+5000;
+            Log("[AnimDriver] Manifest unavailable; retry deferred: "+package+" reason="+why);
             continue;
         }
-
-        const uint64_t now = GetTickCount64();
-        if (failed_package == package && now < retry_at) continue;
-
-        BemPackageInfo info; std::string why;
-        if (ReadBemManagementInfo(mod.package, info, why, true) && !info.manifest_json.empty()) {
-            if (g_animation_driver.LoadFromManifest(info.manifest_json, package)) {
-                MaterializeDriverSounds(mod.package);
-                StopAllDriverSounds();
-                g_sounding_drivers.clear();
-#if defined(_WIN32)
-                PublishAnimationDrivers(mod.package);
-#elif defined(__ANDROID__)
-                ReapplyAndroidDriverOverrides();
-#endif
-                failed_package.clear();
-                ApplyModDriverOverrides(package, mod.drivers, applied_overrides);
-                break; // Found and loaded the package with drivers! Stop scanning!
-            } else {
-                s_driverless_packages.insert(package);
-            }
-        } else {
-            failed_package = package;
-            retry_at = now + 5000;
+        AnimationDriverHost candidate;
+        candidate.SetLogger([](const std::string& message){Log(message);});
+        if (!candidate.LoadFromManifest(info.manifest_json,package)) {
+            driverless_packages.insert(package); continue;
         }
+        g_animation_driver=std::move(candidate);
+        for (const auto& owner:g_registry.enabled) if (PackagePathUtf8(owner.package)==package)
+            g_driver_resources.push_back({owner.adapter,OwnAdapter(*owner.adapter),owner.selection_key});
+        MaterializeDriverSounds(mod.package);
+        retry_at.erase(package);
+#if defined(__ANDROID__)
+        ReapplyAndroidDriverOverrides();
+#endif
+        ApplyModDriverOverrides(package,mod.drivers,g_driver_applied_overrides);
+#if defined(_WIN32)
+        PublishAnimationDrivers(mod.package);
+#endif
+        Log("[AnimDriver] Owner loaded: package="+package+" resources="+
+            std::to_string(g_driver_resources.size())+" drivers="+std::to_string(g_animation_driver.DriverCount()));
+        return;
     }
 }
 
@@ -5033,6 +5271,7 @@ void PollAnimationDriverControls() {
 // and stop distinct on both platforms.
 struct AndroidDriverOverride { int state = 0; uint32_t speed_millis = 1000; };
 static std::unordered_map<std::string, AndroidDriverOverride> s_driver_overrides;
+void ClearAndroidDriverOverrides() {s_driver_overrides.clear();}
 
 void ReapplyAndroidDriverOverrides() {
     for (const auto& entry : s_driver_overrides) {
@@ -5044,6 +5283,7 @@ void ReapplyAndroidDriverOverrides() {
 bool SetAndroidDriver(const char* id, int state, int speed_millis) {
     if (!id || *id == '\0') return false;
     std::lock_guard lock(g_state_mutex);
+    if (g_driver_resources.empty() || g_animation_driver.DriverCount()==0) return false;
     const int clamped = state < 0 ? 0 : (state > 2 ? 2 : state);
     const uint32_t sp = (speed_millis >= 250 && speed_millis <= 4000)
         ? static_cast<uint32_t>(speed_millis) : 1000;
@@ -5099,6 +5339,8 @@ bool ReadRuntimeRegistry() {
     g_last_registry_text=text;
     g_hot_switch_runtime.store(g_registry.hot_switch);
     g_clone_support_runtime.store(g_registry.clone_support);
+    g_release_retired_resources_runtime.store(g_registry.release_retired_resources);
+    Log(std::string("[RetiredResourceCleanup] enabled=")+(g_registry.release_retired_resources?"1 delayMs=1000":"0"));
     g_model_clone_hooks_requested=g_registry.clone_support;
     Log(std::string("Experimental clone support=")+(g_registry.clone_support?"on; template delivery remains synchronous":"off"));
     if(g_probe.sweep) {
@@ -5314,8 +5556,10 @@ void BE_CALL ShutdownResourceModule() {
 #if defined(__ANDROID__)
         need_restore=need_restore || g_android_budget_policy.HasOwnedOverride() || AndroidBudgetHasLease();
 #endif
+        need_restore=need_restore || g_animation_driver.DriverCount()!=0;
         if (need_restore && g_pump_thread.load()==GetCurrentThreadId()) {
             ConstructionScope construction;
+            UnloadAnimationDriver("module-shutdown");
             CancelModelJobs();
             bool restored=g_lod.Restore();
 #if defined(__ANDROID__)
@@ -5346,6 +5590,14 @@ void BE_CALL ShutdownResourceModule() {
     // Pending scene work owns strong roots. It belongs to this module lifetime,
     // never to a later start, even though published bindings stay in the game.
     ResetInstanceRebinds();g_pending_model_resources.clear();
+    StopAllDriverSounds(); g_sounding_drivers.clear();
+    g_animation_driver.Reset(); g_driver_resources.clear(); g_driver_applied_overrides.clear();
+    g_driver_morph_active=false; g_driver_dirty_meshes.clear(); g_driver_material_writes.clear();
+    g_dynamic_meshes.clear();
+#if defined(__ANDROID__)
+    ClearAndroidDriverOverrides();
+#endif
+    g_retired_generated_assets.clear();g_release_retired_resources_runtime.store(false);
     g_payload_cache.clear(); g_completed.clear(); g_lod.pipeline.Reset();
     g_generated_texture_identity.clear(); g_generated_texture_order.clear();
     g_model_assets.clear();g_model_plans.clear();g_model_targets.clear();g_model_file_leases.clear();

@@ -95,10 +95,17 @@ static class Program
         service.Load();
         Expect(service.Packages.Count == 3, "Synthetic legacy packages failed to load.");
         Expect(!service.CloneSupport, "Clone support must default off.");
+        Expect(!service.ReleaseRetiredResources, "Retired resource cleanup must default off.");
+        service.ReleaseRetiredResources = true;
         service.CloneSupport = true;
         await service.SaveAsync();
         service.Load();
         Expect(service.CloneSupport && !service.HotSwitch, "Clone support did not persist independently of hot switch.");
+        Expect(service.ReleaseRetiredResources, "Retired resource cleanup setting did not persist.");
+        service.ReleaseRetiredResources = false;
+        await service.SaveAsync();
+        service.Load();
+        Expect(!service.ReleaseRetiredResources && service.CloneSupport, "Cleanup must turn off independently of clone support.");
         string runtime = Path.Combine(service.Root, "runtime.ini");
         var loaded = BemRuntimeSettings.Read(runtime);
         var external = BemRuntimeSettings.Clone(loaded);
