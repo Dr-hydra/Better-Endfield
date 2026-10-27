@@ -63,7 +63,6 @@ bool ResolveRendererMaterialCacheApi() {
         field(rendering,space,info,"subMeshCount","System.Int32",api.submeshes) &&
         field(rendering,space,info,"materialReplacing","System.Boolean",api.replacing) &&
         field(rendering,space,info,"replacingMaterials","UnityEngine.Material[]",api.replacements);
-    if (api.ready) Log("[MaterialCacheSync] Base-material cache synchronization ready (metadata contracts)");
     return api.ready;
 }
 void* ReadMaterialCacheField(void* object,const BE_ResolvedFieldV1& field) {
@@ -242,11 +241,6 @@ bool ApplyRendererMaterialCache(const PreparedBinding& binding) {
         Log("[MaterialCacheSync] Cache commit verification failed; transaction rollback required renderer="+
             DescribeBindingObject(binding.renderer));return false;
     }
-    Log("[MaterialCacheSync] applied renderer="+DescribeBindingObject(binding.renderer)+
-        " baseSlots="+std::to_string(ArrayLength(snapshot.source.Get()))+"->"+std::to_string(ArrayLength(materials))+
-        " submeshes="+std::to_string(snapshot.submeshes)+"->"+std::to_string(count)+
-        " additiveVfx="+std::to_string(snapshot.added.Get()!=nullptr)+
-        " gameCopies="+std::to_string(snapshot.replacing!=0));
     return true;
 }
 bool RestoreRendererMaterialCache(const PreparedBinding& binding) {

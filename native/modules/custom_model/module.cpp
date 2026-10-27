@@ -58,6 +58,7 @@ constexpr char kModuleId[]="betterendfieldnext.custom_model";
 const BE_HostApiV1* g_host=nullptr;
 std::atomic_bool g_hot_switch_runtime{false};
 std::atomic_bool g_clone_support_runtime{false};
+std::atomic_bool g_release_retired_resources_runtime{false};
 void WatchModelCloneSource(void* asset);
 std::atomic<DWORD> g_pump_thread{0};
 uint64_t g_registry_generation = 0;
@@ -2628,24 +2629,10 @@ bool PrepareDrawMaterials(const BemComponent& component,PreparedBinding& target,
     TextureTransactionCache* transaction_textures=nullptr) {
     TextureTransactionCache local_textures;
     auto& texture_cache=transaction_textures?*transaction_textures:local_textures;
-    auto fail=[&](const char* reason,size_t draw_index,const PreparedBinding* donor=nullptr,
-            void* material=nullptr,void* copy=nullptr) {
-        const auto* draw=draw_index<component.draws.size()?&component.draws[draw_index]:nullptr;
-        Log(std::string("[MaterialPrepareAudit] reason=")+reason+
-            " resource="+(g_construction?g_construction->resource_name:"unavailable")+
-            " component="+std::to_string(component.info.component_id)+" draw="+std::to_string(draw_index)+
-            " donorComponent="+(draw?std::to_string(draw->material_component):"none")+
-            " donorSlot="+(draw?std::to_string(draw->material_slot):"none")+
-            " donorSlots="+std::to_string(donor?ArrayLength(DonorMaterials(*donor)):-1)+
-            " expected="+(draw_index<component.material_names.size()?component.material_names[draw_index]:"none")+
-            " material="+DescribeBindingObject(material)+" copy="+DescribeBindingObject(copy)+
-            " shader="+DescribeBindingObject(material && IsNativeObjectAlive(material)?
-                Invoke(Contract("material.get_shader"),material,nullptr,false):nullptr)+
-            " receiver="+DescribeBindingObject(target.renderer)+
-            " donorSource="+(donor && donor->saved_original?"saved-original":"current-renderer")+
-            " donorReceiver="+DescribeBindingObject(donor?donor->renderer:nullptr)+
-            " currentMesh="+DescribeBindingObject(target.original_mesh)+
-            " donorMesh="+DescribeBindingObject(DonorMesh(target))+DescribeRendererVisibility(target.renderer));
+    auto fail=[&](const char* reason,size_t draw_index,const PreparedBinding* =nullptr,
+            void* =nullptr,void* =nullptr) {
+        Log(std::string("Material preparation failed: reason=")+reason+
+            " component="+std::to_string(component.info.component_id)+" draw="+std::to_string(draw_index));
         return false;
     };
     void* target_base=nullptr;
@@ -3273,6 +3260,7 @@ struct CompletedResource {
     std::string selection_key;
     WeakObject root;
     std::vector<CompletedBinding> bindings;
+    std::vector<WeakObject> experimental_assets; // Only objects created by this module.
     uint64_t last_seen_ms=GetTickCount64();
     bool retired_drop=false; // pruning mark (hot switch retired-generation bound)
 };
@@ -3884,8 +3872,6 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
             completed.bone_paths.push_back(std::move(path));completed.bones.push_back(std::move(weak));
         }
         if (!completed.mesh.Set(binding.custom_mesh)) return false;
-        if (completed.generated_mesh && !completed.bones.empty())
-            CaptureSkinBindingAudit(binding.renderer,binding.custom_mesh,completed.skin_audit);
         for (int i=0;i<ArrayLength(binding.custom_materials);++i) {
             void* custom=ArrayValue(binding.custom_materials,i);bool original=false;
             for (int j=0;j<ArrayLength(DonorMaterials(binding));++j) if (custom==ArrayValue(DonorMaterials(binding),j)) original=true;
@@ -4057,33 +4043,7 @@ std::string DescribeSkinBindingState(const CompletedBinding& binding,void* rende
     }
     return state;
 }
-void AuditPublishedSkinBindings(uint64_t now) {
-    // One renderer every 250 ms, only for active selections. A full palette is
-    // sampled so changes beyond the first few bones cannot go unnoticed.
-    static uint64_t next=0;static size_t cursor=0;
-    if (!g_hot_switch_runtime.load() || now<next) return;
-    next=now+250;
-    struct Target {CompletedResource* resource;CompletedBinding* binding;};
-    std::vector<Target> targets;
-    for (auto& record:g_completed) {
-        if (record.selection_key.empty() || record.selection_key!=ActiveSelectionKey(*record.adapter)) continue;
-        for (auto& binding:record.bindings)
-            if (binding.generated_mesh && !binding.bones.empty() && binding.skin_audit.reports<12)
-                targets.push_back({&record,&binding});
-    }
-    if (targets.empty()) {cursor=0;return;}
-    const auto target=targets[cursor++%targets.size()];
-    if (!target.resource->root.Get()) return;
-    void* renderer=target.binding->renderer.Get();if (!renderer) return;
-    auto& audit=target.binding->skin_audit;
-    auto state=DescribeSkinBindingState(*target.binding,renderer);
-    if (state==audit.last_state) return;
-    Log(std::string("[SkinBindingAudit] ")+(audit.reports?"changed":"observed")+
-        " role="+target.resource->adapter->id+" selection="+target.resource->selection_key+
-        " root="+std::to_string(target.resource->root.instance_id)+" renderer="+target.binding->renderer_name+
-        " rendererId="+std::to_string(target.binding->renderer.instance_id)+" "+state);
-    audit.last_state=std::move(state);++audit.reports;
-}
+#include "model_retired_resources.inc"
 void PruneCompletedResources() {
     const auto now=GetTickCount64();
     // Scene instances and pooled UI models can retain a retired generation
@@ -4459,15 +4419,6 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
         b.material_overrides=component.draw_material_overrides;
         b.custom_enabled=(component.info.flags&kComponentFlagHidden)?false:
             (b.saved_original?b.donor_enabled:b.original_enabled);
-        if (g_hot_switch_runtime.load()) Log("[BindingCaptureAudit] resource="+ObjectName(asset)+
-            " root="+DescribeBindingObject(asset)+" component="+std::to_string(b.component_id)+
-            " receiver="+DescribeBindingObject(b.renderer)+" savedOriginal="+std::to_string(bool(b.saved_original))+
-            " currentEnabled="+std::to_string(b.original_enabled)+" donorEnabled="+std::to_string(b.donor_enabled)+
-            " targetEnabled="+std::to_string(b.custom_enabled)+
-            " hidden="+std::to_string(bool(component.info.flags&kComponentFlagHidden))+
-            " currentMesh="+DescribeBindingObject(b.original_mesh)+" donorMesh="+DescribeBindingObject(DonorMesh(b))+
-            " currentSlots="+std::to_string(ArrayLength(b.original_materials))+
-            " donorSlots="+std::to_string(ArrayLength(DonorMaterials(b)))+DescribeRendererVisibility(b.renderer));
         if (b.saved_original) b.custom_bones=DonorBones(b);
 #if defined(__ANDROID__)
         if (adapter.explicit_resource && c.renderer) {
@@ -4606,7 +4557,8 @@ bool InstallRegistryUpdate(std::string_view text) {
     ModRegistry candidate; std::string error;
     if (!ParseModRegistry(text,g_registry_root,candidate,error)) { Log("Hot switch configuration rejected; previous selection retained: "+error); return false; }
     if (candidate.hot_switch!=g_registry.hot_switch || candidate.skip_validation!=g_registry.skip_validation ||
-        candidate.fast_loading!=g_registry.fast_loading || candidate.clone_support!=g_registry.clone_support) {
+        candidate.fast_loading!=g_registry.fast_loading || candidate.clone_support!=g_registry.clone_support ||
+        candidate.release_retired_resources!=g_registry.release_retired_resources) {
         Log("Hot switch flags changed; restart the game to apply experimental/validation settings."); return false;
     }
     for (const auto& diagnostic:candidate.diagnostics) if (!diagnostic.starts_with("Developer mode:")) {
@@ -4701,6 +4653,8 @@ DeliveryFn g_original_finish=nullptr;
 PumpFn g_original_pump=nullptr;
 RetireHooksFn g_retire_hooks=nullptr;
 void PublishCompleted(CompletedResource&& record,void* asset) {
+    CaptureExperimentalGeneratedAssets(record);
+    for (auto& old:g_completed) if (old.root.Is(asset)) QueueExperimentalRetiredAssets(old,GetTickCount64());
     // Natural clones may still reference the preceding template generation.
     // Keep only its weak generated-asset lineage; never root old custom assets.
     for (auto& old:g_completed) if (!old.selection_key.empty() && old.root.Is(asset)) old.root.Reset();
@@ -5126,7 +5080,7 @@ void __fastcall ResourcePump(void* method) {
 #endif
         ) { g_shutdown_ack.store(true); g_shutdown_cv.notify_all(); }
         const uint64_t now=GetTickCount64();
-        if (!stop) AuditPublishedSkinBindings(now);
+        if (!stop) TickExperimentalRetiredResources(now,!g_model_jobs.empty());
         if (now>=g_next_prune) {
             TickNativeProbe();
             PrunePayloadCache(now);
@@ -5385,6 +5339,8 @@ bool ReadRuntimeRegistry() {
     g_last_registry_text=text;
     g_hot_switch_runtime.store(g_registry.hot_switch);
     g_clone_support_runtime.store(g_registry.clone_support);
+    g_release_retired_resources_runtime.store(g_registry.release_retired_resources);
+    Log(std::string("[RetiredResourceCleanup] enabled=")+(g_registry.release_retired_resources?"1 delayMs=1000":"0"));
     g_model_clone_hooks_requested=g_registry.clone_support;
     Log(std::string("Experimental clone support=")+(g_registry.clone_support?"on; template delivery remains synchronous":"off"));
     if(g_probe.sweep) {
@@ -5641,6 +5597,7 @@ void BE_CALL ShutdownResourceModule() {
 #if defined(__ANDROID__)
     ClearAndroidDriverOverrides();
 #endif
+    g_retired_generated_assets.clear();g_release_retired_resources_runtime.store(false);
     g_payload_cache.clear(); g_completed.clear(); g_lod.pipeline.Reset();
     g_generated_texture_identity.clear(); g_generated_texture_order.clear();
     g_model_assets.clear();g_model_plans.clear();g_model_targets.clear();g_model_file_leases.clear();

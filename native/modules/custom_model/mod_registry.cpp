@@ -89,6 +89,9 @@ bool ParseModRegistry(std::string_view ini,const std::filesystem::path& root,Mod
         if(auto i=sections["CustomModel"].find("clone_support");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.clone_support)) {
             error="clone_support must be boolean";return false;
         }
+        if(auto i=sections["CustomModel"].find("release_retired_resources");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.release_retired_resources)) {
+            error="release_retired_resources must be boolean";return false;
+        }
         // The former experimental loading_optimization key is now always on and ignored.
         if(auto i=sections["CustomModel"].find("fast_loading");i!=sections["CustomModel"].end()&&!Boolean(i->second,parsed.fast_loading)) {
             error="fast_loading must be boolean";return false;

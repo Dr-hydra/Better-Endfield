@@ -52,8 +52,7 @@ bool ResolveRendererMaterialReplacementApi() {
         field(group,"vectorProperties",api.vector_properties) && field(group,"textureProperties",api.texture_properties) &&
         field(group,"keywordStates",api.keyword_states) && field(group,"depthOnlyPassControlling",api.depth_control) &&
         field(group,"src2dstMaterialDict",api.material_map);
-    Log(api.active_ready?"[MaterialCacheSync] Active game material rebase contracts ready":
-        "[MaterialCacheSync] Active game material rebase contracts unavailable");
+    if (!api.active_ready) Log("[MaterialCacheSync] Active game material rebase contracts unavailable");
     return api.active_ready;
 }
 bool CacheCollectionCount(void* collection,int32_t& count) {

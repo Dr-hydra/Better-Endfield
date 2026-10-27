@@ -33,7 +33,7 @@ final class BemInstallPage {
     private boolean updatingCharacterFilter,hasEnabledPackages;
     private final java.util.List<String> characterIds=new java.util.ArrayList<>();
     private JSONObject characterNames=new JSONObject();
-    private Switch skipValidation,hotSwitch,cloneSupport,fastLoading,keepLocalCopies;
+    private Switch skipValidation,hotSwitch,cloneSupport,releaseRetiredResources,fastLoading,keepLocalCopies;
     private Button cleanUnused;
     private final java.util.Set<String> expanded=new java.util.HashSet<>();
     private final java.util.Map<String,java.util.LinkedHashMap<String,Integer>> parameterDrafts=new java.util.HashMap<>();
@@ -47,6 +47,7 @@ final class BemInstallPage {
         skipValidation.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.SKIP_VALIDATION,false));
         refreshExperiment(hotSwitch,BemInstaller.HOT_SWITCH);
         refreshExperiment(cloneSupport,BemInstaller.CLONE_SUPPORT);
+        refreshExperiment(releaseRetiredResources,BemInstaller.RELEASE_RETIRED_RESOURCES);
         refreshExperiment(fastLoading,BemInstaller.FAST_LOADING);
         keepLocalCopies.setEnabled(!BemInstaller.busy);cleanUnused.setEnabled(!BemInstaller.busy);
         status.setText(BemInstaller.status);
@@ -81,9 +82,11 @@ final class BemInstallPage {
         skipValidation=root.findViewById(R.id.bem_skip_validation);
         hotSwitch=root.findViewById(R.id.bem_hot_switch);
         cloneSupport=root.findViewById(R.id.bem_clone_support);
+        releaseRetiredResources=root.findViewById(R.id.bem_release_retired_resources);
         fastLoading=root.findViewById(R.id.bem_fast_loading);
         bindExperiment(hotSwitch,BemInstaller.HOT_SWITCH);
         bindExperiment(cloneSupport,BemInstaller.CLONE_SUPPORT);
+        bindExperiment(releaseRetiredResources,BemInstaller.RELEASE_RETIRED_RESOURCES);
         bindExperiment(fastLoading,BemInstaller.FAST_LOADING);
         keepLocalCopies=root.findViewById(R.id.bem_keep_local_copies);
         cleanUnused=root.findViewById(R.id.bem_clean_unused);

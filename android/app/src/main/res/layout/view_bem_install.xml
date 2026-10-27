@@ -7,6 +7,7 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <Switch android:id="@+id/bem_hot_switch" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/bem_hot_switch" />
             <Switch android:id="@+id/bem_clone_support" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_clone_support" />
+            <Switch android:id="@+id/bem_release_retired_resources" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_release_retired_resources" />
             <Switch android:id="@+id/bem_fast_loading" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_fast_loading" />
             <Switch android:id="@+id/bem_skip_validation" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_skip_validation" />
         </LinearLayout>

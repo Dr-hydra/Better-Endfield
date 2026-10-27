@@ -9,4 +9,5 @@
     <string name="bem_keep_local_copies">로컬 사본 보관</string>
     <string name="bem_clean_unused">사용하지 않는 데이터 정리</string>
     <string name="bem_clone_support">실험: 복제 모델 지원</string>
+    <string name="bem_release_retired_resources">실험: 이전 모델 리소스 해제</string>
 </resources>

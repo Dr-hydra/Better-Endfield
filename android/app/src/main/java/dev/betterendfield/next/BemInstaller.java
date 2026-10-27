@@ -15,6 +15,7 @@ final class BemInstaller {
     static final String SKIP_VALIDATION = "bem_skip_validation";
     static final String HOT_SWITCH = "bem_hot_switch";
     static final String CLONE_SUPPORT = "bem_clone_support";
+    static final String RELEASE_RETIRED_RESOURCES = "bem_release_retired_resources";
     static final String FAST_LOADING = "bem_fast_loading";
     static final String KEEP_LOCAL_COPIES = "bem_keep_local_copies";
     /** Idle hint. The page compares against it instead of matching localized status text. */

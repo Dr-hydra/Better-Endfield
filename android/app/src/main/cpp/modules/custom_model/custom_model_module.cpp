@@ -47,7 +47,8 @@ std::string SharedRegistryText(std::string_view config,const std::vector<std::fi
         std::string(ConfigValue(config,"skip_validation")=="1"?"true":"false")+
         "\nhot_switch="+(ConfigValue(config,"hot_switch")=="1"?"true":"false")+
         "\nfast_loading="+(ConfigValue(config,"fast_loading")=="1"?"true":"false")+
-        "\nclone_support="+(ConfigValue(config,"clone_support")=="1"?"true":"false")+"\n";
+        "\nclone_support="+(ConfigValue(config,"clone_support")=="1"?"true":"false")+
+        "\nrelease_retired_resources="+(ConfigValue(config,"release_retired_resources")=="1"?"true":"false")+"\n";
     const auto appearances=ConfigStrings(ConfigValue(config,"appearances"));
     const auto options=ConfigStrings(ConfigValue(config,"options"));
     const auto parameters=ConfigStrings(ConfigValue(config,"parameters"));
@@ -108,15 +109,6 @@ BE_Result CustomModelModule::HostResolveMethod(void* context,
         descriptor->assembly_name, descriptor->namespace_name, descriptor->class_name,
         descriptor->method_name, descriptor->parameter_types, descriptor->return_type,
         static_cast<int>(descriptor->parameter_count));
-    if (descriptor->method_name && std::strcmp(descriptor->method_name,"ApplySharedMaterialArray")==0 &&
-        descriptor->class_name && std::strcmp(descriptor->class_name,"EntityRenderHelperMaterialController/AddedMaterialController")==0) {
-        const std::string diagnostic=std::string("[MaterialCacheSync] Android apply contract resolved=")+
-            ((method.info && method.entry)?"1":"0")+" expected="+
-            (descriptor->parameter_types?descriptor->parameter_types:"")+" actual="+
-            self->runtime_->DescribeMethod(descriptor->assembly_name,descriptor->namespace_name,
-                descriptor->class_name,descriptor->method_name);
-        LogInfo(self->Id(),diagnostic.c_str());
-    }
     if (!method.info || !method.entry) { *result = {}; return BE_Result_NotFound; }
     result->method_info = method.info; result->method_pointer = method.entry;
     return BE_Result_Ok;

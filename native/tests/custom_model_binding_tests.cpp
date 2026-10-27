@@ -1466,6 +1466,7 @@ void ResourceTypeBoundaryTests(const std::filesystem::path& package_path) {
 
 #include "custom_model_clone_support_tests.inc"
 #include "custom_model_material_cache_tests.inc"
+#include "custom_model_retired_resources_tests.inc"
 #include "aurora_runtime_checks.inc"
 
 std::map<void*,float> lifecycle_material_values;
@@ -1647,6 +1648,7 @@ void SkinBindingAuditTests() {
 }
 int main(int argc,char** argv) {
     if(argc==2 && std::string_view(argv[1])=="--material-cache-sync") {MaterialCacheSyncTests();return 0;}
+    if(argc==2 && std::string_view(argv[1])=="--retired-resources") {RetiredResourceCleanupTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--skin-binding-audit") {SkinBindingAuditTests();return 0;}
     if(argc==4 && std::string_view(argv[1])=="--driver-lifecycle") {DriverLifecycleTests(argv[2],argv[3]);return 0;}
     if(argc==2 && std::string_view(argv[1])=="--aurora-legacy") {AuroraRuntimeTests();return 0;}

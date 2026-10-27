@@ -9,4 +9,5 @@
     <string name="bem_keep_local_copies">保留本地副本</string>
     <string name="bem_clean_unused">清理未使用数据</string>
     <string name="bem_clone_support">实验：克隆模型支持</string>
+    <string name="bem_release_retired_resources">实验：释放旧模型资源</string>
 </resources>
