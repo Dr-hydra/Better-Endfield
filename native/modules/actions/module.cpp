@@ -387,6 +387,7 @@ struct Session {
 Session g_session;
 bool g_liino_teardown_contract = true, g_effect_follow_contract = true;
 bool g_liino_clean_contract = true;
+bool g_ending_skip_contract = true;
 int g_liino_mesh_groups[2]{-1, -1};
 VoidFn g_effect_action_play = nullptr;
 const void* g_hash_fields[2]{};
@@ -912,17 +913,37 @@ bool CleanLiinoPerform(void* handle, void* target = nullptr) {
     void* control = Object(GetCharCtrl, entity, ok);
     return Value<bool>(IsMain, control, ok) && ok;
 }
-void __fastcall EffectActionPlayDetour(void* action, const void* method) {
-    if (action && !g_stopping && GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed)) {
-        if (g_session.profile && g_session.profile->skipped_effect_actors) {
-            void* data = FieldObject(VisualActionData, action);
-            bool ok = data != nullptr;
-            const int actor = ok ? Unbox<int>(FieldObject(ActionIndex, data), ok) : -1;
-            if (ok && actor >= 0 && actor < 32 && (g_session.profile->skipped_effect_actors & (1u << actor))) {
-                if (FieldObject(VisualActionHandle, action) == g_session.handle) return;
-            }
-        }
+// Clip-ending effects are queued by the native StartSpDash before the dash
+// session exists, so ownership comes from the action's own perform, not the
+// session. Actor fields are read before any managed identity getter.
+bool SkippedEndingEffect(void* action) {
+    if (!g_ending_skip_contract) return false;
+    auto config = g_config.load();
+    uint32_t skipped = 0;
+    for (size_t i = 0; i < kCharacterCount; ++i)
+        if (config->characters & (1u << i)) skipped |= kCharacters[i].skipped_effect_actors;
+    if (!config->enabled || !skipped) return false;
+    void* data = FieldObject(VisualActionData, action);
+    bool ok = data != nullptr;
+    const int actor = ok ? Unbox<int>(FieldObject(ActionIndex, data), ok) : -1;
+    if (!ok || actor < 0 || actor >= 32 || !(skipped & (1u << actor))) return false;
+    void* handle = FieldObject(VisualActionHandle, action);
+    for (size_t i = 0; handle && i < kCharacterCount; ++i) {
+        const auto& profile = kCharacters[i];
+        if (!(config->characters & (1u << i)) || !(profile.skipped_effect_actors & (1u << actor))) continue;
+        ok = true;
+        void* id = Invoke(VisualPerformId, handle, nullptr, ok);
+        if (!ok || !PerformMatches(id, profile.perform_id, profile.side_suffixed_perform)) continue;
+        void* entity = Object(VisualPerformEntity, handle, ok);
+        if (!ok || !Value<bool>(EntityValid, entity, ok) || !ok) return false;
+        void* control = Object(GetCharCtrl, entity, ok);
+        return ok && Value<bool>(IsMain, control, ok) && ok;
     }
+    return false;
+}
+void __fastcall EffectActionPlayDetour(void* action, const void* method) {
+    if (action && !g_stopping && GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed) &&
+        SkippedEndingEffect(action)) return;
     // All EffectPlayActions belonging to this exact perform are cosmetic:
     // entry/exit particles, continuous trails, and material dissolve/glow VFX.
     if (action && !g_stopping && g_liino_clean_contract &&
@@ -1648,6 +1669,11 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
              reinterpret_cast<void*>(&EffectActionPlayDetour), reinterpret_cast<void**>(&g_effect_action_play)) != BE_Result_Ok))
         g_liino_teardown_contract = false;
     if (!g_liino_teardown_contract) Log("Sustained dash Liino: teardown hook unavailable; material dissolve follows native timing.");
+    g_ending_skip_contract = g_liino_teardown_contract;
+    for (int id : {VisualPerformId, VisualPerformEntity})
+        if (!g_methods[id].resolved.method_info || (flags(g_methods[id].resolved.method_info, &impl) & 0x10u))
+            g_ending_skip_contract = false;
+    if (!g_ending_skip_contract) Log("Sustained dash: clip-ending effect skip unavailable; those effects follow native timing.");
     if (g_effect_follow_contract && (flags(g_methods[EffectManualFollow].resolved.method_info, &impl) & 0x10u))
         g_effect_follow_contract = false;
     if (!g_effect_follow_contract) Log("Sustained dash Liino: final-pose effect follow refresh unavailable.");
@@ -1707,7 +1733,7 @@ void BE_CALL Shutdown() {
     g_particle_type_root = 0;
     g_particle_type = nullptr;
 }
-const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.2", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
+const BE_ModuleApiV1 kApi{{kId, "Sustained Dash", "1.14.3", BETTER_ENDFIELD_NEXT_MODULE_ABI_V1},
     &Initialize, &Configure, &Shutdown};
 } // namespace
 } // namespace BetterEndfieldNext::Actions
