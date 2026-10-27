@@ -156,7 +156,7 @@ sys.exit(1 if failures or catalogs < 1 else 0)
     return payload
 
 
-def archive(root, output):
+def archive(root, output, calculate_digest=False):
     output.parent.mkdir(parents=True, exist_ok=True)
     files = sorted(path for path in root.rglob('*')
                    if path.is_file() and '__pycache__' not in path.parts and path.suffix not in ('.pyc', '.pyo'))
@@ -171,7 +171,7 @@ def archive(root, output):
             info.mtime = stamp
             with path.open('rb') as handle:
                 tar.addfile(info, handle)
-    digest = hashlib.sha256(output.read_bytes()).hexdigest()
+    digest = hashlib.sha256(output.read_bytes()).hexdigest() if calculate_digest else None
     return len(files), sum(path.stat().st_size for path in files), digest
 
 
@@ -194,6 +194,7 @@ def main(argv=None):
     parser.add_argument('--wheels', type=Path, default=None,
                         help='Optional directory of prebuilt .whl files to bundle for offline pip install.')
     parser.add_argument('--skip-verify', action='store_true')
+    parser.add_argument('--calculate-digest', action='store_true', help='Explicitly calculate the archive SHA-256.')
     args = parser.parse_args(argv)
 
     repo = args.repo.resolve()
@@ -203,7 +204,7 @@ def main(argv=None):
 
     root, modules = stage(repo, args.staging.resolve(), version, wheels=args.wheels)
     check = {'skipped': True} if args.skip_verify else verify(root, args.python)
-    files, raw_bytes, digest = archive(root, args.output.resolve())
+    files, raw_bytes, digest = archive(root, args.output.resolve(), args.calculate_digest)
 
     print(json.dumps({
         'version': version,

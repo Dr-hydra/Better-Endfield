@@ -1,6 +1,6 @@
 {
   "name": "dsh-bem-creator",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "description": "DeepSeek Harness bundle for the bem-creator skill: convert Endfield source Mods to BEM 1.0-1.5, repair non-standard packages, validate the result, and preview it in the conversation.",
   "type": "module",
   "license": "AGPL-3.0-only",

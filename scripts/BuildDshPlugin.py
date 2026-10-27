@@ -278,6 +278,12 @@ def main():
     parser.add_argument('--keep-stage', action='store_true', help='Leave the staging directory in place for inspection.')
     parser.add_argument('--no-cli', action='store_true', help='Build the code-only bundle, without the platform CLIs (fast iteration).')
     args = parser.parse_args()
+    # Honor the configured build root, including fresh release workspaces.
+    if args.workspace_config:
+        sys.path.insert(0, str(REPO/'scripts'))
+        from workspace_config import load_workspace
+        global ANDROID_ARCHIVE
+        ANDROID_ARCHIVE = load_workspace(args.workspace_config, REPO).path('paths.build')/'tools/bem-android/dist/BEM-Tools-android-arm64.tar.gz'
 
     version = tool_version()
     manifest = plugin_manifest()

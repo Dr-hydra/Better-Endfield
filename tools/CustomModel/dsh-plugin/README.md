@@ -21,7 +21,7 @@ things, and carries the converter while leaving its runtime to the host:
 
 ```sh
 # from the release tarball
-dsh plugin --profile web add ./dsh-bem-creator-1.6.3.tgz
+dsh plugin --profile web add ./dsh-bem-creator-1.6.4.tgz
 
 # from a checkout
 dsh plugin --profile web add ./tools/CustomModel/dsh-plugin
@@ -40,7 +40,7 @@ Restart the harness afterwards.
 
 ```sh
 dsh plugin --profile desktop remove dsh-bem-creator
-dsh plugin --profile desktop add "F:\path\to\dsh-bem-creator-1.6.3.tgz"
+dsh plugin --profile desktop add "F:\path\to\dsh-bem-creator-1.6.4.tgz"
 ```
 
 Pass an **absolute path**, not a `file:` URL — the `file:` prefix drops the drive

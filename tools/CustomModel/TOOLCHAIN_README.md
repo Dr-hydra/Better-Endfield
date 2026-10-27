@@ -1,8 +1,14 @@
-# BEM Tools 1.6.3
+# BEM Tools 1.6.4
 
 解压整个工具包，双击 **BetterEndfieldNext.BemTools.exe** 打开创作者 GUI。
 无需安装 Better Endfield、Python 或 .NET。请保留同目录的命令行程序、
-`_internal/`、`7zip/`、`catalog/`、`profiles/` 和 `docs/`。
+`_internal/`、`7zip/`、`BemCompose/`、`catalog/`、`profiles/` 和 `docs/`。
+
+1.6.4 新增外观组合 CLI，原生引擎随 Windows 工具包提供。可运行
+`BetterEndfieldNext.BemConverter.exe compose plan --request request.json --json plan.json`，
+也可由 agent 调用 `skills/bem-creator/scripts/bem_compose.py`。
+组合选项、身体区域与 PC/Android 出包说明见
+`skills/bem-creator/references/BEM_COMPOSITION.md`；组合目标为 Android 不表示该 Windows EXE 能在手机执行。
 
 GUI 与 Better Endfield 的“角色外观 → BEM 创作者工具…”使用同一份窗口代码，
 支持导出工程、标准工作区、源 Mod 转换、BEM 解包、项目打包和 ZIP 合集。

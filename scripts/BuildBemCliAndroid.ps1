@@ -65,5 +65,5 @@ $rawMb = [math]::Round($info.raw_bytes / 1MB, 2)
 Write-Host "BEM Android CLI: $releaseArchive"
 Write-Host ("  version {0} / {1} modules / {2} files" -f $info.version, $info.modules, $info.files)
 Write-Host ("  packed {0} MB, unpacked {1} MB" -f $sizeMb, $rawMb)
-Write-Host ("  sha256 {0}" -f $info.sha256)
+if ($info.sha256) { Write-Host ("  sha256 {0}" -f $info.sha256) }
 Write-Host "  install on device: tar -xzf <archive> && sh BEM-Tools-$($info.version)-android-arm64/install.sh"

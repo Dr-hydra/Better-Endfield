@@ -1,0 +1,75 @@
+{
+  "version": "4.1.3",
+  "date": "2026-10-27",
+  "status": "ready",
+  "hashes_calculated": false,
+  "windows": {
+    "fileVersion": "4.1.3.0",
+    "architecture": "x64",
+    "signing": "existing Next internal identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionName": "4.1.3",
+    "versionCode": 40103,
+    "architecture": "arm64-v8a",
+    "signing": "existing Next release identity",
+    "obfuscation": "R8"
+  },
+  "bem_tools": {
+    "version": "1.6.4",
+    "gui_file_version": "1.6.4.0",
+    "native_composer_bundled": true
+  },
+  "dsh_plugin": {
+    "version": "1.6.4"
+  },
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "android_release": "passed",
+    "bem_tools_packaging": "passed",
+    "android_cli_packaging": "passed",
+    "dsh_packaging_smoke": "passed",
+    "device_and_game_interaction": "not repeated, per user request"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.3-Setup.exe",
+      "bytes": 82793032
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.3-Android-arm64.apk",
+      "bytes": 9672438
+    },
+    {
+      "name": "BEM-Tools-1.6.4-win-x64.zip",
+      "bytes": 74373266
+    },
+    {
+      "name": "BEM-Tools-1.6.4-android-arm64.tar.gz",
+      "bytes": 2101872
+    },
+    {
+      "name": "dsh-bem-creator-1.6.4.tgz",
+      "bytes": 2058054
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.3-win-x64.zip",
+      "published": false
+    }
+  ],
+  "integrated_commits": [
+    "fda9ad66",
+    "5865a053",
+    "a5da6e3c"
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.3",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.3"
+  }
+}

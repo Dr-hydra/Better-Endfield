@@ -10,6 +10,7 @@ def main(argv):
     root = Path(__file__).resolve().parents[2]
     candidates = ([Path(os.environ['BEM_COMPOSER'])] if os.environ.get('BEM_COMPOSER') else [])
     candidates.extend([
+        Path(sys.executable).resolve().parent / 'BemCompose' / executable,
         Path(sys.executable).resolve().parent.parent / 'BemCompose' / executable,
         root / 'tools' / 'BemCompose' / executable,
         root / 'build' / 'bem-compose' / 'stage' / 'Release' / 'tools' / 'BemCompose' / executable,

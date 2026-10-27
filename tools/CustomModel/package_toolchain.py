@@ -40,6 +40,7 @@ def main():
     p = argparse.ArgumentParser(); p.add_argument('directory', type=Path)
     p.add_argument('--workspace-config', type=Path)
     p.add_argument('--archive-backend', type=Path)
+    p.add_argument('--composer-directory', type=Path, required=True)
     p.add_argument('--gui-directory', type=Path, required=True)
     args = p.parse_args()
     repo = Path(__file__).resolve().parents[2]
@@ -48,10 +49,13 @@ def main():
     workspace = load_workspace(args.workspace_config, repo)
     target = args.directory.resolve()
     if not (target/'BetterEndfieldNext.BemConverter.exe').is_file(): raise ValueError('Build CLI first')
+    composer = args.composer_directory.resolve()
+    if not (composer/'BetterEndfieldNext.BemCompose.exe').is_file(): raise ValueError('Build native composer first')
+    shutil.copytree(composer, target/'BemCompose', dirs_exist_ok=True, ignore=shutil.ignore_patterns('*.pdb'))
     gui = args.gui_directory.resolve()
     if not (gui/'BetterEndfieldNext.BemTools.exe').is_file(): raise ValueError('Build creator GUI first')
     docs = ['BEM_CREATOR_GUIDE.md', 'BEM_FORMAT_SPEC.md', 'BEM_V1_4_SPEC.md', 'BEM_RUNTIME_COMPATIBILITY.md', 'BEM_SOURCE_MOD_CONVERSION.md',
-            'BEM_CREATOR_GUIDE.en.md', 'BEM_FORMAT_SPEC.en.md', 'BEM_RUNTIME_COMPATIBILITY.en.md', 'BEM_SOURCE_MOD_CONVERSION.en.md']
+            'BEM_CREATOR_GUIDE.en.md', 'BEM_FORMAT_SPEC.en.md', 'BEM_RUNTIME_COMPATIBILITY.en.md', 'BEM_SOURCE_MOD_CONVERSION.en.md', 'BEM_COMPOSER_PC.md']
     (target/'docs').mkdir(exist_ok=True)
     copy_documents(workspace, docs, target/'docs', '../profiles/bem14-drafts/README.md')
     source_ignore = shutil.ignore_patterns('__pycache__', '*.pyc')

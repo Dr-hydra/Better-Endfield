@@ -1,6 +1,6 @@
 ---
 name: bem-creator
-description: Convert Endfield source Mods to BEM 1.0–1.5, build explicit multi-resource and static-mesh BEM 1.4 projects, apply BEM 1.5 material and keyword overrides, configure author position sliders and EFMI ShapeKey bindings, repair source-side defects (index-buffer overruns, oversized textures, missing donors), inspect, validate, unpack and repack packages, and assemble multi-Mod ZIPs with the BEM creator CLI. Compose existing BEM packages and body regions for PC/Android through the native composer. Use for BEM creation, composition and conversion diagnostics.
+description: Create, convert, inspect, validate and repair Endfield BEM 1.0–1.5 packages with the creator CLI. Build explicit multi-resource and static-mesh projects, material overrides, author sliders and EFMI ShapeKeys. Compose existing packages and body regions for PC/Android through the native engine. Use for BEM conversion diagnostics, source-Mod repair, multi-Mod ZIP assembly and appearance composition.
 ---
 
 ## Existing-package composition
@@ -117,7 +117,7 @@ What the tab does **not** show, so do not let a user draw the wrong conclusion f
 
 ## BEM Version Capabilities & Obsolete Rules Clearance
 
-Do not rely on outdated rules from older BEM 1.0–1.2 historical logs. The current system is BEM 1.5 (BEM Tools 1.6.3):
+Do not rely on outdated rules from older BEM 1.0–1.2 historical logs. The current system is BEM 1.5 (BEM Tools 1.6.4):
 - **Weapons & Static Meshes (1.4+)**: Non-character props, swords, sheaths, and static items are supported via explicit multi-resource roots. Do not mark weapon/prop mods as failed.
 - **Expanded Option Limits (1.2+)**: Max option groups is 64 (not 4); max choices per group is 64; per-component candidate draws is 4096 (not 512). Do not fail packages with large reachable state spaces.
 - **Two different draw limits — do not quote the wrong one**: 4096 is the *candidate* ceiling (per component, and 4096 across the whole package counting component rules + draws + texture-slot candidates). The *active* ceiling is **256 draws in any single reachable state** (`bem_v11.py:394`, `Selected draw limit exceeded`). A 1551-draw package is legal because its draws belong to mutually exclusive states; the same draws in one state are rejected. Quote 4096 when you mean declarations and 256 when you mean what renders.
@@ -147,11 +147,11 @@ extra package (the standard library provides zstd); on older interpreters run
 
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
-The toolchain in this tree is **BEM Tools 1.6.3**, which reads and writes **BEM 1.0–1.5**
+The toolchain in this tree is **BEM Tools 1.6.4**, which reads and writes **BEM 1.0–1.5**
 and refreshes Windows 1.6.3 target data. `bem_tool.py --version` is the authority; the
 `1.5.x` numbers that appear in older notes refer to earlier distributions that lacked
 1.4 or 1.5, so do not treat them as describing this tree. Verify with
-`BEM Tools 1.6.3 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`.
+`BEM Tools 1.6.4 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`.
 
 Read [the creator guide](references/BEM_CREATOR_GUIDE.en.md) for tools, export task projects,
 editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.en.md)
@@ -225,7 +225,7 @@ than produced by a supported path.
 **Where the toolchain lives.** The shipped GUI + CLI + catalogs + profiles + skills are published
 as `BEM-Tools-<version>-win-x64.zip`, with a separate CLI-only
 `BEM-Tools-<version>-android-arm64.tar.gz` for Android hosts, on the GitHub releases page of
-`https://github.com/Dr-hydra/Better-Endfield` (release `v4.1.0` carries BEM Tools 1.6.3). Those are
+`https://github.com/Dr-hydra/Better-Endfield` (release `v4.1.3` carries BEM Tools 1.6.4). Those are
 the only supported downloads; do not invent a mirror.
 
 The **native-asset dump path is partly in the repository and partly not**, and the split matters:
@@ -336,7 +336,7 @@ contain several independently managed packages. Multiple packages for one charac
 may be installed, but only one legacy package per character can be enabled. Source key combinations need reviewed reachability
 and resource mapping; do not blindly enumerate them as complete appearances.
 
-BEM Tools 1.6.3 supports BEM 1.4 explicit resources and static meshes; see
+BEM Tools 1.6.4 supports BEM 1.4 explicit resources and static meshes; see
 `references/BEM_V1_4_SPEC.md`. One 1.4 package owns a character or weapon ID and may declare
 multiple resource roots with separate component contracts. Conflict checks use resources
 on the current platform; updates preserve target kind/id. Windows currently executes only

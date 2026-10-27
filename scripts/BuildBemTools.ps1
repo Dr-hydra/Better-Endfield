@@ -36,6 +36,14 @@ if ($LASTEXITCODE -ne 0 -or ($toolVersionText -join ' ') -notmatch '(\d+\.\d+\.\
     throw 'BEM Tools version could not be resolved.'
 }
 $toolVersion = $Matches[1]
+# The standalone creator ZIP must carry the same native engine as the player.
+$composerBuild = Join-Path $ws.paths.build 'next\windows\win-x64\Release\native'
+& $ws.tools.cmake -S (Join-Path $repo 'native') -B $composerBuild -G 'Visual Studio 17 2022' -A x64
+if ($LASTEXITCODE -ne 0) { throw 'Native composer configuration failed.' }
+& $ws.tools.cmake --build $composerBuild --config Release --target BetterEndfieldNext.BemCompose --parallel 4
+if ($LASTEXITCODE -ne 0) { throw 'Native composer build failed.' }
+$composerDirectory = Join-Path $composerBuild 'stage\Release\tools\BemCompose'
+& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $composerDirectory -WorkspaceConfig $WorkspaceConfig
 # Creator tools are self-contained at runtime. Build dependencies are explicit.
 & $python -c "import PyInstaller, zstandard"
 if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.txt into the build Python environment first." }
@@ -92,7 +100,8 @@ if ($LASTEXITCODE -ne 0) { throw "BEM creator GUI build failed." }
 $packageArgs = @((Join-Path $repo 'tools\CustomModel\package_toolchain.py'),
     (Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter'),
     '--gui-directory', $guiPublishDir,
-    '--archive-backend', $ArchiveBackend)
+    '--archive-backend', $ArchiveBackend,
+    '--composer-directory', $composerDirectory)
 if ($ws.config_file) { $packageArgs += @('--workspace-config', $ws.config_file) }
 & $python @packageArgs
 if ($LASTEXITCODE -ne 0) { throw "BEM toolchain packaging failed." }
