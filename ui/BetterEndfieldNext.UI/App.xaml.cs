@@ -28,6 +28,31 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         string[] arguments = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        if (arguments.Length == 1 && arguments[0] == "--check-core-resources")
+        {
+            try
+            {
+                var snapshot = Services.GameResourceStore.Resolve("core")
+                    ?? throw new InvalidDataException("Core resource pack is missing: " + Services.GameResourceStore.Root);
+                int files = 0;
+                foreach (var file in snapshot.Manifest.GetProperty("files").EnumerateObject())
+                {
+                    snapshot.File(file.Name);
+                    files++;
+                }
+                using Stream presets = Services.GameResourceStore.OpenCore("model/character-presets.json")
+                    ?? throw new InvalidDataException("Character presets could not be opened.");
+                using var catalog = JsonDocument.Parse(presets);
+                ExitCommand(0, new Dictionary<string, object?> { ["ok"] = true,
+                    ["root"] = Services.GameResourceStore.Root, ["version"] = snapshot.Version,
+                    ["files"] = files, ["characters"] = catalog.RootElement.GetProperty("characters").GetArrayLength() });
+            }
+            catch (Exception error)
+            {
+                ExitCommand(4, new Dictionary<string, object?> { ["ok"] = false, ["error"] = error.Message });
+            }
+            return;
+        }
         if (arguments.Contains("--webview-probe"))
         {
             _window = new Views.WebViewProbeWindow();

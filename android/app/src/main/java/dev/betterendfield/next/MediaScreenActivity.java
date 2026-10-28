@@ -19,7 +19,7 @@ import java.io.*;
 import java.util.*;
 
 /** File sources are configured here; takeover is explicitly triggered in-game. */
-public final class MediaScreenActivity extends Activity {
+public final class MediaScreenActivity extends ModuleActivity {
     private static final int PICK = 71;
     private SharedPreferences settings;
     private SettingRow enabled, audio, loop, wallScreen, deskScreen;

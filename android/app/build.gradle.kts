@@ -78,8 +78,8 @@ android {
         // needs Android 10. The legacy API 82 build was dropped in 3.3.0.
         minSdk = 29
         targetSdk = 35
-        versionCode = 40104
-        versionName = "4.1.4"
+        versionCode = 40105
+        versionName = "4.1.5"
         testInstrumentationRunner = "dev.betterendfield.next.BemInstallerTest"
 
         ndk {
@@ -151,13 +151,23 @@ android {
     }
 }
 
+val androidCoreSource = JsonSlurper().parse(rootProject.file("resources/resource-source.json")) as Map<*, *>
+val androidCoreGame = (androidCoreSource["provenance"] as Map<*, *>)["gameVersion"] as String
+val resourcePackRegistry = JsonSlurper().parse(rootProject.file("../config/resource-packs.json")) as Map<*, *>
+val androidCoreRevisions = (((resourcePackRegistry["revisions"] as Map<*, *>)["core"] as Map<*, *>)["android"] as Map<*, *>)
+val bundledAndroidCoreArchive = File(workspacePaths["build"] as String,
+    "resource-pack-archives/BE-Core-Android-$androidCoreGame.${androidCoreRevisions[androidCoreGame] ?: 1}.zip")
+
 val prepareAndroidResourceAssets by tasks.registering(Sync::class) {
-    // Only program-owned preview code remains in the APK.
+    dependsOn("stageAndroidCoreResources")
+    // The baseline pack is data, extracted into the same external resource store.
+    // Optional preview geometry/textures are still downloaded separately.
+    from(bundledAndroidCoreArchive) { into("bundled-resources"); rename { "core.zip" } }
     from(rootProject.file("../resources/bem-preview")) { exclude("*.zip"); into("bem-preview") }
     into(generatedAssets)
 }
 
-// External companion: imported by the manager, never embedded in the APK.
+// Build the external companion and the identical offline baseline for the APK.
 val stageAndroidCoreResources by tasks.registering(Exec::class) {
     workingDir(rootProject.projectDir.parentFile)
     commandLine(workspaceTools["python"] as String, "scripts/BuildResourcePacks.py",
@@ -167,6 +177,7 @@ val stageAndroidCoreResources by tasks.registering(Exec::class) {
 }
 
 val archiveAndroidRelease by tasks.registering(Copy::class) {
+    doNotTrackState("Release archives share their directory with other platform installers.")
     from(layout.buildDirectory.dir("outputs/apk/release")) {
         include("*.apk")
         rename { "BetterEndfieldNext-${android.defaultConfig.versionName}-Android-arm64.apk" }

@@ -13,7 +13,7 @@ import android.widget.*;
 import java.util.*;
 
 /** Review cached sources and explicitly confirm an immutable work installation. */
-public final class MmdImportActivity extends Activity {
+public final class MmdImportActivity extends ModuleActivity {
     private static final int ARCHIVE = 71, DIRECTORY = 72, FILE = 73;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final List<View> controls = new ArrayList<>();

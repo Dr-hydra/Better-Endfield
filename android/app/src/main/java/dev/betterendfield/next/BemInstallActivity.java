@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.widget.ScrollView;
 
 /** External BEM file entry; shares the main tab's package management content. */
-public final class BemInstallActivity extends Activity {
+public final class BemInstallActivity extends ModuleActivity {
     private BemInstallPage page;
 
     @Override public void onCreate(Bundle state) {

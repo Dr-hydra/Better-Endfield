@@ -22,7 +22,10 @@ final class OverlaySettingsClient {
     private static final Map<String, String> lastOutcome = new HashMap<>();
     private static final OverlayReconnectPolicy reconnect = new OverlayReconnectPolicy();
     /** Installed exclusively by the scoped libxposed entry; never open preferences with the game Context. */
-    static void initialize(Supplier<SharedPreferences> preferences) { frameworkPreferences = preferences; }
+    static void initialize(Supplier<SharedPreferences> preferences) {
+        frameworkPreferences = preferences;
+        AppLanguage.read(preferences.get());
+    }
     static java.io.InputStream openCore(Context app,String path) throws java.io.IOException {
         Bundle request=new Bundle();
         Supplier<SharedPreferences> source=frameworkPreferences;

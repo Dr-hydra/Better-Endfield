@@ -31,11 +31,12 @@ final class AboutPage extends LinearLayout {
     private static final String RELEASES = REPOSITORY + "/releases";
     private static final String QQ_GROUP = "851586605";
     private static final String DISCORD_COMMUNITY = "https://discord.gg/Hadjs5XvS";
-    private static final String DISCLAIMER =
+    private static String disclaimer() { return
             Text.of("本软件会将本机代码注入游戏进程，并在运行时修改模型、动画和语音资源选择。\n\n")
             + Text.of("可能的风险包括游戏崩溃、存档或配置异常、更新后失效，以及被游戏安全或反作弊系统识别。使用在线账号可能产生账号限制风险。\n\n")
             + Text.of("本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关，也不提供任何形式的担保。请自行备份重要数据，遵守游戏服务条款，并自行承担使用后果。\n\n")
             + Text.of("本软件不负责停用或绕过反作弊组件；游戏更新后如签名不匹配，相关 Hook 应停止使用，等待适配。");
+    }
     private final Activity activity;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
@@ -63,6 +64,21 @@ final class AboutPage extends LinearLayout {
         name.addView(text(Text.of("版本 ") + BuildConfig.VERSION_NAME, 14));
         header.addView(name, new LayoutParams(0, -2, 1));
         addView(header);
+
+        SectionCard language = card("语言 / Language");
+        String[] languageValues = {"system", "zh-CN", "en"};
+        String[] languageLabels = {"跟随系统 / System", "简体中文", "English"};
+        String selectedLanguage = UiLanguagePolicy.normalize(
+                FrameworkSettings.open(activity).getString(AppLanguage.KEY, "system"));
+        int selectedIndex = java.util.Arrays.asList(languageValues).indexOf(selectedLanguage);
+        language.add(button(languageLabels[selectedIndex], () -> new AlertDialog.Builder(activity)
+                .setTitle("语言 / Language")
+                .setSingleChoiceItems(languageLabels, selectedIndex, (dialog, which) -> {
+                    dialog.dismiss();
+                    if (languageValues[which].equals(selectedLanguage)) return;
+                    AppLanguage.select(activity, languageValues[which]);
+                    activity.recreate();
+                }).setNegativeButton(Text.of("取消"), null).show()));
 
         SectionCard updates = card(Text.of("软件更新"));
         android.content.SharedPreferences prefs = FrameworkSettings.open(activity);
@@ -99,7 +115,7 @@ final class AboutPage extends LinearLayout {
         SectionCard disclaimer = card(Text.of("风险与免责声明"));
         disclaimer.add(text(Text.of("本项目为非官方实验工具，与鹰角网络、峘形山工作室及 GRYPHLINE 无关。注入和运行时修改可能造成游戏崩溃、版本不兼容或账号风险。"), 14));
         disclaimer.add(button(Text.of("查看完整说明"), () -> new AlertDialog.Builder(activity)
-                .setTitle(Text.of("风险与免责声明")).setMessage(DISCLAIMER)
+                .setTitle(Text.of("风险与免责声明")).setMessage(disclaimer())
                 .setPositiveButton(Text.of("关闭"), null).show()));
     }
 

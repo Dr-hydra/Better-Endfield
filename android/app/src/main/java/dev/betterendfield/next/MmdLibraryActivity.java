@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Settings and SAF imports live in the module app; playback lives in the game. */
-public final class MmdLibraryActivity extends Activity {
+public final class MmdLibraryActivity extends ModuleActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final List<String> folders = new ArrayList<>();
     private final List<Button> workButtons = new ArrayList<>();

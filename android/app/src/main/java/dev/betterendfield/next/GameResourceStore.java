@@ -8,7 +8,7 @@ import java.util.*;
 import java.util.zip.*;
 import org.json.*;
 
-/** External game data only; application code and WebView assets stay in the APK. */
+/** Versioned external game data with an APK-bundled offline core baseline. */
 final class GameResourceStore {
     static final class VersionedInput extends FilterInputStream {
         final String version; final long length;
@@ -24,6 +24,15 @@ final class GameResourceStore {
         }
     }
     private GameResourceStore() {}
+    static synchronized void ensureBundledCore(Context context) throws Exception {
+        if (resolve(context, "core") != null) return;
+        // Never replace a user's explicitly selected version behind their back.
+        File state = new File(root(context), "state.json");
+        if (state.isFile() && json(state).has("core.android")) return;
+        try (InputStream baseline = context.getAssets().open("bundled-resources/core.zip")) {
+            install(context, baseline, true, null);
+        }
+    }
     static File root(Context context) { return new File(context.getFilesDir(),"betterendfieldnext/resources"); }
     static JSONObject json(File file) throws Exception {
         if(file.length()>16L*1024*1024)throw new IOException("Resource metadata is too large");
@@ -67,6 +76,7 @@ final class GameResourceStore {
             name=switch(name){case "character-presets.json","character-names.json","character-names-en.json","android-normal-rules.json" -> "model/"+name;case "voice-catalog-index.json" -> "voice/"+name;default -> name;};
             if(context.getApplicationInfo().uid!=android.os.Process.myUid() || !BuildConfig.APPLICATION_ID.equals(context.getPackageName()))
                 return OverlaySettingsClient.openCore(context,name);
+            ensureBundledCore(context);
             Snapshot snapshot=resolve(context,"core");
             if(snapshot==null)throw new IOException("Missing Android core resource pack");
             File file=snapshot.file(name);

@@ -1,0 +1,51 @@
+{
+  "version": "4.1.5",
+  "status": "ready",
+  "android_version_code": 40105,
+  "bem_tools_version": "1.6.5",
+  "dsh_version": "1.6.5",
+  "hashes_calculated": false,
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.5-Android-arm64.apk",
+      "bytes": 6395767
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.5-Setup.exe",
+      "bytes": 76971144
+    },
+    {
+      "name": "BEM-Tools-1.6.5-win-x64.zip",
+      "bytes": 74378980,
+      "reused_from": "v4.1.4"
+    },
+    {
+      "name": "BEM-Tools-1.6.5-android-arm64.tar.gz",
+      "bytes": 2104417,
+      "reused_from": "v4.1.4"
+    },
+    {
+      "name": "dsh-bem-creator-1.6.5.tgz",
+      "bytes": 2071030,
+      "reused_from": "v4.1.4"
+    }
+  ],
+  "checks": {
+    "windows_signed_single_file_core_probe": "passed: 126 files, 37 characters",
+    "windows_resource_store": "13 checks passed",
+    "android_language_policy": "12 checks passed",
+    "android_offline_core": "1.6.4.3: all 6 file lengths validated",
+    "android_signature": "passed",
+    "android_device_install": "success: versionName 4.1.5, versionCode 40105",
+    "android_device_cold_start": "passed: offline core extracted and active",
+    "android_voice_routes": "18 checks passed; all 140 real catalogs / 56664 source-language routes decoded",
+    "android_device_voice_page": "installed repaired APK; user confirmed working",
+    "release_publication_regressions": "4 tests passed",
+    "distribution_index_regressions": "2 tests passed"
+  },
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.5",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.5"
+  }
+}

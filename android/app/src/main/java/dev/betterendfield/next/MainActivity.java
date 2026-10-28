@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public final class MainActivity extends Activity {
+public final class MainActivity extends ModuleActivity {
     static final String EXTRA_PAGE = "settings_page";
     // The home page is an overview; every settings page lives one level below it.
     private static final int HOME_PAGE = 0;

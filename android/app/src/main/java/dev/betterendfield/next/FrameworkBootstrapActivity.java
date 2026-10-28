@@ -7,7 +7,7 @@ import android.os.Looper;
 import android.os.SystemClock;
 
 /** Starts ModuleApplication's framework listener without opening a settings page. */
-public final class FrameworkBootstrapActivity extends Activity {
+public final class FrameworkBootstrapActivity extends ModuleActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean resumed;
     private long startedAt;

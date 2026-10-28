@@ -80,6 +80,7 @@ final class GameOverlay {
     private final ArrayList<TextView> workRows = new ArrayList<>();
     private RuntimeSnapshot snapshot = RuntimeSnapshot.offline();
     private OverlayFeatures shown = OverlayFeatures.off();
+    private String shownLanguage = "";
     private boolean resumed, closed, details, bridgeError, movementAllowed;
     private boolean autoSnap, docked;
     private OverlayGeometry.Rect lastSafeArea;
@@ -91,7 +92,7 @@ final class GameOverlay {
             reconcileHost();
             OverlayFeatures current = readFeatures();
             if (!current.panel() && !preview) { pause(); return; }
-            if (!current.equals(shown)) rebuild();
+            if (!current.equals(shown) || !AppLanguage.tag().equals(shownLanguage)) rebuild();
             refreshState();
             main.postDelayed(this, 500);
         }
@@ -246,6 +247,8 @@ final class GameOverlay {
         mmdSummary = null; mmdTime = null; mmdMessage = null; mmdKeys = null; mediaStatus = null;
         body.removeAllViews(); navigation.removeAllViews();
         shown = readFeatures();
+        shownLanguage = AppLanguage.tag();
+        handle.setContentDescription(Text.of("快捷控制，点按展开，拖动移动"));
         if (!hasTab(selectedTab)) {
             selectedTab = -1;
             for (int tab = 0; tab <= MEDIA; tab++) if (hasTab(tab)) { selectedTab = tab; break; }
@@ -305,6 +308,7 @@ final class GameOverlay {
         try {
             SharedPreferences current = settings.get();
             if (current == null) return OverlayFeatures.off();
+            AppLanguage.read(current);
             applyAppearance(ModuleSettings.getOverlayAppearance(current));
             return OverlayFeatures.read(current);
         }

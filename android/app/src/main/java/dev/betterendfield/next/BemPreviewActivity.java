@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Standalone preview; drafts use the installed settings transaction on explicit save. */
-public final class BemPreviewActivity extends Activity {
+public final class BemPreviewActivity extends ModuleActivity {
     private static final String HOST="bem-preview.local";
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final AtomicBoolean loading=new AtomicBoolean();

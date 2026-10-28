@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <queries>
+        <!-- Resource updates read the installed game's version on Android 11+. -->
+        <package android:name="com.hypergryph.endfield" />
+    </queries>
     <application
         android:name=".ModuleApplication"
         android:description="@string/xposed_description"

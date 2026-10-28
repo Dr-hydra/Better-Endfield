@@ -54,10 +54,16 @@ final class DistributionUpdater {
     }
     static String update(Context context,boolean preview,boolean resume) throws Exception {
         if(!busy.compareAndSet(false,true))throw new IOException(Text.of("资源更新正在进行"));
+        String phase="index";
         cancelled.set(false);
         try {
             JSONObject index=index();if(index==null)throw new IOException(Text.of("资源发布尚未就绪"));
-            String game=context.getPackageManager().getPackageInfo("com.hypergryph.endfield",0).versionName;
+            phase="game-version";
+            String game;
+            try { game=context.getPackageManager().getPackageInfo("com.hypergryph.endfield",0).versionName; }
+            catch (android.content.pm.PackageManager.NameNotFoundException unavailable) {
+                throw new IOException(Text.of("无法读取已安装的游戏版本，请确认游戏已安装并更新管理器。"), unavailable);
+            }
             if(game==null || !game.matches("[0-9]+([.][0-9]+){2}"))throw new IOException(Text.of("无法识别游戏版本"));
             List<String> result=new ArrayList<>();
             for(String type:List.of("core","preview")) {
@@ -77,6 +83,7 @@ final class DistributionUpdater {
                 if(!asset.equals(new File(asset).getName()) || !url.equals(ROOT+asset))throw new IOException("Untrusted resource URL");
                 long expected=best.getLong("bytes");if(expected<=0)throw new IOException("Invalid download length");
                 File downloads=new File(GameResourceStore.root(context),"downloads");downloads.mkdirs();File file=new File(downloads,UUID.randomUUID()+".part");
+                phase="download-"+type;
                 HttpURLConnection connection=connect(url);
                 try {
                     if(connection.getResponseCode()!=200)throw new IOException("HTTP "+connection.getResponseCode());
@@ -87,6 +94,7 @@ final class DistributionUpdater {
                     }
                     checkCancelled();
                     // Manual imports and automatic activation share the same store lock.
+                    phase="install-"+type;
                     synchronized(GameResourceStore.class) {
                         JSONObject now=state(context);
                         if(now.has(key) && !now.optBoolean("auto."+key,false) && !resume)throw new IOException(Text.of("已固定版本"));
@@ -97,6 +105,18 @@ final class DistributionUpdater {
                 }finally{connection.disconnect();file.delete();}
             }
             return String.join("; ",result);
+        }catch(Exception failure){
+            android.util.Log.e("BetterEndfieldNext.Resources", "Resource update failed at "+phase, failure);
+            android.util.AtomicFile log=new android.util.AtomicFile(new File(context.getCacheDir(),"betterendfieldnext-resources.log"));
+            FileOutputStream output=null;
+            try {
+                StringWriter stack=new StringWriter();failure.printStackTrace(new PrintWriter(stack));
+                String message=System.currentTimeMillis()+" phase="+phase+"\n"+stack;
+                if(message.length()>16384)message=message.substring(0,16384);
+                output=log.startWrite();output.write(message.getBytes(StandardCharsets.UTF_8));
+                log.finishWrite(output);output=null;
+            }catch(Exception ignored){if(output!=null)log.failWrite(output);}
+            throw failure;
         }finally{busy.set(false);}
     }
 }

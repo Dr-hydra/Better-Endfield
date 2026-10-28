@@ -37,7 +37,7 @@ final class VoiceCatalogIndex {
     static VoiceCatalogIndex load(Context context) throws Exception {
         JSONObject names = new JSONObject(readAsset(context, "character-names.json"));
         JSONObject root = new JSONObject(readAsset(context, "voice-catalog-index.json"));
-        if (root.optInt("schemaVersion") != 1 ||
+        if (!VoiceCatalogRouteDecoder.supports(root.optInt("schemaVersion")) ||
                 !"betterendfield-voice-catalog-index".equals(root.optString("kind"))) {
             throw new IOException(Text.of("桌面端语气词对照表版本不受支持"));
         }

@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
 /** Each feature edits only its own settings; the main page is a navigation menu. */
-public final class EnhancementSettingsActivity extends Activity {
+public final class EnhancementSettingsActivity extends ModuleActivity {
     static final String EXTRA_FEATURE = "enhancement_feature";
     static final String INTERFACE = "interface";
     static final String CAMERA = "camera";

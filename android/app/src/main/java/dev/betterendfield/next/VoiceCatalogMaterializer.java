@@ -67,14 +67,15 @@ final class VoiceCatalogMaterializer {
         byte[] indexBytes = readAsset(moduleContext, INDEX_ASSET);
         String indexIdentity = hex(MessageDigest.getInstance("SHA-256").digest(indexBytes));
         JSONObject root = new JSONObject(new String(indexBytes, StandardCharsets.UTF_8));
-        if (root.optInt("schemaVersion") != 1 ||
+        int schemaVersion = root.optInt("schemaVersion");
+        if (!VoiceCatalogRouteDecoder.supports(schemaVersion) ||
                 !"betterendfield-voice-catalog-index".equals(root.optString("kind"))) {
             throw new IOException(Text.of("内置语气词对照表版本不受支持"));
         }
 
         Map<Integer, String> packageFolders = readPackageFolders(root.getJSONArray("packages"));
         Map<String, RouteSet> availableRoutes = readSelectedRouteSets(
-                root.getJSONArray("catalogs"), configured);
+                root.getJSONArray("catalogs"), configured, schemaVersion);
         List<RouteSet> selected = new ArrayList<>();
         List<String> failures = new ArrayList<>();
         for (Map.Entry<String, Integer> rule : configured.entrySet()) {
@@ -195,7 +196,7 @@ final class VoiceCatalogMaterializer {
 
     private static Map<String, RouteSet> readSelectedRouteSets(
             JSONArray catalogs,
-            Map<String, Integer> configured) throws Exception {
+            Map<String, Integer> configured, int schemaVersion) throws Exception {
         Set<String> wanted = new HashSet<>();
         for (Map.Entry<String, Integer> rule : configured.entrySet()) {
             wanted.add(routeKey(rule.getKey(), rule.getValue()));
@@ -211,21 +212,16 @@ final class VoiceCatalogMaterializer {
                 continue;
             }
             JSONArray encoded = item.getJSONArray("routes");
-            if (encoded.length() == 0 || (encoded.length() & 1) != 0) {
-                throw new IOException(Text.of("内置语气词对照表损坏：") + key);
+            long[] values = new long[encoded.length()];
+            for (int route = 0; route < values.length; ++route) {
+                values[route] = encoded.getLong(route);
             }
-            TreeMap<Long, Long> routes = new TreeMap<>();
-            for (int route = 0; route < encoded.length(); route += 2) {
-                long source = encoded.getLong(route);
-                long target = encoded.getLong(route + 1);
-                if (source <= 0 || source > UINT32_MAX ||
-                        target <= 0 || target > UINT32_MAX) {
-                    throw new IOException(Text.of("Media ID 越界：") + key);
-                }
-                Long previous = routes.putIfAbsent(source, target);
-                if (previous != null && previous != target) {
-                    throw new IOException(Text.of("Media 路由冲突：") + key + "/" + source);
-                }
+            TreeMap<Long, Long> routes;
+            try {
+                routes = VoiceCatalogRouteDecoder.decode(schemaVersion, values);
+            } catch (IOException error) {
+                throw new IOException(Text.of("内置语气词对照表损坏：") + key +
+                        " (" + error.getMessage() + ")", error);
             }
             result.put(key, new RouteSet(characterId, language, routes));
         }

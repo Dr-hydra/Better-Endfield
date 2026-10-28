@@ -12,7 +12,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /** Native editor; the preview Activity is created exclusively by an explicit action. */
-public final class BemComposeActivity extends Activity {
+public final class BemComposeActivity extends ModuleActivity {
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private final Set<String> sources=new LinkedHashSet<>(),expanded=new HashSet<>(),selected=new HashSet<>();
     private BemComposeSession session;

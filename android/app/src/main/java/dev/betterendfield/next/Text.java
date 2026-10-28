@@ -1,7 +1,6 @@
 package dev.betterendfield.next;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -12,7 +11,7 @@ import java.util.Map;
  * available. Text that already lives in {@code res/values} is localized through
  * {@code values-en}; this class covers the literals that are assembled in code,
  * using the Chinese source text as the key (the same model Qt's {@code tr()}
- * uses). When the system language is not English, or a key has no translation,
+ * uses). The application language setting selects English or Chinese. When a key has no translation,
  * the original text is returned unchanged, so behavior for existing users is
  * identical.</p>
  */
@@ -33,6 +32,7 @@ final class Text {
         put("资源更新正在进行","A resource update is already running");
         put("资源发布尚未就绪","The resource release is not available yet");
         put("无法识别游戏版本","Cannot identify the game version");
+        put("无法读取已安装的游戏版本，请确认游戏已安装并更新管理器。", "Cannot read the installed game version. Check that the game is installed and update the manager.");
         put("已固定版本","Version pinned");
         put("暂无兼容资源","No compatible resources available");
         put("导入资源包","Import resource pack");
@@ -111,7 +111,7 @@ final class Text {
     /** Source text in, display text out. */
     static String of(String chinese) {
         if (chinese == null || chinese.isEmpty()) return chinese;
-        if (!Locale.getDefault().getLanguage().equals("en")) return chinese;
+        if (!AppLanguage.isEnglish()) return chinese;
         String english = ENGLISH.get(chinese);
         return english == null ? chinese : english;
     }

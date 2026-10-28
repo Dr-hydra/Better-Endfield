@@ -26,7 +26,11 @@ internal static class GameResourceStore
         }
     }
 
-    public static string Root => Path.Combine(AppContext.BaseDirectory, "resources");
+    // Single-file publishing extracts managed assemblies into a temporary tree.
+    // External resource packs belong beside the installed executable.
+    internal static string ResolveRoot(string? processPath, string assemblyDirectory) =>
+        Path.Combine(Path.GetDirectoryName(processPath) ?? assemblyDirectory, "resources");
+    public static string Root => ResolveRoot(Environment.ProcessPath, AppContext.BaseDirectory);
     public static Snapshot? Resolve(string type, string? resourceRoot = null)
     {
         string baseRoot = resourceRoot ?? Root;
