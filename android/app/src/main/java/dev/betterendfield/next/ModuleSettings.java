@@ -68,6 +68,7 @@ final class ModuleSettings {
     private static final String DASH_AGLINA = "dash_character_aglina";
     private static final String DASH_LIINO = "dash_character_liino";
     private static final String DASH_JSSPSI = "dash_character_jsspsi";
+    private static final String DASH_JSSPSI_QUALITY = "dash_jsspsi_quality";
     static final String ACTIONS_CONFIGURATION = "actions_configuration";
     static final String MEDIA_CONFIGURATION = "media_screen_configuration";
     static final String MEDIA_SETTINGS = "media_screen_settings";
@@ -459,6 +460,13 @@ final class ModuleSettings {
         return preferences(context).getBoolean(DASH_LIINO_CLEAN, false);
     }
 
+    /** Desktop 'jsspsi_quality'. Off by default: it rewrites ~370 rider and 32
+     * mount bones every frame, which is a measured 0.18 ms on a desktop core and
+     * scales with mobile CPU. */
+    static boolean isJsspsiQualityEnabled(Context context) {
+        return preferences(context).getBoolean(DASH_JSSPSI_QUALITY, false);
+    }
+
     static boolean isDashCharacterEnabled(Context context, String codename) {
         if ("jsspsi".equals(codename)) {
             return preferences(context).getBoolean(DASH_JSSPSI, false);
@@ -473,7 +481,8 @@ final class ModuleSettings {
             boolean liinoClean,
             boolean aglina,
             boolean liino,
-            boolean jsspsi) {
+            boolean jsspsi,
+            boolean jsspsiQuality) {
         StringBuilder characters = new StringBuilder();
         if (aglina) characters.append("aglina");
         if (liino) {
@@ -496,6 +505,7 @@ final class ModuleSettings {
                 // looping segment always runs from them rather than the native-only hold.
                         + "external_loop=true\n"
                         + "liino_clean=" + liinoClean + "\n"
+                        + "jsspsi_quality=" + jsspsiQuality + "\n"
                         + "characters=" + characters + "\n"
                 : "";
         preferences(context)
@@ -505,6 +515,7 @@ final class ModuleSettings {
                 .putBoolean(DASH_AGLINA, aglina)
                 .putBoolean(DASH_LIINO, liino)
                 .putBoolean(DASH_JSSPSI, jsspsi)
+                .putBoolean(DASH_JSSPSI_QUALITY, jsspsiQuality)
                 .putString(ACTIONS_CONFIGURATION, configuration)
                 .commit();
     }
@@ -593,7 +604,8 @@ final class ModuleSettings {
                 isLiinoCleanDashEnabled(context),
                 isDashCharacterEnabled(context, "aglina"),
                 isDashCharacterEnabled(context, "liino"),
-                isDashCharacterEnabled(context, "jsspsi"));
+                isDashCharacterEnabled(context, "jsspsi"),
+                isJsspsiQualityEnabled(context));
         setAppearanceSettings(context,
                 isAppearanceEnabled(context),
                 isAppearanceReplaceWeapon(context),

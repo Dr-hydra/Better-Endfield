@@ -259,6 +259,14 @@ Character names, the clean-exhaust option and the camera/interface labels use
 the desktop UI's wording (洁尔佩塔, 梨诺, 隐藏机甲与光效, 启用时间冻结功能,
 视野（FOV）) so the two platforms describe the same switch the same way.
 
+`jsspsi_quality` is the desktop 「高质量过渡」 switch and has no bank: its seam
+and accessory tables ship inside `native/modules/actions/jsspsi_quality_data.h`,
+which the Android build compiles into the same `module.cpp`, so nothing extra is
+packaged. It is written next to the other dash keys and defaults to false. The
+option rewrites roughly 400 bones per frame (measured 0.18 ms on a desktop core),
+so the page hints that it costs more than the rest and can be switched off if the
+frame rate drops; no mobile timing has been taken yet.
+
 ### Contract evidence
 
 Every distinctive contract these three modules need was checked against the

@@ -176,6 +176,7 @@ public final class EnhancementSettingsActivity extends Activity {
         addDashToggle(card, R.string.dash_liino, () -> ModuleSettings.isDashCharacterEnabled(this, "liino"));
         addDashToggle(card, R.string.dash_liino_clean, () -> ModuleSettings.isLiinoCleanDashEnabled(this));
         addDashToggle(card, R.string.dash_jsspsi, () -> ModuleSettings.isDashCharacterEnabled(this, "jsspsi"));
+        addDashToggle(card, R.string.dash_jsspsi_quality, () -> ModuleSettings.isJsspsiQualityEnabled(this));
         return card;
     }
 
@@ -350,6 +351,8 @@ public final class EnhancementSettingsActivity extends Activity {
             rows.get(R.string.dash_jsspsi).setAvailable(dash);
             rows.get(R.string.dash_liino_clean).setAvailable(
                     dash && ModuleSettings.isDashCharacterEnabled(this, "liino"));
+            rows.get(R.string.dash_jsspsi_quality).setAvailable(
+                    dash && ModuleSettings.isDashCharacterEnabled(this, "jsspsi"));
         } else if (APPEARANCE.equals(feature)) {
             boolean enabled = ModuleSettings.isAppearanceEnabled(this);
             boolean weapon = enabled && ModuleSettings.isAppearanceReplaceWeapon(this);
@@ -394,7 +397,8 @@ public final class EnhancementSettingsActivity extends Activity {
                 option == R.string.dash_liino_clean ? checked : ModuleSettings.isLiinoCleanDashEnabled(this),
                 option == R.string.dash_aglina ? checked : ModuleSettings.isDashCharacterEnabled(this, "aglina"),
                 option == R.string.dash_liino ? checked : ModuleSettings.isDashCharacterEnabled(this, "liino"),
-                option == R.string.dash_jsspsi ? checked : ModuleSettings.isDashCharacterEnabled(this, "jsspsi"));
+                option == R.string.dash_jsspsi ? checked : ModuleSettings.isDashCharacterEnabled(this, "jsspsi"),
+                option == R.string.dash_jsspsi_quality ? checked : ModuleSettings.isJsspsiQualityEnabled(this));
     }
 
     private void removeOverlayPreview() {

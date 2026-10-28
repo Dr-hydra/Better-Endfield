@@ -470,6 +470,9 @@ public final class MainActivity extends Activity {
         }
         if (ModuleSettings.isDashCharacterEnabled(this, "jsspsi")) {
             active.add(getString(R.string.dash_jsspsi));
+            if (ModuleSettings.isJsspsiQualityEnabled(this)) {
+                active.add(getString(R.string.dash_jsspsi_quality));
+            }
         }
         return active.isEmpty() ? "" : String.join(Text.of("、"), active);
     }

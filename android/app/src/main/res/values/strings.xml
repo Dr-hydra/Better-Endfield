@@ -125,6 +125,8 @@
     <string name="dash_liino_clean">隐藏机甲与光效</string>
     <string name="dash_liino_clean_hint">梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。</string>
     <string name="dash_jsspsi">祀</string>
+    <string name="dash_jsspsi_quality">高质量过渡</string>
+    <string name="dash_jsspsi_quality_hint">修正每圈回绕时尾巴、后发的甩动和身体的硬切。每帧要改写约 400 根骨，逐帧开销明显高于其它选项，掉帧时关掉即可。</string>
 
     <!-- overlay -->
     <string name="overlay_card_eyebrow">IN-GAME PANEL</string>

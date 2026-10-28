@@ -118,6 +118,8 @@
     <string name="dash_liino_clean">Hide mech and effects</string>
     <string name="dash_liino_clean_hint">Hides Reno\'s mech, including leg armor, and effects throughout her dash while keeping the flight animation.</string>
     <string name="dash_jsspsi">Si</string>
+    <string name="dash_jsspsi_quality">High-quality transition</string>
+    <string name="dash_jsspsi_quality_hint">Fixes the tail and back-hair swing and the body snap at each rewind. Rewrites about 400 bones every frame, so the per-frame cost is clearly higher than the other options; switch it off if the frame rate drops.</string>
     <string name="overlay_card_eyebrow">IN-GAME PANEL</string>
     <string name="overlay_card_title">Overlay</string>
     <string name="overlay_card_subtitle">A draggable icon inside the game that opens the actions which otherwise need hotkeys. No system overlay permission and no background service required.</string>
