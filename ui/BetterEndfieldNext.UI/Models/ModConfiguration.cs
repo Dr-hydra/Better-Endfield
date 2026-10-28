@@ -146,6 +146,10 @@ internal sealed class ModConfiguration
 
     public bool LiinoCleanDashEnabled { get; set; } = false;
 
+    // Optional Jsspsi loop quality: seam split with hard-cut rewinds plus an
+    // accessory lap, from data compiled into the module. Default off.
+    public bool JsspsiQualityEnabled { get; set; } = false;
+
     public bool ContinuousSpecialDashEnabled =>
         ContinuousSpecialDashAglinaEnabled || ContinuousSpecialDashLiinoEnabled || ContinuousSpecialDashJsspsiEnabled;
 
@@ -167,6 +171,7 @@ internal sealed class ModConfiguration
         $"enabled={(ContinuousSpecialDashEnabled ? "true" : "false")}" + Environment.NewLine +
         $"characters={ContinuousSpecialDashCharacters}" + Environment.NewLine +
         $"liino_clean={(LiinoCleanDashEnabled ? "true" : "false")}" + Environment.NewLine +
+        $"jsspsi_quality={(JsspsiQualityEnabled ? "true" : "false")}" + Environment.NewLine +
         "diagnostics=true" + Environment.NewLine;
 
     public bool DisableDitherEnabled { get; set; } = false;

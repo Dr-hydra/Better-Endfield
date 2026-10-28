@@ -1271,6 +1271,7 @@ public sealed partial class MainWindow : Window
             ContinuousSpecialDashLiinoEnabled = ContinuousSpecialDashLiinoToggle.IsOn,
             ContinuousSpecialDashJsspsiEnabled = ContinuousSpecialDashJsspsiToggle.IsOn,
             LiinoCleanDashEnabled = LiinoCleanDashToggle.IsOn,
+            JsspsiQualityEnabled = JsspsiQualityToggle.IsOn,
         };
         try
         {
@@ -3387,6 +3388,7 @@ public sealed partial class MainWindow : Window
             ContinuousSpecialDashLiinoEnabled = ContinuousSpecialDashLiinoToggle.IsOn,
             ContinuousSpecialDashJsspsiEnabled = ContinuousSpecialDashJsspsiToggle.IsOn,
             LiinoCleanDashEnabled = LiinoCleanDashToggle.IsOn,
+            JsspsiQualityEnabled = JsspsiQualityToggle.IsOn,
             DisableDitherEnabled = DisableDitherToggle.IsOn,
             PauseGameInFreeCamera = PauseGameInFreeCameraToggle.IsOn,
             FreeCameraToggleHotkey = cameraToggleHotkey,
@@ -3466,6 +3468,7 @@ public sealed partial class MainWindow : Window
         ContinuousSpecialDashLiinoToggle.IsOn = configuration.ContinuousSpecialDashLiinoEnabled;
         ContinuousSpecialDashJsspsiToggle.IsOn = configuration.ContinuousSpecialDashJsspsiEnabled;
         LiinoCleanDashToggle.IsOn = configuration.LiinoCleanDashEnabled;
+        JsspsiQualityToggle.IsOn = configuration.JsspsiQualityEnabled;
         DisableDitherToggle.IsOn = configuration.DisableDitherEnabled;
         PauseGameInFreeCameraToggle.IsOn = configuration.PauseGameInFreeCamera;
         FreeCameraHotkeyBox.Text = configuration.FreeCameraToggleHotkey;
@@ -4267,6 +4270,12 @@ public sealed partial class MainWindow : Window
         LiinoCleanDashToggle.OffContent = isZh ? "关闭" : "Disabled";
         LiinoCleanDashToggle.OnContent = isZh ? "开启" : "Enabled";
         LiinoCleanDashDescription.Text = isZh ? "梨诺冲刺全程隐藏机甲（含腿甲）与光效，保留飞行动画。" : "Hides Liino's mech, including leg armor, and effects throughout her dash while keeping the flight animation.";
+        JsspsiQualityToggle.Header = isZh ? "高质量过渡" : "High-quality transitions";
+        JsspsiQualityToggle.OffContent = isZh ? "关闭" : "Disabled";
+        JsspsiQualityToggle.OnContent = isZh ? "开启" : "Enabled";
+        JsspsiQualityDescription.Text = isZh
+            ? "补回尾巴、后发每圈甩动与回绕处的身体跳动：在接缝两侧逐帧改写祀和墨兽的骨骼，回绕改成硬切。关闭时使用轻量回绕。"
+            : "Restores the per-lap tail and back-hair swing and the body jolt at the rewind by rewriting Jsspsi's and the mount's bones across the seam, turning rewinds into hard cuts. Off keeps the lightweight rewind.";
         ActionsExperimentalInfo.Title = isZh ? "实验功能" : "Experimental";
         ActionsExperimentalInfo.Message = isZh ? "保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" : "Preserves the left or right special dash chosen by the game and repeats it while sprinting, deferring natural completion. Stops on movement end or interruption.";
         DisplayNavigationItem.Content = isZh ? "显示增强" : "Display & Pipeline";

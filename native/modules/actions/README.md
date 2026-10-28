@@ -49,7 +49,7 @@ external_loop=true
 diagnostics=true
 ```
 
-`jsspsi_quality`（默认 false）只在 INI 里，界面上没有开关；Windows 启动器保存时和 `external_loop` 一样原样保留，Android 生成的配置不写它。
+`jsspsi_quality`（默认 false）在 Windows 启动器的「冲刺持续」页里是祀下面的「高质量过渡」开关，保存时和 `characters` 一起写进 `[betterendfieldnext.actions]`；手改 INI 的写法同样有效，启动器保存时原样保留（`ActionIniPreservation`）。Android 设置页没有这个开关，生成的配置不写它，按默认关运行。
 
 ## 日志
 

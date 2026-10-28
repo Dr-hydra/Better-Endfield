@@ -54,7 +54,7 @@
 - **特效保持。** 第一次成功回绕请求起，沿用 `MaintainEffects` 按档案 `effects[]` 逐槽查找并核对名字：actor 0–5 没有粒子，只把实例标为已准备，由现有 `EffectDurationDetour` 将寿命增量改为 0；actor 13 的 8 个 ParticleSystem 使用已有流程保存 loop/duration、设为循环并播放，同时停寿命钟。回绕前不准备也不停钟，保留 1、2 号约 0.39 秒的原生起始延迟。完整版保持这几个特效的原因见其研究文档 §4：13 号原生寿命 6.34 秒，长冲刺里到寿命会断；0–2 号到寿命会撤掉墨兽的墨色外观。6–12 号不在保持名单中；10–12 号由收尾水花抑制跳过（见下）。冲刺结束、选项关闭、会话失效或原生 Finish/OnStop 时沿用已有 `RestoreEffect` 恢复粒子参数；工作线程关闭时沿用只释放 pin、不调用 Unity 的规则。此项不依赖写骨租约或接缝是否成功，不增加钩子、游戏方法或字段契约。
 - **松手。** 冲刺结束后，接缝修正当场撤掉（和轻量版自己的退出一样，不淡出），附属件骨在 0.4 秒内从最后一次写的姿态 smoothstep 淡回原生姿态。新的一次冲刺、组件释放、模块关闭、选项关掉时立刻停；停的时候，动画不每帧重写的通道会写回记下的原生值。
 
-**收尾水花抑制。** 10–12 号是剪辑结尾踩墨兽时溅起的水墨水花，原生在起冲后 4.43、5.33、5.73 秒出现；持续冲刺走不到结尾，不该有。这三个动作由原生 StartSpDash 在冲刺会话建立之前就投递了（完整版研究文档 §4 的探针日志里，投递时还没有会话），所以跳过时不看会话，按动作所属的 Perform 认：Perform 名是祀的（允许 L/R 后缀）、实体有效且是操控角色，和梨诺清理模式认 Perform 的办法相同。先读动作的 actor 编号，编号在跳过位图里才调托管函数取 Perform 名和实体。这一项属于基础路径，不受 `jsspsi_quality` 控制；`VisualPerformId`、`VisualPerformEntity` 或特效动作钩子不可用时照原生放。1.14.2 之前只按会话认，这三个水花从没被跳过，游戏内对比时在持续冲刺途中出现；1.14.3 的修正还没有进游戏验证。
+**收尾水花抑制。** 10–12 号是剪辑结尾踩墨兽时溅起的水墨水花，原生在起冲后 4.43、5.33、5.73 秒出现；持续冲刺走不到结尾，不该有。这三个动作由原生 StartSpDash 在冲刺会话建立之前就投递了（完整版研究文档 §4 的探针日志里，投递时还没有会话），所以跳过时不看会话，按动作所属的 Perform 认：Perform 名是祀的（允许 L/R 后缀）、实体有效且是操控角色，和梨诺清理模式认 Perform 的办法相同。先读动作的 actor 编号，编号在跳过位图里才调托管函数取 Perform 名和实体。这一项属于基础路径，不受 `jsspsi_quality` 控制；`VisualPerformId`、`VisualPerformEntity` 或特效动作钩子不可用时照原生放。1.14.2 之前只按会话认，这三个水花从没被跳过，游戏内对比时在持续冲刺途中出现；1.14.3 的修正还没有进游戏验证。取舍要写清楚：只要模块启用且祀在 `characters` 里，这三朵水花就一律不生成，包括「开着模块但这一次没有持续、冲刺原生跑到结尾」的情况——投递时刻还没有会话，分不出那两种情形。按住冲刺的时长通常就决定了走哪条路，所以绝大多数情况下这正是想要的；如果以后要区分，只能在播放时刻再判一次会话和回绕次数，4.43、5.33 两朵仍然区分不开。
 
 完整版提交 `c843582` 的 `dash_policy.h` 使用 `kJsspsiHoldEffects=0x203F`，`module.cpp` 按 actor 位图保持，`g_session.rewound` 控制寿命钟；研究文档 `docs/actions/research/1.6.3/jsspsi-dash/JSSPSI_SUSTAINED_DASH.md` §4 记录用途与延迟。本实现改用轻量版已有的名称档案，只在质量选项开启且 `animation_replays>0` 时准备；零粒子实例的寿命保持也仅对该档案启用，洁尔佩塔、梨诺沿用原行为。
 
@@ -92,7 +92,7 @@
 
 `AkSoundEngine` 和两个枚举处于空命名空间。停音不需要 playing id 捕获，也不调用停止对象上全部声音的方法。
 
-**配置。** 只在 INI 里，界面上没有开关。Windows 启动器保存时会整节重写 `[betterendfieldnext.actions]`，`jsspsi_quality` 和 `external_loop` 一样原样保留（`ActionIniPreservation`）；Android 设置页生成的配置不写这个键，按默认关运行。键名只认 `true`、`false`、`1`、`0`，写错时整节判为无效（`Invalid action configuration; special dash disabled.`）。改这个键会发布新的配置快照，正在进行的持续冲刺以 `configuration changed` 结束。选项关着时，已测配置及冲刺调用轨迹与轻量版一致；初始化多解析两个可选音频方法，缺失时多一条诊断（见模块 README 的「祀的高质量过渡测试」）。
+**配置。** Windows 启动器「冲刺持续」页的祀下面有「高质量过渡」开关（`jsspsi_quality`），保存时和 `characters` 一起写进 `[betterendfieldnext.actions]`。启动器保存时会整节重写这一节，手改的 `jsspsi_quality`、`external_loop` 仍原样保留（`ActionIniPreservation`）；Android 设置页没有这个开关，生成的配置不写这个键，按默认关运行。键名只认 `true`、`false`、`1`、`0`，写错时整节判为无效（`Invalid action configuration; special dash disabled.`）。改这个键会发布新的配置快照，正在进行的持续冲刺以 `configuration changed` 结束。选项关着时，已测配置及冲刺调用轨迹与轻量版一致；初始化多解析两个可选音频方法，缺失时多一条诊断（见模块 README 的「祀的高质量过渡测试」）。
 
 **每帧开销。** 选项开着、接缝生效时，每帧对约 440 根骨各做 `IsChildOf`、读、写三次托管调用，约 1300 次；梨诺姿态覆盖是 339 根骨、同样三次。没有在游戏里量过耗时；释放时的日志 `quality: released … mean_apply_us=` 给出每帧平均微秒数。
 

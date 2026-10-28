@@ -1270,8 +1270,22 @@
                                         </StackPanel>
                                     </ContentControl>
                                 </StackPanel>
-                                <ToggleSwitch x:Name="ContinuousSpecialDashJsspsiToggle" Header="祀"
-                                    OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                <StackPanel Spacing="10">
+                                    <ToggleSwitch x:Name="ContinuousSpecialDashJsspsiToggle" Header="祀"
+                                        OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                    <ContentControl HorizontalContentAlignment="Stretch"
+                                        IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashJsspsiToggle}">
+                                        <StackPanel Margin="28,2,0,0" Spacing="6">
+                                            <ToggleSwitch x:Name="JsspsiQualityToggle" Header="高质量过渡"
+                                                IsEnabled="{Binding IsOn, ElementName=ContinuousSpecialDashJsspsiToggle}"
+                                                OffContent="关闭" OnContent="开启" Toggled="ActionsToggle_Toggled" />
+                                            <TextBlock x:Name="JsspsiQualityDescription"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                TextWrapping="Wrap"
+                                                Text="补回尾巴、后发每圈甩动与回绕处的身体跳动：在接缝两侧逐帧改写祀和墨兽的骨骼，回绕改成硬切。关闭时使用轻量回绕。" />
+                                        </StackPanel>
+                                    </ContentControl>
+                                </StackPanel>
                                 <InfoBar x:Name="ActionsExperimentalInfo" IsOpen="True" IsClosable="False" Severity="Informational"
                                     Title="实验功能"
                                     Message="保留游戏本次选中的左或右特殊冲刺动作，在持续冲刺时循环播放，延后自然结束；停止或被打断时结束。" />

@@ -507,6 +507,7 @@ internal static class ConfigurationService
             actionsEnabled && listPresent && HasCharacter(characters, "jsspsi");
         // Missing preferences default off; preserve explicitly saved choices.
         configuration.LiinoCleanDashEnabled = Boolean(actionValues, "liino_clean", false);
+        configuration.JsspsiQualityEnabled = Boolean(actionValues, "jsspsi_quality", false);
         configuration.Character = Text(values, "character", configuration.Character);
         configuration.FinalAction = Text(values, "final_action", configuration.FinalAction);
         configuration.StartYaw = Number(values, "start_yaw", configuration.StartYaw);

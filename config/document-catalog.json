@@ -7014,7 +7014,7 @@
       ],
       "legacy_path": "native/modules/actions/README.md",
       "path": "native/modules/actions/README.md",
-      "title": "冲刺持续模块 1.14.0",
+      "title": "冲刺持续模块 1.14.3",
       "evidence": [
         {
           "kind": "inventory",
@@ -7026,7 +7026,7 @@
           "kind": "document",
           "path": "native/modules/actions/README.md",
           "line": 1,
-          "excerpt": "冲刺持续模块 1.13.4"
+          "excerpt": "冲刺持续模块 1.14.3"
         }
       ],
       "purpose": "持续冲刺三层机制、分角色配置、祀的可选高质量过渡、日志、测试与VFX修复导航",
