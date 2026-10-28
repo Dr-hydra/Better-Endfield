@@ -7014,7 +7014,7 @@
       ],
       "legacy_path": "native/modules/actions/README.md",
       "path": "native/modules/actions/README.md",
-      "title": "冲刺持续模块 1.13.4",
+      "title": "冲刺持续模块 1.14.0",
       "evidence": [
         {
           "kind": "inventory",
@@ -7029,7 +7029,7 @@
           "excerpt": "冲刺持续模块 1.13.4"
         }
       ],
-      "purpose": "持续冲刺三层机制、分角色配置、日志与VFX修复导航",
+      "purpose": "持续冲刺三层机制、分角色配置、祀的可选高质量过渡、日志、测试与VFX修复导航",
       "status_detail": "生产模块邻接说明",
       "classification_source": "维护接口",
       "dates": [
@@ -7055,6 +7055,47 @@
       },
       "game_version_note": "按用户明确的九月初后 1.5.3 时间线与当前配置归类；原始来源与验证边界保留，热更新差异由资源快照记录。",
       "resource_snapshot_evidence": []
+    },
+    {
+      "module": "actions",
+      "type": "maintenance_reference",
+      "status": "reference",
+      "game_version": "1.6.4",
+      "platform": [
+        "Windows"
+      ],
+      "legacy_path": null,
+      "path": "tools/actions/jsspsi_quality/README.md",
+      "title": "祀高质量过渡数据生成工具",
+      "evidence": [
+        {
+          "kind": "document",
+          "path": "tools/actions/jsspsi_quality/README.md",
+          "line": 1,
+          "excerpt": "祀高质量过渡数据生成工具"
+        }
+      ],
+      "purpose": "jsspsi_quality 内置接缝差与附属件循环数据的输入、生成命令、样本数取舍与误差",
+      "status_detail": "工具邻接使用说明",
+      "classification_source": "维护接口",
+      "dates": [
+        "2026-10-26"
+      ],
+      "game_version_evidence": [
+        {
+          "path": "tools/actions/jsspsi_quality/README.md",
+          "line": 9,
+          "excerpt": "生成仓库里那份头文件用的是下面这批，录制和差表都是在 1.6.4 Windows 客户端上录的"
+        }
+      ],
+      "replacement": "未见明确整体替代声明；按正文适用范围保留",
+      "ownership": "external_read_only",
+      "reference_evidence": {
+        "机器消费及生成证据": "范围内未见",
+        "证据定位及代码注释": "native/modules/actions/jsspsi_quality_data.h:1 生成器路径",
+        "文档导航及正文引用": "docs/actions/SPECIAL_DASH_CONTINUOUS_ANIMATION.md、native/modules/actions/README.md"
+      },
+      "game_version_note": "输入录于 1.6.4 Windows 客户端；数据只对其中的状态 hash 与回绕区间有效，游戏更新后按正文重新生成。"
     },
     {
       "module": "actions",

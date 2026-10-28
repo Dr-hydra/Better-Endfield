@@ -47,7 +47,7 @@ def main():
         for ident, entry in zip(ids, entries):
             parts = [value(x) for x in tokens(entry[1])]
             asm, ns, cls, name = parts[:4]
-            d = dict(kind=kind, id=ident, asm=asm, cls=ns+'.'+cls, name=name,
+            d = dict(kind=kind, id=ident, asm=asm, cls=ns+'.'+cls if ns else cls, name=name,
                      source_line=source.count('\n', 0, match.start(1)+entry.start())+1)
             if kind == 'method':
                 d.update(types=parts[4].split('|') if parts[4] else [], ret=parts[5], count=parts[6])
@@ -139,7 +139,8 @@ def main():
                     'FlowTick','PerformClear','AddCommand','CrossFade','TryInterruptCommand','DoExit','ShowObject',
                     'AudioMonoPost','AudioMonoComponent','EffectDuration','EffectFinish','EffectStop',
                     'EffectActionPlay','EffectManualFollow','MeshGroupShow','VisualPerformId','VisualPerformEntity','PoseTail']
-    static_ids = ['ShouldInterrupt','AudioEntityPost','AudioHash','UnityAlive']
+    static_ids = ['ShouldInterrupt','AudioEntityPost','AudioHash','UnityAlive',
+                  'JsspsiAudioObjectId','JsspsiStopSound']
     for ident, expected_static in [(x, False) for x in instance_ids]+[(x, True) for x in static_ids]:
         actual = matched_methods.get(ident)
         status = 'matched' if actual and ('static' in actual['modifiers']) == expected_static else 'abi-review'

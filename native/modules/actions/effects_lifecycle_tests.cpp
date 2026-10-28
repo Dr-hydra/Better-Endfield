@@ -289,6 +289,35 @@ int main() {
     MeshGroupShowDetour(&visual_other, &visual_identity, 1, true, nullptr);
     MeshGroupShowDetour(&visual_handle, &visual_identity, 3, true, nullptr);
     CHECK(mesh_calls == 3);
+    // Jsspsi's clip-ending splashes (actors 10-12) are queued inside the native
+    // StartSpDash before any dash session exists; ownership comes from the perform.
+    CHECK(std::strcmp(kCharacters[2].perform_id, "CharIntPerform_Jsspsi_Spdash") == 0);
+    g_session = {}; config = std::make_shared<Configuration>(); config->enabled = true;
+    config->characters = 1u << 2; g_config.store(config);
+    action_calls = 0; action_handle = &visual_handle; main_character = true; airborne = false; moving = true;
+    perform_id = "CharIntPerform_Jsspsi_SpdashL";
+    for (int actor : {10, 11, 12}) { visual_actor = actor; EffectActionPlayDetour(&visual_identity, nullptr); }
+    perform_id = "CharIntPerform_Jsspsi_SpdashR"; EffectActionPlayDetour(&visual_identity, nullptr);
+    CHECK(action_calls == 0);
+    perform_id = "CharIntPerform_Jsspsi_SpdashL";
+    for (int actor : {0, 9, 13}) { visual_actor = actor; EffectActionPlayDetour(&visual_identity, nullptr); }
+    visual_actor = 10;
+    perform_id = "CharIntPerform_Jsspsi_SpdashX"; EffectActionPlayDetour(&visual_identity, nullptr);
+    perform_id = "CharIntPerform_Liino_Spdash"; EffectActionPlayDetour(&visual_identity, nullptr);
+    perform_id = "CharIntPerform_Jsspsi_SpdashL";
+    action_handle = &visual_other; EffectActionPlayDetour(&visual_identity, nullptr); action_handle = &visual_handle;
+    main_character = false; EffectActionPlayDetour(&visual_identity, nullptr); main_character = true;
+    visual_metadata_error = true; EffectActionPlayDetour(&visual_identity, nullptr); visual_metadata_error = false;
+    config->characters = 3; EffectActionPlayDetour(&visual_identity, nullptr); config->characters = 1u << 2;
+    config->enabled = false; EffectActionPlayDetour(&visual_identity, nullptr); config->enabled = true;
+    g_ending_skip_contract = false; EffectActionPlayDetour(&visual_identity, nullptr); g_ending_skip_contract = true;
+    g_stopping = true; EffectActionPlayDetour(&visual_identity, nullptr); g_stopping = false;
+    g_game_thread = GetCurrentThreadId() + 1; before = unity_calls;
+    EffectActionPlayDetour(&visual_identity, nullptr); CHECK(unity_calls == before);
+    g_game_thread = GetCurrentThreadId();
+    CHECK(action_calls == 13); // Other actors, performs, players, configs and failures play natively.
+    EffectActionPlayDetour(&visual_identity, nullptr);
+    CHECK(action_calls == 13); // The same skip holds without ever creating a session.
     g_host = nullptr;
-    std::puts("Actions effects: optional frame diagnostics, core failure guards, restoration, retained visuals, clean entry/exit, all 22 VFX slots and ownership exclusions passed.");
+    std::puts("Actions effects: optional frame diagnostics, core failure guards, restoration, retained visuals, clean entry/exit, all 22 VFX slots, ownership exclusions and session-free Jsspsi ending skips passed.");
 }

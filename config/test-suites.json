@@ -922,6 +922,133 @@
       ]
     },
     {
+      "id": "actions.quality_data",
+      "module": "actions",
+      "kind": "simulation",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "source",
+          "path": "native/modules/actions/quality_data_tests.cpp"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "native/modules/actions/quality_data_tests.cpp",
+          "native/modules/actions/quality_policy.h",
+          "native/modules/actions/jsspsi_quality_data.h"
+        ],
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityDataTests.exe",
+        "artifacts": [
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityDataTests.exe"
+        ],
+        "receipt": "tests/receipts/actions.quality_data.json",
+        "configuration": "Release"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Compiled-in Jsspsi quality data, seam closure and accessory sampling; excluded target.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
+      "id": "actions.quality",
+      "module": "actions",
+      "kind": "simulation",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "source",
+          "path": "native/modules/actions/loop_quality_tests.cpp"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "native/modules/actions/loop_quality_tests.cpp",
+          "native/modules/actions/loop_quality.inl"
+        ],
+        "executable": "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityTests.exe",
+        "artifacts": [
+          "windows/win-x64/Release/native/Release/BetterEndfieldNext.ActionsQualityTests.exe"
+        ],
+        "receipt": "tests/receipts/actions.quality.json",
+        "configuration": "Release"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Production jsspsi_quality path with fake Unity objects: off path, first-rewind effect holds and restoration, hard-cut seam, accessory lap, fade, lease, sound; excluded target.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
+      "id": "actions.ini_preservation",
+      "module": "actions",
+      "kind": "offline",
+      "platform": [
+        "Windows"
+      ],
+      "game_version": [
+        "any"
+      ],
+      "input": {
+        "id": "source-fixtures",
+        "type": "synthetic"
+      },
+      "prerequisite": [
+        {
+          "type": "tool",
+          "key": "tools.dotnet"
+        }
+      ],
+      "entry": {
+        "type": "native",
+        "cwd": ".",
+        "sources": [
+          "ui/tests/ActionIniPreservation/ActionIniPreservation.csproj",
+          "ui/tests/ActionIniPreservation/Program.cs",
+          "ui/BetterEndfieldNext.UI/Services/ActionIniPreservation.cs"
+        ],
+        "executable": "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.exe",
+        "artifacts": [
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.exe",
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.dll",
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.deps.json",
+          "next/dotnet/ActionIniPreservation/AnyCPU/bin/Release/net9.0/ActionIniPreservation.runtimeconfig.json"
+        ],
+        "receipt": "tests/receipts/actions.ini_preservation.json"
+      },
+      "status": "active",
+      "replaced_by": null,
+      "purpose": "Launcher keeps external_loop and jsspsi_quality across Actions section and full saves.",
+      "host_platform": [
+        "Windows"
+      ]
+    },
+    {
       "id": "creator.bem.format",
       "module": "creator",
       "kind": "offline",
