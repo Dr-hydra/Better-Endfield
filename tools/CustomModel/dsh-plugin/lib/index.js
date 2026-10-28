@@ -29,6 +29,7 @@ import { spawn } from 'node:child_process'
 import { resolve, join, delimiter } from 'node:path'
 
 import { inspect, validate, preview, getScene, latestSceneId, initialSelection } from './bem/preview.js'
+import { previewResourcesStatus, configurePreviewResources } from './bem/resources.js'
 
 export const name = 'bem-creator'
 export const inject = ['skills']
@@ -130,6 +131,31 @@ function sendJson(res, status, value) {
   send(res, status, Buffer.from(JSON.stringify(value), 'utf8'), 'application/json; charset=utf-8')
 }
 
+function selectResources(path, platform) {
+  const result = configurePreviewResources(path, platform)
+  if (result.ok) {
+    const current = getScene(latestSceneId())
+    if (current) result.previewId = preview(current.path).id
+  }
+  return result
+}
+
+async function updateResources(req, res) {
+  try {
+    if (req.headers?.origin && new URL(req.headers.origin).host !== req.headers.host) { sendJson(res, 403, { error: 'cross-origin resource configuration refused' }); return }
+    const chunks = []; let length = 0
+    for await (const chunk of req) {
+      length += Buffer.byteLength(chunk)
+      if (length > 8192) { sendJson(res, 413, { error: 'resource settings are too large' }); return }
+      chunks.push(Buffer.from(chunk))
+    }
+    const value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    if (typeof value.path !== 'string' || !value.path.trim() || !['windows', 'android'].includes(value.platform)) { sendJson(res, 400, { error: 'path and platform (windows=BC7 or android=ASTC) are required' }); return }
+    const result = selectResources(value.path, value.platform)
+    sendJson(res, result.ok ? 200 : 400, result)
+  } catch (error) { sendJson(res, 400, { error: error.message }) }
+}
+
 /**
  * Serve one path under the plugin prefix.
  *
@@ -146,6 +172,12 @@ function handleRequest(req, res, url) {
   // Tolerate the base alone, a trailing slash, and the doubled slash that the
   // old registration produced — a stale client may still ask for any of them.
   const rest = path.slice(ROUTE_BASE.length).replace(/^\/+/, '')
+  if (rest === 'api/resources') {
+    if (req.method === 'POST') { void updateResources(req, res); return }
+    if (req.method && req.method !== 'GET') { sendJson(res, 405, { error: 'use GET or POST' }); return }
+    sendJson(res, 200, previewResourcesStatus())
+    return
+  }
 
   if (rest === 'api/latest') {
     const id = latestSceneId()
@@ -312,6 +344,7 @@ const TOOL_DESCRIPTION = [
   '  inspect  - manifest summary (format, target, counts) without decoding payloads.',
   '  validate - preview-side integrity checks (index ranges, payload lengths, mesh refs).',
   '  preview  - build a render scene and open it in the conversation 预览 tab.',
+  '  resources - inspect local optional preview resources; pass path and platform to select an extracted BC7/windows or ASTC/android pack. Never downloads.',
   '  convert  - run the BEM Tools CLI, which this bundle does not ship; doctor',
   '             reports whether one is reachable and from where.',
   '  doctor   - report which parts of the surface are available on this host.',
@@ -694,7 +727,7 @@ function remedyFor(failures) {
   return `${missing.command} -m pip install zstandard`
 }
 
-const ACTIONS = ['inspect', 'validate', 'preview', 'convert', 'doctor']
+const ACTIONS = ['inspect', 'validate', 'preview', 'resources', 'convert', 'doctor']
 
 /**
  * Drop every `undefined` before the value leaves the plugin.
@@ -729,6 +762,9 @@ async function runTool(args) {
   // check, which would report a confusing "path is required for action wat".
   if (!ACTIONS.includes(action)) throw new Error(`unknown action ${action}; expected one of ${ACTIONS.join(' | ')}`)
 
+  if (action === 'resources') {
+    return args.path ? selectResources(args.path, args.platform) : { ok: true, ...previewResourcesStatus(undefined, args.platform) }
+  }
   if (action === 'doctor') {
     return {
       ok: true,
@@ -740,7 +776,8 @@ async function runTool(args) {
       preview: {
         ready: true,
         decoders: ['bc1', 'bc3', 'bc4', 'bc5', 'bc7', 'rgba32'],
-        astc: 'not decoded in the browser build',
+        astc: 'requires WEBGL_compressed_texture_astc in the viewing browser',
+        resources: previewResourcesStatus(),
       },
       cli: await resolveCli(),
     }
@@ -811,13 +848,14 @@ async function runTool(args) {
     return { ok: report.ok, ...report }
   }
   if (action === 'preview') {
-    const result = preview(absolute)
+    const result = preview(absolute, { resourcesPath: args.resourcesPath, platform: args.platform })
     return {
       ok: true,
       previewId: result.id,
       name: result.name,
       path: result.path,
       stats: result.scene.stats,
+      nativeCompletion: result.scene.nativeCompletion,
       selection: initialSelection(result.scene),
       url: `${ROUTE_PREFIX}api/scene/${result.id}`,
       hint: 'open the 预览 tab in this conversation; the stage updates as soon as a preview is registered',
@@ -847,6 +885,8 @@ function registerTool(ctx) {
           action: { type: 'string', enum: ACTIONS },
           path: { type: 'string', description: 'absolute path to a .bem file, or a source path for convert' },
           args: { type: 'array', items: { type: 'string' }, description: 'arguments for the CLI when action=convert' },
+          resourcesPath: { type: 'string', description: 'local resources root or extracted preview pack directory for action=preview; no download' },
+          platform: { type: 'string', enum: ['windows', 'android'], description: 'user-selected preview texture pack: windows=BC7; android=ASTC (requires viewing browser GPU support). Independent of host OS.' },
         },
         required: ['action'],
         additionalProperties: false,

@@ -6,6 +6,8 @@ import { statSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
 import { readPackage } from './container.js'
 import { buildScene, evalWhen, meshesForRules, meshesForAppearance, defaultOptions } from './scene.js'
+import { resolvePreviewResources } from './resources.js'
+import { completeNativeScene } from './native.js'
 
 /** Bounded so a long session that previews twenty packages cannot grow without limit. */
 const MAX_SCENES = 6
@@ -35,18 +37,21 @@ export function latestSceneId() {
  * Read a package and build its scene. Re-previewing an unchanged file reuses
  * the previous build, which is what makes the tab's refresh cheap.
  */
-export function preview(path) {
+export function preview(path, options = {}) {
   const absolute = resolve(path)
-  const id = sceneIdFor(absolute)
-  const cached = scenes.get(id)
+  const resources = resolvePreviewResources(options.resourcesPath, options.platform)
+  const key = JSON.stringify([absolute, sceneIdFor(absolute), resources.path, resources.repository?.signature, resources.reason, options.platform])
+  const cached = [...scenes.values()].find((entry) => entry.key === key)
   if (cached) {
-    latestId = id
-    return { id, ...cached }
+    latestId = cached.id
+    return cached
   }
+  const id = `${sceneIdFor(absolute)}-${sequence.toString(36)}`
   const pkg = readPackage(absolute)
-  const { scene, blobs } = buildScene(pkg, { path: absolute })
+  const { scene, blobs } = completeNativeScene(pkg, buildScene(pkg, { path: absolute }), resources)
   const entry = {
     id,
+    key,
     path: absolute,
     name: basename(absolute),
     scene,
@@ -225,13 +230,24 @@ export function validate(path) {
  * Resolve the geometry an initial render should show, so the tab can open on a
  * sensible state instead of an empty stage.
  */
+export function nativeMeshesForSelection(scene, options, appearanceId) {
+  const appearance = scene.appearances.find((item) => item.id === appearanceId) || scene.appearances[0]
+  return (scene.nativeMeshes || []).filter(({ target }) => {
+    const rule = scene.componentRules.find((item) => item.target === target)
+    const operation = scene.componentRules.length
+      ? rule?.candidates.find((candidate) => evalWhen(candidate.when, options))?.operation
+      : appearance?.components.find((item) => item.target === target)?.operation
+    return !operation || operation === 'keep'
+  }).map((item) => item.index)
+}
+
 export function initialSelection(scene) {
   if (scene.componentRules.length > 0) {
     const state = defaultOptions(scene.optionGroups)
-    return { mode: 'rules', options: state, meshes: [...meshesForRules(scene.componentRules, state)] }
+    return { mode: 'rules', options: state, meshes: [...meshesForRules(scene.componentRules, state), ...nativeMeshesForSelection(scene, state)] }
   }
   const appearance = scene.appearances.find((a) => a.id === scene.defaultAppearance) || scene.appearances[0]
-  if (appearance) return { mode: 'appearance', appearance: appearance.id, meshes: appearance.meshes }
+  if (appearance) return { mode: 'appearance', appearance: appearance.id, meshes: [...appearance.meshes, ...nativeMeshesForSelection(scene, {}, appearance.id)] }
   return { mode: 'all', meshes: scene.meshes.map((mesh) => mesh.index) }
 }
 

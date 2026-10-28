@@ -511,12 +511,6 @@ add_custom_target(BetterEndfieldNext.Layout ALL
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/custom_model/betterendfieldnext.custom_model.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.custom_model.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../ui/BetterEndfieldNext.UI/Assets/model/character-names.json"
-        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/model-character-names.json"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../ui/BetterEndfieldNext.UI/Assets/model/character-names-en.json"
-        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/model-character-names-en.json"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/voice/betterendfieldnext.voice.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.voice.module.ini"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -543,20 +537,8 @@ add_custom_target(BetterEndfieldNext.Layout ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/actions"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/assets/pose_aglina.bin"
-        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/actions/pose_aglina.bin"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/modules/actions/assets/pose_liino.bin"
-        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/actions/pose_liino.bin"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/modules/gacha/betterendfieldnext.gacha.module.ini"
         "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/betterendfieldnext.gacha.module.ini"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../manifests/combat/combat-semantics.besem"
-        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/combat-semantics.besem"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_CURRENT_SOURCE_DIR}/../manifests/combat/buff-sources.bemap"
-        "${BETTER_ENDFIELD_NEXT_STAGE_DIR}/modules/buff-sources.bemap"
     DEPENDS
         BetterEndfieldNext.BemCompose
         BetterEndfieldNext.Host

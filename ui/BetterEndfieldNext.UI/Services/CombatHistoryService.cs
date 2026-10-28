@@ -652,8 +652,7 @@ internal static class CombatHistoryService
         string assetId = id is "chr_0002_endminm" or "chr_0003_endminf"
             ? "chr_9000_endmin"
             : id;
-        string resourceName = $"BetterEndfieldNext.UI.Assets.combat.{assetId}.png";
-        using Stream? source = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+        using Stream? source = GameResourceStore.OpenCore($"icons/avatars/{assetId}.png");
         if (source is null)
         {
             AvatarCache[id] = null;

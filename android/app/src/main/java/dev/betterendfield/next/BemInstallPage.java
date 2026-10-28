@@ -146,7 +146,7 @@ final class BemInstallPage {
         }
     }
     private void addModelManagement() {
-        try(java.io.InputStream input=activity.getAssets().open("character-names.json");
+        try(java.io.InputStream input=GameResourceStore.openCore(activity,"model/character-names.json");
                 java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream()) {
             byte[] buffer=new byte[8192];int count;
             while((count=input.read(buffer))!=-1) output.write(buffer,0,count);

@@ -119,7 +119,7 @@ final class ModelPresetIndex {
     }
 
     private static String readAsset(Context context, String name) throws IOException {
-        try (InputStream input = context.getAssets().open(name);
+        try (InputStream input = GameResourceStore.openCore(context,name);
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[8192];
             int count;

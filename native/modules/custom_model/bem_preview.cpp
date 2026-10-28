@@ -263,8 +263,8 @@ bool ExportBemPreview(const std::filesystem::path& package,const std::filesystem
         std::array<float,3> minimum{INFINITY,INFINITY,INFINITY},maximum{-INFINITY,-INFINITY,-INFINITY};
         std::set<size_t> usedTextures;
         const BemResourceInfo* active=nullptr;for(const auto& r:info.resources) if(r.id==resourceId) active=&r;
-        NativePreviewHead head;head.Load(gpu.native_assets,info,active,resourceId,data);
-        scene["nativeCompletion"]={{"status",head.diagnostic},{"meshes",0},{"textures",head.textures.size()}};
+        NativePreviewHead head;head.Load(gpu.native_assets,info,active,resourceId,data,gpu.desktop);
+        scene["nativeCompletion"]={{"status",head.diagnostic},{"reason",head.reason},{"resourceVersion",head.version},{"meshes",0},{"textures",head.textures.size()}};
         auto globalId=[&](uint32_t id){return active && id<active->component_ids.size()?active->component_ids[id]:id;};
         for(const auto& c:data.components) {
             checkpoint();if(c.info.flags&kComponentFlagHidden)continue;

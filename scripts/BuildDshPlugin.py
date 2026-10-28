@@ -162,7 +162,7 @@ def smoke(stage_directory):
     ):
         environment[variable] = str(REPO/relative)
     summaries = []
-    for suite in ('test/smoke.mjs', 'test/host.test.mjs', 'test/client.test.mjs'):
+    for suite in ('test/smoke.mjs', 'test/host.test.mjs', 'test/client.test.mjs', 'test/resources.test.mjs', 'test/astc.test.mjs'):
         result = subprocess.run(
             [node_executable(), suite],
             cwd=stage_directory,

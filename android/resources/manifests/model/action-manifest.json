@@ -3,10 +3,10 @@
   "kind": "endfield-action-manifest",
   "generatorVersion": 2,
   "manifestVersion": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
-  "manifestHash": "b277a370e4c4e6524b79c0cb67444a7f",
+  "manifestHash": "f4fbbc7fd0b5e7ad0241377aa9d21dd8",
   "source": {
-    "path": "resources/generated/model/character-presets.json",
-    "sha256": "2247FB73C36DB13FEB7C44D076A8EB66CC5B8A30E3BBBACB95261A6088CDF77C"
+    "path": "android/resources/character-presets.json",
+    "sha256": "C473A2C0ABDF2134C49B1537B01E4760D3D1066D61CD994E657C3E1F1EBDB6D6"
   },
   "stats": {
     "characterCount": 37,
@@ -20,7 +20,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0002_endminm_postmodel.prefab",
         "pathHash": "0x0B0F0EF23D692090",
-        "bundleHash": "0x6C45EF3F1D7ECD5B"
+        "bundleHash": "0x2B867C1245E9E0A5"
       },
       "introSequence": {
         "sitLoop": {
@@ -2937,7 +2937,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0003_endminf_postmodel.prefab",
         "pathHash": "0x0C9AC03D143EA082",
-        "bundleHash": "0x9A33A3226FCB8566"
+        "bundleHash": "0x5B3C14C30211CBD9"
       },
       "introSequence": {
         "sitLoop": {
@@ -6774,7 +6774,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0004_pelica_postmodel.prefab",
         "pathHash": "0x06F2CE7B3D05C9CC",
-        "bundleHash": "0x7C55EB52CB317DD2"
+        "bundleHash": "0x8E9F8352CBC079C9"
       },
       "introSequence": {
         "sitLoop": {
@@ -10283,7 +10283,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0005_chen_postmodel.prefab",
         "pathHash": "0x031AC8CAD30401A9",
-        "bundleHash": "0xA804871EAFDCB109"
+        "bundleHash": "0xBFE1D336966642BD"
       },
       "introSequence": {
         "sitLoop": {
@@ -13032,7 +13032,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0006_wolfgd_postmodel.prefab",
         "pathHash": "0x026D940422DADF27",
-        "bundleHash": "0xBB8CDB15D309A089"
+        "bundleHash": "0x6BF7BB35BAEE3218"
       },
       "introSequence": {
         "sitLoop": {
@@ -13989,7 +13989,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0007_ikut_postmodel.prefab",
         "pathHash": "0x09BEAE5BB9BDF25A",
-        "bundleHash": "0x313231FAB31CB132"
+        "bundleHash": "0x5062F82C1C47FE82"
       },
       "introSequence": {
         "sitLoop": {
@@ -14714,7 +14714,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0009_azrila_postmodel.prefab",
         "pathHash": "0x053EC7DD14798674",
-        "bundleHash": "0xB515BC09CED88B13"
+        "bundleHash": "0x22145E772A9A4283"
       },
       "introSequence": {
         "sitLoop": {
@@ -14951,7 +14951,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0011_seraph_postmodel.prefab",
         "pathHash": "0x0AED037CDCEE2809",
-        "bundleHash": "0x128F53E0DA3F5033"
+        "bundleHash": "0x87C8C30B9D51E019"
       },
       "introSequence": {
         "sitLoop": {
@@ -15700,7 +15700,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0012_avywen_postmodel.prefab",
         "pathHash": "0x0964C1C06179597D",
-        "bundleHash": "0x84CA859573904098"
+        "bundleHash": "0x25428F13E6689433"
       },
       "introSequence": {
         "sitLoop": {
@@ -16449,7 +16449,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0013_aglina_postmodel.prefab",
         "pathHash": "0x0C662A5986756356",
-        "bundleHash": "0xE909F07FCA5C3163"
+        "bundleHash": "0xBE263878A10784ED"
       },
       "introSequence": {
         "sitLoop": {
@@ -17894,7 +17894,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0014_aurora_postmodel.prefab",
         "pathHash": "0x047D3B13A63A193B",
-        "bundleHash": "0x2FC0393554FC030B"
+        "bundleHash": "0xA7C553B4EAC2923A"
       },
       "introSequence": {
         "sitLoop": {
@@ -18499,7 +18499,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0015_lifeng_postmodel.prefab",
         "pathHash": "0x07FF7B6D88E6E3D7",
-        "bundleHash": "0xAD4B8278C27DD4B5"
+        "bundleHash": "0x06E40BBA83244D3C"
       },
       "introSequence": {
         "sitLoop": {
@@ -19248,7 +19248,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0016_laevat_postmodel.prefab",
         "pathHash": "0x0DC296A6DCDAE25C",
-        "bundleHash": "0x73C0CFAEACF157CE"
+        "bundleHash": "0xD7F39D3318E7D8B3"
       },
       "introSequence": {
         "sitLoop": {
@@ -20493,7 +20493,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0017_yvonne_postmodel.prefab",
         "pathHash": "0x0C73D67F54F49C2F",
-        "bundleHash": "0x28293959170508FF"
+        "bundleHash": "0x7777B4A384678503"
       },
       "introSequence": {
         "sitLoop": {
@@ -22834,7 +22834,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0018_dapan_postmodel.prefab",
         "pathHash": "0x0105DF570CBCE34B",
-        "bundleHash": "0x3F90882271B1AF11"
+        "bundleHash": "0xA343A72FBCD2F6AE"
       },
       "introSequence": {
         "sitLoop": {
@@ -23519,7 +23519,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0019_karin_postmodel.prefab",
         "pathHash": "0x08CD6140BDD57787",
-        "bundleHash": "0x03EA395DC9438997"
+        "bundleHash": "0x2BCAA8D2DF495093"
       },
       "introSequence": {
         "sitLoop": {
@@ -23740,7 +23740,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0020_meurs_postmodel.prefab",
         "pathHash": "0x0BA2CFE1AB9CE4D4",
-        "bundleHash": "0x74F93DD36919D751"
+        "bundleHash": "0x9027D1AE656D0AC7"
       },
       "introSequence": {
         "sitLoop": {
@@ -23969,7 +23969,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0021_whiten_postmodel.prefab",
         "pathHash": "0x082002C1204E574A",
-        "bundleHash": "0xF03F951B9A64EE77"
+        "bundleHash": "0x903D3FA4EFD15734"
       },
       "introSequence": {
         "sitLoop": {
@@ -24174,7 +24174,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0022_bounda_postmodel.prefab",
         "pathHash": "0x0EFD2D80B488DF5F",
-        "bundleHash": "0xA8906661C01464BA"
+        "bundleHash": "0xC7553DF292C3F29D"
       },
       "introSequence": {
         "sitLoop": {
@@ -24387,7 +24387,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0023_antal_postmodel.prefab",
         "pathHash": "0x0FF04A874BF0C797",
-        "bundleHash": "0x8F40561553B58521"
+        "bundleHash": "0x3FA3F021C5DF8823"
       },
       "introSequence": {
         "sitLoop": {
@@ -24600,7 +24600,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0024_deepfin_postmodel.prefab",
         "pathHash": "0x03C7A9CD087AF16F",
-        "bundleHash": "0x4069AA634888B09D"
+        "bundleHash": "0x52C1AE2604C23FD7"
       },
       "introSequence": {
         "sitLoop": {
@@ -24797,7 +24797,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0025_ardelia_postmodel.prefab",
         "pathHash": "0x037DC4359CB5AD71",
-        "bundleHash": "0x94B6D4F20F6D4229"
+        "bundleHash": "0x6BB85BF775B9EF43"
       },
       "introSequence": {
         "sitLoop": {
@@ -25610,7 +25610,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0026_lastrite_postmodel.prefab",
         "pathHash": "0x05EA3F0C1AC3C02A",
-        "bundleHash": "0x2D3C905BF05D5AA3"
+        "bundleHash": "0xB26D444FC6F06932"
       },
       "introSequence": {
         "sitLoop": {
@@ -26039,7 +26039,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0027_tangtang_postmodel.prefab",
         "pathHash": "0x03374C55AF0F3AD9",
-        "bundleHash": "0x0A566D974D539494"
+        "bundleHash": "0x0099073AAC105947"
       },
       "introSequence": {
         "sitLoop": {
@@ -28420,7 +28420,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0028_wulfa_postmodel.prefab",
         "pathHash": "0x0D1205AC233F06DB",
-        "bundleHash": "0x0627FAA2D20B8F97"
+        "bundleHash": "0x33BDFBE2DA511A9C"
       },
       "introSequence": {
         "sitLoop": {
@@ -29929,7 +29929,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0029_pograni_postmodel.prefab",
         "pathHash": "0x024BB7A96A83BE87",
-        "bundleHash": "0x25BB8E85D8BE06A1"
+        "bundleHash": "0xED24DD72645CA021"
       },
       "introSequence": {
         "sitLoop": {
@@ -30158,7 +30158,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0030_zhuangfy_postmodel.prefab",
         "pathHash": "0x0A68984D9436CE0F",
-        "bundleHash": "0xBCF637E9F4F0F70E"
+        "bundleHash": "0xE21A3713DFCDB304"
       },
       "introSequence": {
         "sitLoop": {
@@ -31211,7 +31211,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0031_mifu_postmodel.prefab",
         "pathHash": "0x050F4BC622E56BC5",
-        "bundleHash": "0xC9FA31F84FD1FA7B"
+        "bundleHash": "0xFF3A51FFCF521352"
       },
       "introSequence": {
         "sitLoop": {
@@ -32240,7 +32240,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0032_lizhiyan_postmodel.prefab",
         "pathHash": "0x0C73F28350A31E2D",
-        "bundleHash": "0xC1DBC0113A6824D1"
+        "bundleHash": "0x73F6924135EF3EAA"
       },
       "introSequence": {
         "sitLoop": {
@@ -33013,7 +33013,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0033_camille_postmodel.prefab",
         "pathHash": "0x06CFD0811652AC8B",
-        "bundleHash": "0x74DC540C5523FA4E"
+        "bundleHash": "0xDA9E22C5AC3695A6"
       },
       "introSequence": {
         "sitLoop": {
@@ -33626,7 +33626,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0034_typhoea_postmodel.prefab",
         "pathHash": "0x09325F7EF0D10A39",
-        "bundleHash": "0xDA2BABE459212CDE"
+        "bundleHash": "0xA3CED63BB124E61A"
       },
       "introSequence": {
         "sitLoop": {
@@ -34599,7 +34599,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0035_liino_postmodel.prefab",
         "pathHash": "0x0C3F66CB23A3ECAF",
-        "bundleHash": "0xAC7CF315D05B5318"
+        "bundleHash": "0x3EB53447399D9A08"
       },
       "introSequence": {
         "sitLoop": {
@@ -35292,7 +35292,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0036_jsspsi_postmodel.prefab",
         "pathHash": "0x0A697433A0C9E3F1",
-        "bundleHash": "0x04A930FAA654EFA9"
+        "bundleHash": "0xFF75D421F52109F3"
       },
       "introSequence": {
         "sitLoop": {
@@ -36369,7 +36369,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe_postmodel.prefab",
         "pathHash": "0x0547AAB852C4E390",
-        "bundleHash": "0x6133A4430DCE22AE"
+        "bundleHash": "0x5C1FB223393E035E"
       },
       "introSequence": {
         "sitLoop": {
@@ -37038,7 +37038,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe02_postmodel.prefab",
         "pathHash": "0x0B028B11FE4AD2AE",
-        "bundleHash": "0x1EEA52869F798B0B"
+        "bundleHash": "0x7005CCD342C88F34"
       },
       "introSequence": {
         "sitLoop": {
@@ -37707,7 +37707,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe03_postmodel.prefab",
         "pathHash": "0x0B0289DE6B838CAF",
-        "bundleHash": "0x9E96D8F0BE8A01D6"
+        "bundleHash": "0x4D87F583A79E9AC8"
       },
       "introSequence": {
         "sitLoop": {
@@ -38376,7 +38376,7 @@
       "model": {
         "path": "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0038_purrche_postmodel.prefab",
         "pathHash": "0x044527ED1A1CC77C",
-        "bundleHash": "0x824A49EACC851526"
+        "bundleHash": "0xE7722DB90A0B9723"
       },
       "introSequence": {
         "sitLoop": {
@@ -38843,8 +38843,8 @@
   "skippedCharacters": [],
   "versionInputs": {
     "snapshot": {
-      "path": "inputs/1.6.4/Android/resource-sources/20261015-wireless-192.168.31.13-34843/input-snapshot.json",
-      "sha256": "64C31D403B36BE6FF13371C63D1105A2C9CCF14D95D615ED15DEC9AB819CE858"
+      "path": "inputs/current-distribution/Android/input-snapshot.json",
+      "sha256": "4CAB4A35826E0129264CB5DAE1F58A43FB5750233238F1A15FCD9ED0B1736D4F"
     },
     "overlayOrder": [
       "Persistent"
@@ -38852,12 +38852,10 @@
     "files": [
       {
         "path": "Bundles/Android/manifest.hgmmap",
-        "sha256": "FFA614CA2932B8C09892E7000EADE968",
-        "size": 53700330
+        "size": 53696017
       },
       {
         "path": "TableCfg/AudioDialog.bytes",
-        "sha256": "649E7513131B8CAB64F91A0F7DFA0FF90D3DDFB0F4BC7C1C05967021C93CB04C",
         "size": 5388652
       }
     ],

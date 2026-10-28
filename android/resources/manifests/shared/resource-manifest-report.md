@@ -9,8 +9,8 @@
 
 ## 版本输入
 
-- `Bundles/Android/manifest.hgmmap`：`FFA614CA2932B8C09892E7000EADE968`（53700330 bytes）
-- `TableCfg/AudioDialog.bytes`：`649E7513131B8CAB64F91A0F7DFA0FF90D3DDFB0F4BC7C1C05967021C93CB04C`（5388652 bytes）
+- `Bundles/Android/manifest.hgmmap`：`not calculated`（53696017 bytes）
+- `TableCfg/AudioDialog.bytes`：`not calculated`（5388652 bytes）
 
 ## 角色短语音
 

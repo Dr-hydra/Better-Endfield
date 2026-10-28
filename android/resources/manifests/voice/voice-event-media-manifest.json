@@ -5,8 +5,8 @@
   "wwiseHash": "lowercase UTF-8 FNV-1 32-bit",
   "hircSoundMediaIdOffset": 9,
   "source": {
-    "path": "inputs/1.6.3/Windows/tables/Table/AudioDialog.json",
-    "sha256": "23034FD2B095E1F1AD900B35EA5DFF399737D1188C34FC26049586A9F9E3EDF6",
+    "path": "inputs/current-distribution/Android/Table/AudioDialog.json",
+    "sha256": "9A03B24D43DDFBFD6D18E3D96EA5B24EB15D3FA9B57D764732E2849F51FED14D",
     "aliases": {
       "path": "resources/voice/voice-event-aliases.json",
       "sha256": "5AB6D1489934F4FFB74AB0F616A74FA195D97E59A80839275602254F61E3F452"
@@ -475752,15 +475752,15 @@
     4285747702
   ],
   "pckSnapshot": {
-    "path": "inputs/1.6.4/Android/resource-sources/20261015-wireless-192.168.31.13-34843/pck-snapshot.json",
-    "sha256": "9CBE87B1602F12D8833DB59D1B5443A277546BE426F51DDB709CCA1F0F9B0AA6",
+    "path": "inputs/current-distribution/Android/pck-snapshot.json",
+    "sha256": "6D1DE32B52F27AF47A4D30DDF15BA58FEBA005CA0361F686E25BAA0CCA4D5B30",
     "platform": "Android",
     "missingLanguages": []
   },
   "versionInputs": {
     "snapshot": {
-      "path": "inputs/1.6.4/Android/resource-sources/20261015-wireless-192.168.31.13-34843/input-snapshot.json",
-      "sha256": "64C31D403B36BE6FF13371C63D1105A2C9CCF14D95D615ED15DEC9AB819CE858"
+      "path": "inputs/current-distribution/Android/input-snapshot.json",
+      "sha256": "4CAB4A35826E0129264CB5DAE1F58A43FB5750233238F1A15FCD9ED0B1736D4F"
     },
     "overlayOrder": [
       "Persistent"
@@ -475768,12 +475768,10 @@
     "files": [
       {
         "path": "Bundles/Android/manifest.hgmmap",
-        "sha256": "FFA614CA2932B8C09892E7000EADE968",
-        "size": 53700330
+        "size": 53696017
       },
       {
         "path": "TableCfg/AudioDialog.bytes",
-        "sha256": "649E7513131B8CAB64F91A0F7DFA0FF90D3DDFB0F4BC7C1C05967021C93CB04C",
         "size": 5388652
       }
     ],

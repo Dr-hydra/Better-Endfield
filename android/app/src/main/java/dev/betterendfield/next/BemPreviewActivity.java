@@ -174,22 +174,10 @@ public final class BemPreviewActivity extends Activity {
             long size=input.length(),time=input.lastModified();
             if(selection==null)selection=entry==null?"":entry.optInt("bem_minor",0)>0?entry.optString("selected_options",entry.optString("default_options")):entry.optString("selected_appearance",entry.optString("default_appearance"));
             if(parameters==null)parameters=entry==null?"":entry.optString("remembered_parameters",entry.optString("selected_parameters",entry.optString("default_parameters")));
-            File nativeRoot=new File(directory,"native");
-            if(!nativeRoot.exists()) {
-                if(!nativeRoot.mkdirs())throw new java.io.IOException("Cannot create native preview cache");
-                try(java.util.zip.ZipInputStream zip=new java.util.zip.ZipInputStream(getAssets().open("bem-preview/native-head-android.zip"))) {
-                    java.util.zip.ZipEntry item;
-                    while((item=zip.getNextEntry())!=null) {
-                        File target=new File(nativeRoot,item.getName());
-                        if(!target.getCanonicalPath().startsWith(nativeRoot.getCanonicalPath()+File.separator))throw new java.io.IOException("Invalid native preview path");
-                        if(item.isDirectory()){target.mkdirs();continue;}
-                        target.getParentFile().mkdirs();
-                        try(FileOutputStream stream=new FileOutputStream(target)){byte[] buffer=new byte[32768];int n;while((n=zip.read(buffer))!=-1)stream.write(buffer,0,n);}
-                    }
-                } catch(Exception failure){remove(nativeRoot);throw failure;}
-            }
+            // Optional resources must never prevent the BEM itself from loading.
+            GameResourceStore.Snapshot nativePack=GameResourceStore.resolve(this,"preview");
             if(gpu==null)gpu=new JSONObject();
-            gpu.put("nativeAssets",nativeRoot.getAbsolutePath());
+            gpu.put("nativeAssets",nativePack==null?"":nativePack.root().getAbsolutePath());
             if(composition!=null)gpu.put("compositionDraft",true);
             gpu.put("textureCache",new File(getCacheDir(),"bem-preview-textures").getAbsolutePath());
             BemInstaller.loadCodec();

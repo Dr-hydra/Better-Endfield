@@ -5,7 +5,7 @@ things, and carries the converter while leaving its runtime to the host:
 
 1. **The `bem-creator` skill** — converts Endfield source Mods to BEM 1.0–1.5,
    repairs non-standard packages, builds 1.4 projects, and validates the result.
-2. **The `bem` tool** — `inspect`, `validate`, `preview`, `convert` and `doctor`
+2. **The `bem` tool** — `inspect`, `validate`, `preview`, `resources`, `convert` and `doctor`
    on a `.bem` file, so the agent stops depending on shell dialect (`bash` on
    POSIX, `pwsh` on Windows) for the read-only paths.
 3. **A preview tab** — the last previewed package rendered in the conversation,
@@ -17,11 +17,30 @@ things, and carries the converter while leaving its runtime to the host:
    7-Zip backend — all three are cheap to fetch and none is needed to read or
    write a package.
 
+## Optional preview resources
+
+The preview tab's **Preview resources / 预览资源** panel reads an already extracted pack
+and refreshes the current preview. Choose **BC7 (Windows)** or **ASTC (Android)** yourself:
+DSH can run on Android too, and the viewing browser can be on another device. The panel
+reports browser ASTC support. BC7 uses the bundled decoder; ASTC uploads directly to the
+GPU when supported. Neither selection downloads anything automatically.
+
+Use bem action=resources for status, or pass path and platform=windows/android to select.
+Accepts a shared resources root or an exact pack directory containing manifest.json.
+Persistent configuration: BEM_PREVIEW_RESOURCES and BEM_PREVIEW_PLATFORM before DSH starts.
+Paths belong to the DSH host. Reuse existing native-app resource directories first.
+
+Original geometry matches exact prefab/renderer/material identities and appears only for
+keep components. Package textures and hide/replace retain priority. Missing resources report
+diagnostics and leave package meshes visible. The bundled skill reference PREVIEW_RESOURCES.md
+covers choosing one release asset by browser capability, version pins and manual extraction.
+No additional runtime dependency is introduced.
+
 ## Install
 
 ```sh
 # from the release tarball
-dsh plugin --profile web add ./dsh-bem-creator-1.6.4.tgz
+dsh plugin --profile web add ./dsh-bem-creator-1.6.5.tgz
 
 # from a checkout
 dsh plugin --profile web add ./tools/CustomModel/dsh-plugin
@@ -40,7 +59,7 @@ Restart the harness afterwards.
 
 ```sh
 dsh plugin --profile desktop remove dsh-bem-creator
-dsh plugin --profile desktop add "F:\path\to\dsh-bem-creator-1.6.4.tgz"
+dsh plugin --profile desktop add "F:\path\to\dsh-bem-creator-1.6.5.tgz"
 ```
 
 Pass an **absolute path**, not a `file:` URL — the `file:` prefix drops the drive
@@ -109,17 +128,15 @@ and renders it.
 
 Limits, so nobody is surprised in联调:
 
-- **ASTC is not decoded, and is not offered as a blob.** The host marks those
-  textures `blob: null` with a `skipped` reason, so the tab says "N ASTC
-  textures are not decoded in the browser build" once instead of failing per
-  texture; the geometry still draws, in clay. A JS ASTC decoder is slow enough
-  to be useless for a 4096² base level anyway.
+- **ASTC uses the viewing browser GPU.** Its compressed blocks are served directly.
+  Without WEBGL_compressed_texture_astc the tab explains that BC7 is the alternative;
+  it does not automatically download or change the selected resource format.
 - **Geometry is served Y-up.** Packages store Z-up vertices (a 1.67 m character
   measures 1.668 along Z, 0.58 along Y), so `buildScene` rotates positions and
   deformation deltas once and reports what it did in `scene.orientation`.
-- **Base mip only.** Blobs ship the top level; mipmaps are generated on the GPU.
-- **Only the replacement meshes are in the package.** The character's untouched
-  geometry is not, so the stage shows the mod's parts, not a full body.
+- **Base mip only.** Blobs ship the top level; decoded BC/RGBA mipmaps are generated on the GPU, while ASTC uses base-level linear filtering.
+- **Original geometry is optional.** Matching local preview resources complete untouched
+  keep components; without them, the stage shows only meshes from the package.
 - **Deformation moves positions only** — not normals, UVs or skin weights. That
   matches what the format stores.
 - **Preview validation is not the CLI's validation.** `bem validate` checks the

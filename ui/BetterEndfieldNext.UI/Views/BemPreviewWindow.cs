@@ -30,6 +30,7 @@ internal sealed class BemPreviewView : Grid, IDisposable
     private bool _initialized, _closed, _ready;
     private string? _scene;
     private string? _draftSource;
+    private string _nativeAssets = "";
     public async Task HighlightSegmentAsync(string id)
     {
         if (!_closed && _ready && _view is not null)
@@ -115,12 +116,7 @@ internal sealed class BemPreviewView : Grid, IDisposable
                 using var input = assembly.GetManifestResourceStream("BetterEndfieldNext.BemPreview." + name) ?? throw new IOException("Missing preview asset: " + name);
                 using var output = File.Create(Path.Combine(_directory, name)); input.CopyTo(output);
             }
-            using (var archive = assembly.GetManifestResourceStream("BetterEndfieldNext.BemPreview.native-head-pc.zip"))
-                if (archive is not null)
-                {
-                    using var zip = new ZipArchive(archive);
-                    zip.ExtractToDirectory(Path.Combine(_directory, "native"));
-                }
+            _nativeAssets = GameResourceStore.Resolve("preview")?.Root ?? "";
             _view = new WebView2(); Children.Insert(0, _view);
             var profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BetterEndfieldNext", "BemPreviewWebView");
             var environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null);
@@ -238,7 +234,7 @@ internal sealed class BemPreviewView : Grid, IDisposable
             var source = new FileInfo(current.File);
             var stamp = (source.Length, source.LastWriteTimeUtc.Ticks);
             var capabilities = System.Text.Json.Nodes.JsonNode.Parse(gpu)!.AsObject();
-            capabilities["nativeAssets"] = Path.Combine(_directory, "native");
+            capabilities["nativeAssets"] = _nativeAssets;
             capabilities["textureCache"] = Path.Combine(_directory, "texture-cache");
             capabilities["compositionDraft"] = _saveDraft is not null;
             capabilities["desktop"] = true;

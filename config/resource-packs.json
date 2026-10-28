@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "revisions": {
+    "core": {
+      "windows": {
+        "1.6.3": 2
+      },
+      "android": {
+        "1.6.4": 3
+      }
+    },
+    "preview": {
+      "windows": {
+        "1.6.3": 2
+      },
+      "android": {
+        "1.6.4": 2
+      }
+    }
+  }
+}

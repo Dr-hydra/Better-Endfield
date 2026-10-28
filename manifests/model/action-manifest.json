@@ -3,10 +3,10 @@
   "kind": "endfield-action-manifest",
   "generatorVersion": 2,
   "manifestVersion": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
-  "manifestHash": "b277a370e4c4e6524b79c0cb67444a7f",
+  "manifestHash": "44ad035c02cc0c6195d151f9f328ca3d",
   "source": {
     "path": "resources/generated/model/character-presets.json",
-    "sha256": "2247FB73C36DB13FEB7C44D076A8EB66CC5B8A30E3BBBACB95261A6088CDF77C"
+    "sha256": "73F5F1AA29B83366E81F027BDA3BC84651A3ACE60A4C59485957C0ED43E6772B"
   },
   "stats": {
     "characterCount": 37,
@@ -38843,8 +38843,8 @@
   "skippedCharacters": [],
   "versionInputs": {
     "snapshot": {
-      "path": "inputs/1.6.3/Windows/baseline/input-snapshot.json",
-      "sha256": "58B77B887D43D45A29A6D31B7BB102D1CDC2D24AA06CABBE45B601AB8BF0B883"
+      "path": "inputs/current-distribution/Windows/input-snapshot.json",
+      "sha256": "DD54888E1A001F594C626C9B9D7963AD2234463866F0141B27804AEEE43D7F9B"
     },
     "overlayOrder": [
       "StreamingAssets",
@@ -38853,8 +38853,8 @@
     "files": [
       {
         "path": "Bundles/Windows/manifest.hgmmap",
-        "size": 54534471,
-        "sha256": "BD1EB48444E5ABC5F10DB19C5446FB7B9514EE91F7704320D5DBB6CD6DBA0CBA"
+        "size": 54530637,
+        "sha256": "D6210FB23C0ADBC5B1C15FD506A5D910BF002A6F228B3B340EE4E6D69A78A905"
       },
       {
         "path": "TableCfg/AudioDialog.bytes",

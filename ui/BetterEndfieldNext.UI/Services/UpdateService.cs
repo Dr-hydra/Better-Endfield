@@ -40,6 +40,14 @@ internal static partial class UpdateService
 
     public static async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken)
     {
+        if (await DistributionService.IndexAsync(cancellationToken) is { } distribution)
+        {
+            var software = distribution.GetProperty("software");
+            string version = software.GetProperty("version").GetString() ?? string.Empty;
+            string link = software.GetProperty("releaseUrl").GetString() ?? ReleasesUrl;
+            if (!link.StartsWith(ReleasesUrl + "/", StringComparison.Ordinal)) throw new JsonException("Invalid release URL.");
+            return new UpdateCheckResult(CurrentVersion, version, link, !string.IsNullOrWhiteSpace(version), CompareVersions(version, CurrentVersion) > 0);
+        }
         using HttpResponseMessage response = await Client.GetAsync(
             "https://api.github.com/repos/Dr-hydra/Better-Endfield/releases/latest",
             cancellationToken);

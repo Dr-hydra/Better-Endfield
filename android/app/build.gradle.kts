@@ -78,8 +78,8 @@ android {
         // needs Android 10. The legacy API 82 build was dropped in 3.3.0.
         minSdk = 29
         targetSdk = 35
-        versionCode = 40103
-        versionName = "4.1.3"
+        versionCode = 40104
+        versionName = "4.1.4"
         testInstrumentationRunner = "dev.betterendfield.next.BemInstallerTest"
 
         ndk {
@@ -147,39 +147,23 @@ android {
     }
 
     sourceSets {
-        getByName("main").assets.srcDir(generatedAssets.get().asFile)
+        getByName("main").assets.directories.add(generatedAssets.get().asFile.absolutePath)
     }
 }
 
 val prepareAndroidResourceAssets by tasks.registering(Sync::class) {
-    // Android voice descriptors and model increments remain maintained inputs.
-    // Share the canonical file only when the complete JSON content agrees;
-    // neither source is rewritten during packaging.
-    for ((name, key) in listOf("voice-catalog-index.json" to "voice_index",
-                              "character-presets.json" to "character_presets")) {
-        val shared = File(sharedOutputs[key] as String)
-        val platform = rootProject.file("resources/$name")
-        inputs.files(shared, platform)
-        from(providers.provider {
-            check(shared.isFile) { "Shared resource is missing: $shared" }
-            if (!platform.isFile || JsonSlurper().parse(shared) == JsonSlurper().parse(platform)) {
-                shared
-            } else {
-                platform
-            }
-        }) {
-            rename { name }
-        }
-    }
-    from(rootProject.file("resources/character-names.json"))
-    from(rootProject.file("../resources/bem-preview")) { exclude("native-head-pc.zip"); into("bem-preview") }
-    // Same layout the desktop module reads from beside its DLL, so one set of
-    // bone-pose banks serves both platforms.
-    from(rootProject.file("../native/modules/actions/assets")) {
-        include("pose_*.bin")
-        into("actions")
-    }
+    // Only program-owned preview code remains in the APK.
+    from(rootProject.file("../resources/bem-preview")) { exclude("*.zip"); into("bem-preview") }
     into(generatedAssets)
+}
+
+// External companion: imported by the manager, never embedded in the APK.
+val stageAndroidCoreResources by tasks.registering(Exec::class) {
+    workingDir(rootProject.projectDir.parentFile)
+    commandLine(workspaceTools["python"] as String, "scripts/BuildResourcePacks.py",
+        "--platform", "android", "--type", "core",
+        "--output", File(workspacePaths["build"] as String, "resource-packs").absolutePath,
+        "--archives", File(workspacePaths["build"] as String, "resource-pack-archives").absolutePath)
 }
 
 val archiveAndroidRelease by tasks.registering(Copy::class) {
@@ -250,6 +234,7 @@ val verifyDesktopModelHookParity by tasks.registering {
 
 tasks.named("preBuild").configure {
     dependsOn(prepareAndroidResourceAssets)
+    dependsOn(stageAndroidCoreResources)
     dependsOn(verifyDesktopModelHookParity)
 }
 

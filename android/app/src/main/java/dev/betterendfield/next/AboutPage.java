@@ -66,7 +66,7 @@ final class AboutPage extends LinearLayout {
 
         SectionCard updates = card(Text.of("软件更新"));
         android.content.SharedPreferences prefs = FrameworkSettings.open(activity);
-        SettingRow autoCheckRow = new SettingRow(activity, Text.of("启动时自动检查更新"), Text.of("进入应用时自动检查 GitHub Releases 并提示新版本"), null);
+        SettingRow autoCheckRow = new SettingRow(activity, Text.of("启动时自动检查更新"), Text.of("检查软件版本并自动更新未固定的资源，预览包首次按需下载"), null);
         autoCheckRow.initialize(prefs.getBoolean(ModuleSettings.AUTO_CHECK_UPDATES, true));
         autoCheckRow.onChanged((button, checked) -> prefs.edit().putBoolean(ModuleSettings.AUTO_CHECK_UPDATES, checked).apply());
         updates.add(autoCheckRow);

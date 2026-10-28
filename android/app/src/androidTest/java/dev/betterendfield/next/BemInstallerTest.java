@@ -105,7 +105,7 @@ public final class BemInstallerTest extends Instrumentation {
         File input=new File(getInstrumentation().getTargetContext().getFilesDir(),realInput);
         if(!input.isFile()) {if(method.equals("testRealPackageConversionWhenProvided")) fail("Missing real package");return;}
         File output=new File(directory,"real-converted.bem");output.delete();String rules;
-        try(InputStream in=getInstrumentation().getTargetContext().getAssets().open("android-normal-rules.json")){rules=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);}
+        try(InputStream in=GameResourceStore.openCore(getInstrumentation().getTargetContext(),"model/android-normal-rules.json")){rules=new String(in.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8);}
         long start=System.currentTimeMillis();
         String report=BemInstaller.convertNative(input.getPath(),output.getPath(),rules,true);
         Files.writeString(new File(directory,"real-report.json").toPath(),report);

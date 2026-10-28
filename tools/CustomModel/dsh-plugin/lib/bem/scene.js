@@ -18,11 +18,8 @@ const SEMANTIC_TEXCOORD0 = 4
 /**
  * Texture format -> decoder family. Mirrors the Python table.
  *
- * `decodable` is a promise the browser build can actually keep. ASTC needs the
- * GPU's ASTC extension, which WebGL2 does not expose, so those blocks never get
- * a blob: handing the client a payload no decoder can read produced one failed
- * request per texture ("no decoder for astc", six of them on one package)
- * instead of the one sentence that explains it.
+ * BC formats use the browser worker. ASTC exposes compressed blocks for direct
+ * GPU upload; support is checked by the viewing browser rather than the host OS.
  */
 const TEXTURE_FAMILY = {
   4: { family: 'rgba32', block: null, bytesPerBlock: null, decodable: true },
@@ -31,9 +28,9 @@ const TEXTURE_FAMILY = {
   25: { family: 'bc7', block: 4, bytesPerBlock: 16, decodable: true },
   26: { family: 'bc4', block: 4, bytesPerBlock: 8, decodable: true },
   27: { family: 'bc5', block: 4, bytesPerBlock: 16, decodable: true },
-  48: { family: 'astc', block: 4, bytesPerBlock: 16, decodable: false },
-  49: { family: 'astc', block: 5, bytesPerBlock: 16, decodable: false },
-  50: { family: 'astc', block: 6, bytesPerBlock: 16, decodable: false },
+  48: { family: 'astc', block: 4, bytesPerBlock: 16, decodable: true },
+  49: { family: 'astc', block: 5, bytesPerBlock: 16, decodable: true },
+  50: { family: 'astc', block: 6, bytesPerBlock: 16, decodable: true },
   63: { family: 'unknown', block: null, bytesPerBlock: null, decodable: false },
 }
 

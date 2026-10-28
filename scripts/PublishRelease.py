@@ -127,6 +127,21 @@ def main():
                       "draft": False, "prerelease": False, "make_latest": "true"})
         if release["tag_name"] != args.tag or release["draft"]:
             raise RuntimeError("GitHub did not publish the requested release tag")
+        # Keep the unified entry in step with normal software releases. Older
+        # installations continue using /releases/latest and the release list.
+        try:
+            resource_release = api(base + "/releases/tags/game-resources")
+        except urllib.error.HTTPError as error:
+            if error.code != 404: raise
+            resource_release = None
+        if resource_release and not resource_release["draft"]:
+            import sys
+            with __import__('tempfile').TemporaryDirectory(prefix='be-distribution-index-') as temporary:
+                software_path=Path(temporary)/'software.json'
+                software_path.write_text(json.dumps(dict(version=args.tag.removeprefix('v'),releaseUrl=release['html_url'],
+                    assets=[dict(name=a['name'],url=a['browser_download_url'],bytes=a['size']) for a in release['assets']])),encoding='utf-8')
+                subprocess.run([sys.executable, str(Path(__file__).with_name('PublishResourceRelease.py')),
+                    '--refresh-software', '--software-index',str(software_path), '--output', str(Path(temporary)/'distribution-index.json'), '--publish'], check=True)
     print(json.dumps({"url": release["html_url"], "tag": release["tag_name"], "draft": release["draft"],
                       "assets": [{"name": a["name"], "bytes": a["size"],
                                   **({"digest": a.get("digest")} if args.verify_digest else {})}

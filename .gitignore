@@ -33,6 +33,10 @@ scripts/*
 !scripts/BuildBemTools.ps1
 !scripts/BuildBemCliAndroid.ps1
 !scripts/BuildDshPlugin.py
+!scripts/BuildResourcePacks.py
+!scripts/PublishResourceRelease.py
+!scripts/ExportDeviceResources.py
+!scripts/BuildPreviewResources.py
 !scripts/BuildBetterEndfieldNext.ps1
 !scripts/BuildWeb.ps1
 !scripts/PublishRelease.py

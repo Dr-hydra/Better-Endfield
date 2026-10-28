@@ -5,7 +5,7 @@
   "wwiseHash": "lowercase UTF-8 FNV-1 32-bit",
   "hircSoundMediaIdOffset": 9,
   "source": {
-    "path": "inputs/1.6.3/Windows/baseline/Table/AudioDialog.json",
+    "path": "inputs/current-distribution/Windows/Table/AudioDialog.json",
     "sha256": "9A03B24D43DDFBFD6D18E3D96EA5B24EB15D3FA9B57D764732E2849F51FED14D",
     "aliases": {
       "path": "resources/voice/voice-event-aliases.json",
@@ -475773,8 +475773,8 @@
   ],
   "versionInputs": {
     "snapshot": {
-      "path": "inputs/1.6.3/Windows/baseline/input-snapshot.json",
-      "sha256": "58B77B887D43D45A29A6D31B7BB102D1CDC2D24AA06CABBE45B601AB8BF0B883"
+      "path": "inputs/current-distribution/Windows/input-snapshot.json",
+      "sha256": "DD54888E1A001F594C626C9B9D7963AD2234463866F0141B27804AEEE43D7F9B"
     },
     "overlayOrder": [
       "StreamingAssets",
@@ -475783,8 +475783,8 @@
     "files": [
       {
         "path": "Bundles/Windows/manifest.hgmmap",
-        "size": 54534471,
-        "sha256": "BD1EB48444E5ABC5F10DB19C5446FB7B9514EE91F7704320D5DBB6CD6DBA0CBA"
+        "size": 54530637,
+        "sha256": "D6210FB23C0ADBC5B1C15FD506A5D910BF002A6F228B3B340EE4E6D69A78A905"
       },
       {
         "path": "TableCfg/AudioDialog.bytes",

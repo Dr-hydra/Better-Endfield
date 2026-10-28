@@ -21,6 +21,27 @@ const NS = 'bem-preview'
 const API = '/dsh-bem/'
 
 const zh = {
+  resources: "预览资源",
+  resourceReady: "已启用",
+  resourceMissing: "未启用可用的预览资源",
+  resourceCharacters: "个角色 / 变体",
+  astcAvailable: "当前浏览器支持 ASTC，可选择 ASTC 以减少解码开销，也可使用 BC7。",
+  astcUnavailable: "当前浏览器不支持 ASTC，建议选择 BC7。由你选择，不按服务器系统决定。",
+  resourceFormat: "资源包格式",
+  resourcePath: "DSH 运行端的本地目录",
+  resourcePathHint: "resources 根目录或含 manifest.json 的包目录",
+  resourceApply: "应用并刷新预览",
+  resourceLocalOnly: "仅读取已解压的本地资源，不自动下载。路径设置仅用于当前 DSH 会话；长期使用可设置 BEM_PREVIEW_RESOURCES 和 BEM_PREVIEW_PLATFORM。",
+  resourceRelease: "打开资源发布页",
+  nativeCompletion: "原生补全",
+  native_ready: "已就绪",
+  native_not_installed: "未安装预览资源",
+  native_character_not_covered: "资源未覆盖此角色",
+  native_identity_mismatch: "角色部件身份不匹配",
+  native_invalid_package: "资源包无效",
+  native_invalid_character: "部分角色资源无效",
+  native_pinned_version_missing: "固定的资源版本不存在",
+
   'view.preview': '预览',
   empty: '还没有可预览的包',
   emptyHint: '让 agent 调用 bem 工具：{ action: "preview", path: "…/xxx.bem" }，这里会立刻出现模型。',
@@ -44,17 +65,38 @@ const zh = {
   decodeFailed: '张解码失败',
   clay: '素模',
   noTexture: '无贴图',
-  astc: 'ASTC 贴图不在浏览器内解码',
-  astcCount: '{n} 张 ASTC 贴图不在浏览器内解码',
+  astc: 'ASTC 贴图需要浏览器 GPU 支持，不支持时可选 BC7',
+  astcCount: '{n} 张 ASTC 贴图需要浏览器 GPU 支持，不支持时可选 BC7',
   reset: '重置视角',
   controlsMouse: '左键旋转 · 右键/中键或 Shift+拖动平移 · 滚轮缩放',
   controlsTouch: '单指旋转 · 双指平移/缩放',
   showAll: '全部显示',
   hideNone: '全部隐藏',
-  note: '预览的是包内的替换网格，原始角色几何不在包内。',
+  note: '显示包内网格；本地资源可按精确身份补全保留的原生部件。',
 }
 
 const en = {
+  resources: "Preview resources",
+  resourceReady: "Active",
+  resourceMissing: "No usable preview resources selected",
+  resourceCharacters: "characters / variants",
+  astcAvailable: "This browser supports ASTC. Select ASTC to avoid BC decoding, or use BC7.",
+  astcUnavailable: "This browser lacks ASTC support; BC7 is recommended. The choice is yours, independent of the server OS.",
+  resourceFormat: "Pack format",
+  resourcePath: "Local directory on the DSH host",
+  resourcePathHint: "resources root or pack directory containing manifest.json",
+  resourceApply: "Apply and refresh preview",
+  resourceLocalOnly: "Reads extracted local files only; never downloads automatically. Selection lasts for this DSH session; use BEM_PREVIEW_RESOURCES and BEM_PREVIEW_PLATFORM for persistent configuration.",
+  resourceRelease: "Open resource release",
+  nativeCompletion: "Native completion",
+  native_ready: "Ready",
+  native_not_installed: "Preview resources not installed",
+  native_character_not_covered: "Character not covered",
+  native_identity_mismatch: "Component identities do not match",
+  native_invalid_package: "Invalid resource pack",
+  native_invalid_character: "Some character resources are invalid",
+  native_pinned_version_missing: "Pinned resource version is missing",
+
   'view.preview': 'Preview',
   empty: 'No preview yet',
   emptyHint: 'Ask the agent to call the bem tool: { action: "preview", path: "…/xxx.bem" }.',
@@ -78,14 +120,14 @@ const en = {
   decodeFailed: 'failed to decode',
   clay: 'Clay',
   noTexture: 'No texture',
-  astc: 'ASTC textures are not decoded in the browser build',
-  astcCount: '{n} ASTC textures are not decoded in the browser build',
+  astc: 'ASTC requires GPU support; select BC7 if unavailable',
+  astcCount: '{n} ASTC requires GPU support; select BC7 if unavailable',
   reset: 'Reset view',
   controlsMouse: 'Left drag: orbit · Right/middle or Shift+drag: pan · Wheel: zoom',
   controlsTouch: 'One finger: orbit · Two fingers: pan/pinch',
   showAll: 'Show all',
   hideNone: 'Hide all',
-  note: 'Previews the replacement meshes in the package; the original character geometry is not included.',
+  note: 'Shows package meshes and, when local resources match, untouched original components.',
 }
 
 /* ------------------------------------------------------------------ */
@@ -221,6 +263,7 @@ in vec3 aNormal;
 in vec2 aUv;
 uniform mat4 uProjection;
 uniform mat4 uView;
+uniform vec4 uUvTransform;
 out vec3 vNormal;
 out vec2 vUv;
 out vec3 vWorld;
@@ -228,7 +271,7 @@ void main() {
   vec4 world = vec4(aPosition, 1.0);
   vWorld = world.xyz;
   vNormal = aNormal;
-  vUv = aUv;
+  vUv = aUv * uUvTransform.xy + uUvTransform.zw;
   gl_Position = uProjection * uView * world;
 }`
 
@@ -403,6 +446,7 @@ class Stage {
       hasAlbedo: gl.getUniformLocation(program, 'uHasAlbedo'),
       clay: gl.getUniformLocation(program, 'uClay'),
       camera: gl.getUniformLocation(program, 'uCamera'),
+      uvTransform: gl.getUniformLocation(program, 'uUvTransform'),
     }
 
     this.meshes = []
@@ -584,6 +628,8 @@ class Stage {
           texture: draw.textures.length > 0 ? draw.textures[0] : null,
           when: draw.when,
           material: draw.material,
+          uvTransform: draw.uvTransform || [1, 1, 0, 0],
+          appearance: draw.appearance || null,
         })
       }
       const normals = computeNormals(base, [...indexArrays.values()])
@@ -739,17 +785,18 @@ class Stage {
       }
     }
     if (wanted.size === 0) return
-    // A texture the host refused to serve is not a decode failure. ASTC has no
-    // browser decoder, so the host marks it `blob: null` with a reason; asking
-    // the worker anyway turned one explained decision into a wall of errors.
-    const requestable = [...wanted].filter((index) => scene.textures[index]?.blob)
+    // Keep unsupported ASTC out of both fetch and BC-worker queues. The panel
+    // and overlay explain the capability; unsupported formats are not failures.
+    const astcAvailable = Boolean(this.gl.getExtension('WEBGL_compressed_texture_astc'))
+    const requestable = [...wanted].filter((index) => scene.textures[index]?.blob && (scene.textures[index].family !== 'astc' || astcAvailable))
     this.pendingDecodes = requestable.length
     this.reportStatus()
     await Promise.all(requestable.map(async (index) => {
       const texture = scene.textures[index]
       try {
-        if (texture.family === 'rgba32') {
+        if (texture.family === 'rgba32' || texture.family === 'astc') {
           const response = await fetch(`${API}api/blob/${this.sceneId}/${texture.blob}`)
+          if (!response.ok) throw new Error(`texture HTTP ${response.status}`)
           const data = new Uint8Array(await response.arrayBuffer())
           this.uploadTexture(index, texture, data)
         } else {
@@ -772,10 +819,20 @@ class Stage {
     const handle = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, handle)
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
-    const internal = texture.srgb ? gl.SRGB8_ALPHA8 : gl.RGBA8
-    gl.texImage2D(gl.TEXTURE_2D, 0, internal, texture.width, texture.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
-    gl.generateMipmap(gl.TEXTURE_2D)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    if (texture.family === 'astc') {
+      const extension = gl.getExtension('WEBGL_compressed_texture_astc')
+      const key = `COMPRESSED_${texture.srgb ? 'SRGB8_ALPHA8' : 'RGBA'}_ASTC_${texture.block}x${texture.block}_KHR`
+      const internal = extension?.[key]
+      if (internal === undefined) { gl.deleteTexture(handle); throw new Error('ASTC texture format is not supported by this browser') }
+      gl.compressedTexImage2D(gl.TEXTURE_2D, 0, internal, texture.width, texture.height, 0, data)
+      if (gl.getError() !== gl.NO_ERROR) { gl.deleteTexture(handle); throw new Error('ASTC GPU upload failed; select BC7') }
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    } else {
+      const internal = texture.srgb ? gl.SRGB8_ALPHA8 : gl.RGBA8
+      gl.texImage2D(gl.TEXTURE_2D, 0, internal, texture.width, texture.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
+      gl.generateMipmap(gl.TEXTURE_2D)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    }
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
@@ -835,7 +892,9 @@ class Stage {
       gl.bindVertexArray(mesh.vao)
       for (const draw of mesh.draws) {
         if (draw.when && !evalWhen(draw.when, state)) continue
+        if (draw.appearance && draw.appearance !== this.appearance) continue
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffers.get(draw.blob))
+        gl.uniform4fv(this.loc.uvTransform, draw.uvTransform)
         const handle = texturesOn && draw.texture !== null ? this.textureUnits.get(draw.texture) : null
         if (handle) {
           gl.bindTexture(gl.TEXTURE_2D, handle)
@@ -932,6 +991,51 @@ const styles = {
     textAlign: 'center',
     color: 'var(--color-text-secondary, #9aa0a6)',
   },
+}
+
+function ResourcePanel({ t, gl }) {
+  const [open, setOpen] = React.useState(false)
+  const [info, setInfo] = React.useState(null)
+  const [path, setPath] = React.useState('')
+  const [platform, setPlatform] = React.useState('windows')
+  const [busy, setBusy] = React.useState(false)
+  const [error, setError] = React.useState(null)
+  const [astc, setAstc] = React.useState(null)
+  React.useEffect(() => {
+    if (!open) return undefined
+    let cancelled = false
+    const context = gl || document.createElement('canvas').getContext('webgl2')
+    setAstc(Boolean(context?.getExtension('WEBGL_compressed_texture_astc')))
+    if (!gl) context?.getExtension('WEBGL_lose_context')?.loseContext()
+    setBusy(true)
+    fetch(`${API}api/resources`, { cache: 'no-store' }).then(async (response) => {
+      if (!response.ok) throw new Error(`resources HTTP ${response.status}`)
+      const data = await response.json()
+      if (!cancelled) { setInfo(data); setPath(data.path || ''); setPlatform(data.selectedPlatform || 'windows'); setError(null) }
+    }).catch((failure) => { if (!cancelled) setError(failure.message) }).finally(() => { if (!cancelled) setBusy(false) })
+    return () => { cancelled = true }
+  }, [open])
+  const apply = async () => {
+    setBusy(true); setError(null)
+    try {
+      const response = await fetch(`${API}api/resources`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path, platform }) })
+      const data = await response.json()
+      if (!response.ok || !data.ok) throw new Error(data.error || data.message || data.reason || `HTTP ${response.status}`)
+      setInfo(data)
+    } catch (failure) { setError(failure.message) } finally { setBusy(false) }
+  }
+  return h('details', { style: { ...styles.section, maxWidth: '100%' }, onToggle: (event) => setOpen(event.currentTarget.open) },
+    h('summary', { style: { ...styles.sectionTitle, cursor: 'pointer' } }, t('resources')),
+    open ? h('div', { style: { display: 'grid', gap: 8, paddingTop: 8 } },
+      h('div', { style: styles.muted }, info?.status === 'ready' ? `${t('resourceReady')} · ${info.version} · ${info.characters} ${t('resourceCharacters')}` : t('resourceMissing')),
+      h('div', { style: styles.muted }, t(astc ? 'astcAvailable' : 'astcUnavailable')),
+      h('label', null, t('resourceFormat'), h('select', { value: platform, disabled: busy, onChange: (event) => setPlatform(event.target.value), style: { width: '100%', marginTop: 4 } },
+        h('option', { value: 'windows' }, 'BC7 (Windows)'), h('option', { value: 'android' }, 'ASTC (Android)'))),
+      h('label', null, t('resourcePath'), h('input', { value: path, disabled: busy, onChange: (event) => setPath(event.target.value), style: { width: '100%', boxSizing: 'border-box', marginTop: 4 }, placeholder: t('resourcePathHint') })),
+      h('button', { style: styles.chip, disabled: busy || !path.trim(), onClick: apply }, t(busy ? 'loading' : 'resourceApply')),
+      error ? h('div', { role: 'alert', style: { color: '#d66', overflowWrap: 'anywhere' } }, error) : null,
+      h('div', { style: styles.muted }, t('resourceLocalOnly')),
+      h('a', { href: 'https://github.com/Dr-hydra/Better-Endfield/releases/tag/game-resources', target: '_blank', rel: 'noreferrer' }, t('resourceRelease'))) : null)
 }
 
 function PreviewView() {
@@ -1071,7 +1175,16 @@ function PreviewView() {
       const chosen = scene.appearances.find((item) => item.id === appearance) || scene.appearances[0]
       base = meshesForAppearance(chosen)
     } else base = new Set(scene.meshes.map((mesh) => mesh.index))
-    if (base.size === 0) base = new Set(scene.meshes.map((mesh) => mesh.index))
+    // An all-hide choice is deliberately empty; never re-enable every mesh.
+    const chosen = scene.appearances.find((item) => item.id === appearance) || scene.appearances[0]
+    for (const item of scene.nativeMeshes || []) {
+      const rule = scene.componentRules.find((rule) => rule.target === item.target)
+      const operation = scene.componentRules.length
+        ? rule?.candidates.find((candidate) => evalWhen(candidate.when, optionState))?.operation
+        : chosen?.components.find((component) => component.target === item.target)?.operation
+      if (!operation || operation === 'keep') base.add(item.index)
+      else base.delete(item.index)
+    }
     const result = new Set()
     for (const index of base) if (!hidden[index]) result.add(index)
     return result
@@ -1091,7 +1204,8 @@ function PreviewView() {
     const stage = stageRef.current
     if (!stage || !scene) return
     stage.setVisibility(activeMeshes, optionState)
-  }, [activeMeshes, optionState, scene])
+    stage.appearance = appearance || scene.defaultAppearance || scene.appearances[0]?.id
+  }, [activeMeshes, optionState, appearance, scene])
 
   React.useEffect(() => {
     const stage = stageRef.current
@@ -1113,7 +1227,8 @@ function PreviewView() {
   const decodeNote = status.pending > 0 ? `${t('decoding')}…` : null
   // Counted from what the host said it could not serve, not from a failed
   // request: an ASTC package reports 22 skipped textures and zero errors.
-  const astcCount = (scene?.textures || []).filter((texture) => texture.family === 'astc' && !texture.blob).length
+  const astcSupported = Boolean(stageRef.current?.gl.getExtension('WEBGL_compressed_texture_astc'))
+  const astcCount = (scene?.textures || []).filter((texture) => texture.family === 'astc' && (!texture.blob || !astcSupported)).length
 
   // Before `error`: a service that has stopped answering invalidates whatever the
   // last scene load reported, and this is the state that would otherwise look
@@ -1134,7 +1249,8 @@ function PreviewView() {
   if (!latest?.id) {
     return h('div', { style: styles.empty },
       h('div', { style: styles.title }, t('empty')),
-      h('div', { style: { maxWidth: 420 } }, t('emptyHint')))
+      h('div', { style: { maxWidth: 420 } }, t('emptyHint')),
+      h(ResourcePanel, { t }))
   }
 
   if (!scene) {
@@ -1164,6 +1280,9 @@ function PreviewView() {
           status.errors.size > 0 ? ` · ${status.errors.size} ${t('decodeFailed')}` : ''),
       ),
       h('div', { style: styles.panel },
+        h(ResourcePanel, { t, gl: stageRef.current?.gl }),
+        scene.nativeCompletion ? h('div', { style: { ...styles.muted, padding: '4px 0 12px', overflowWrap: 'anywhere' }, title: scene.nativeCompletion.message || scene.nativeCompletion.reason },
+          `${t('nativeCompletion')}: ${t('native_' + scene.nativeCompletion.reason)} · ${scene.nativeCompletion.meshes} ${t('parts')}`) : null,
         scene.appearances.length > 0
           ? h('div', { style: styles.section },
             h('div', { style: styles.sectionTitle }, t('appearance')),

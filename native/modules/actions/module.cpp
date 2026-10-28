@@ -1,3 +1,6 @@
+#if defined(_WIN32)
+#include "../../shared/game_resources.h"
+#endif
 #include "BetterEndfieldNext/ModuleApi.h"
 #include "BetterEndfieldNext/PoseLease.h"
 #include "dash_policy.h"

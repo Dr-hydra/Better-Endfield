@@ -1,3 +1,6 @@
+#if defined(_WIN32)
+#include "../../shared/game_resources.h"
+#endif
 #include <BetterEndfieldNext/ModuleApi.h>
 
 #include "combat_overlay_protocol.h"
@@ -651,7 +654,7 @@ bool LoadCombatSemanticCatalog() {
     std::vector<std::filesystem::path> candidates;
     const std::filesystem::path module_directory = ModuleDirectory();
     if (!module_directory.empty()) {
-        candidates.push_back(module_directory / L"combat-semantics.besem");
+        candidates.push_back(BetterEndfieldNext::Resources::CoreFile(module_directory,"combat/combat-semantics.besem"));
     }
 
     std::string last_error = "catalogue was not found";

@@ -1,5 +1,5 @@
 """Read-only manager preview integration tests: pass BemCompose.exe."""
-import copy,json,struct,subprocess,sys,tempfile,unittest
+import copy,json,struct,subprocess,sys,tempfile,unittest,shutil
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools/CustomModel'))
 from test_bem_v1 import fixture
@@ -43,6 +43,29 @@ class PreviewTests(unittest.TestCase):
   self.assertLessEqual(report['result']['scene_budget_bytes'],4*1024*1024*1024)
  def test_native_keep_and_replace(self):
   b=options();scene,_=self.preview(b,gpu=self.native(b));self.assertEqual(scene['nativeCompletion']['status'],'ready');self.assertEqual([m['component'] for m in scene['meshes'] if m.get('native')],[1]);self.assertEqual(len(scene['meshes']),2)
+ def repository(self,b,platform='android'):
+  caps=self.native(b);root=self.root/'repository';folder=root/'characters/chr_test/default';folder.parent.mkdir(parents=True);shutil.move(caps['nativeAssets'],folder)
+  (root/'characters.json').write_text(json.dumps(dict(schemaVersion=1,characters=[dict(character='chr_test',path='characters/chr_test/default',resourceRoots=['world'],assetPaths=[])])))
+  self.seal_repository(root,platform);caps['nativeAssets']=str(root);return caps
+ def seal_repository(self,root,platform='android'):
+  files={p.relative_to(root).as_posix():p.stat().st_size for p in root.rglob('*') if p.is_file() and p.name!='manifest.json'}
+  (root/'manifest.json').write_text(json.dumps(dict(schemaVersion=1,kind='betterendfield-resource-pack',packageType='preview',platform=platform,version='1.6.4.1',files=files)))
+ def test_repository_character_lookup(self):
+  b=options();scene,_=self.preview(b,gpu=self.repository(b));self.assertEqual(scene['nativeCompletion']['status'],'ready');self.assertEqual(scene['nativeCompletion']['resourceVersion'],'1.6.4.1');self.assertEqual(len(scene['meshes']),2)
+ def test_repository_wrong_platform_is_optional(self):
+  b=options();scene,_=self.preview(b,gpu=self.repository(b,'windows'));self.assertEqual(scene['nativeCompletion']['reason'],'wrong_platform');self.assertEqual(len(scene['meshes']),1)
+ def test_repository_desktop_platform(self):
+  b=options();caps=self.repository(b,'windows');caps['desktop']=True;scene,_=self.preview(b,gpu=caps);self.assertEqual(scene['nativeCompletion']['status'],'ready')
+ def test_repository_unknown_character(self):
+  b=options();caps=self.repository(b);root=Path(caps['nativeAssets']);p=root/'characters.json';index=json.loads(p.read_text());index['characters'][0]['character']='other';p.write_text(json.dumps(index));self.seal_repository(root);scene,_=self.preview(b,gpu=caps);self.assertEqual(scene['nativeCompletion']['reason'],'character_not_covered');self.assertEqual(len(scene['meshes']),1)
+ def test_repository_truncated_payload_is_optional(self):
+  b=options();caps=self.repository(b);(Path(caps['nativeAssets'])/'characters/chr_test/default/t.bin').write_bytes(b'bad');scene,_=self.preview(b,gpu=caps);self.assertEqual(scene['nativeCompletion']['status'],'invalid');self.assertEqual(len(scene['meshes']),1)
+ def test_repository_ambiguous_identity(self):
+  b=options();caps=self.repository(b);root=Path(caps['nativeAssets']);p=root/'characters.json';index=json.loads(p.read_text());index['characters']*=2;p.write_text(json.dumps(index));self.seal_repository(root);scene,_=self.preview(b,gpu=caps);self.assertEqual(scene['nativeCompletion']['status'],'invalid');self.assertEqual(len(scene['meshes']),1)
+ def test_repository_unrelated_character_payload_is_not_loaded(self):
+  b=options();caps=self.repository(b);root=Path(caps['nativeAssets']);p=root/'characters.json';index=json.loads(p.read_text());index['characters'].append(dict(character='other',path='characters/other/default',resourceRoots=['world'],assetPaths=[]));p.write_text(json.dumps(index));self.seal_repository(root);scene,_=self.preview(b,gpu=caps);self.assertEqual(scene['nativeCompletion']['status'],'ready')
+ def test_missing_repository_is_optional(self):
+  scene,_=self.preview(options());self.assertEqual(scene['nativeCompletion']['reason'],'not_installed');self.assertEqual(len(scene['meshes']),1)
  def test_native_hide(self):
   b=options();scene,_=self.preview(b,'outfit:b&part:off',gpu=self.native(b));self.assertEqual(scene['nativeCompletion']['meshes'],0)
  def test_native_texture_fallback(self):

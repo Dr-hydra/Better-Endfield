@@ -150,9 +150,8 @@ internal static class VoiceCatalogService
 
     private static LoadedCatalogIndex LoadIndex()
     {
-        using Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(
-            CatalogResourceName) ?? throw new InvalidOperationException(
-                $"Embedded voice catalog index was not found: {CatalogResourceName}");
+        using Stream stream = GameResourceStore.OpenCore("voice/voice-catalog-index.json") ?? throw new InvalidOperationException(
+                $"External voice catalog index was not found: {CatalogResourceName}");
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
         byte[] bytes = memory.ToArray();

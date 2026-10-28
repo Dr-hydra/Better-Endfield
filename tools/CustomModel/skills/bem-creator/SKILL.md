@@ -102,6 +102,15 @@ not have them, and the shell entries above stay authoritative either way.
   needs the 7-Zip backend, which is not shipped either (it refuses with `ARCHIVE_BACKEND`).
   Python 3.10–3.13 also needs `pip install zstandard` once; 3.14+ needs nothing.
 
+**Optional original-character resources.** Use the bem tool with action=resources to inspect
+local packs without downloading. With path=/local/resources and platform=windows (BC7) or
+platform=android (ASTC), it selects an extracted pack for this DSH session and refreshes the
+latest preview. The preview tab has a **Preview resources / 预览资源** panel for the same task.
+DSH can run on Android, and its browser can be on another device: **let the user choose;
+do not choose the texture pack from the server OS or BEM target alone.** Check the viewing
+browser's ASTC support, reuse local files first, and read
+[Preview resources](references/PREVIEW_RESOURCES.md) before selecting or downloading a pack.
+
 **The 预览 tab.** `{ "action": "preview", "path": "…/x.bem" }` builds a scene and the
 conversation's 预览 tab shows it: appearances and option groups as chips, `parameters` as
 sliders, per-part visibility, textures or clay. After a successful build, tell the user to open
@@ -110,14 +119,17 @@ before handing the package over.
 
 What the tab does **not** show, so do not let a user draw the wrong conclusion from it:
 
-- only the replacement meshes inside the package; the character's untouched geometry is not there;
-- ASTC textures are not decoded in the browser (BC1/BC3/BC4/BC5/BC7 are), so an android-target
-  package renders with some parts untextured;
+- without matching local resources, only package meshes are shown. With matching resources,
+  original geometry fills untouched keep components; hide/replace remain authoritative.
+  Missing resources leave the package previewable and report nativeCompletion diagnostics;
+- BC1/BC3/BC4/BC5/BC7 use browser decoders. ASTC uploads directly only when the viewing
+  browser exposes WEBGL_compressed_texture_astc. Otherwise suggest BC7 preview resources;
+  ASTC textures embedded in an Android BEM still require GPU support;
 - deformations move positions only, which is exactly what `mesh_deformations` stores.
 
 ## BEM Version Capabilities & Obsolete Rules Clearance
 
-Do not rely on outdated rules from older BEM 1.0–1.2 historical logs. The current system is BEM 1.5 (BEM Tools 1.6.4):
+Do not rely on outdated rules from older BEM 1.0–1.2 historical logs. The current system is BEM 1.5 (BEM Tools 1.6.5):
 - **Weapons & Static Meshes (1.4+)**: Non-character props, swords, sheaths, and static items are supported via explicit multi-resource roots. Do not mark weapon/prop mods as failed.
 - **Expanded Option Limits (1.2+)**: Max option groups is 64 (not 4); max choices per group is 64; per-component candidate draws is 4096 (not 512). Do not fail packages with large reachable state spaces.
 - **Two different draw limits — do not quote the wrong one**: 4096 is the *candidate* ceiling (per component, and 4096 across the whole package counting component rules + draws + texture-slot candidates). The *active* ceiling is **256 draws in any single reachable state** (`bem_v11.py:394`, `Selected draw limit exceeded`). A 1551-draw package is legal because its draws belong to mutually exclusive states; the same draws in one state are rejected. Quote 4096 when you mean declarations and 256 when you mean what renders.
@@ -147,11 +159,11 @@ extra package (the standard library provides zstd); on older interpreters run
 
 Run `--version` and `--help` to check the available commands. Do not assume the
 game runtime or creator profiles support a newer format because the extension matches.
-The toolchain in this tree is **BEM Tools 1.6.4**, which reads and writes **BEM 1.0–1.5**
+The toolchain in this tree is **BEM Tools 1.6.5**, which reads and writes **BEM 1.0–1.5**
 and refreshes Windows 1.6.3 target data. `bem_tool.py --version` is the authority; the
 `1.5.x` numbers that appear in older notes refer to earlier distributions that lacked
 1.4 or 1.5, so do not treat them as describing this tree. Verify with
-`BEM Tools 1.6.4 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`.
+`BEM Tools 1.6.5 / BEM 1.0+1.1+1.2+1.3+1.4+1.5`.
 
 Read [the creator guide](references/BEM_CREATOR_GUIDE.en.md) for tools, export task projects,
 editable projects, sliders, importing and distribution. Read [the format specification](references/BEM_FORMAT_SPEC.en.md)
@@ -225,7 +237,7 @@ than produced by a supported path.
 **Where the toolchain lives.** The shipped GUI + CLI + catalogs + profiles + skills are published
 as `BEM-Tools-<version>-win-x64.zip`, with a separate CLI-only
 `BEM-Tools-<version>-android-arm64.tar.gz` for Android hosts, on the GitHub releases page of
-`https://github.com/Dr-hydra/Better-Endfield` (release `v4.1.3` carries BEM Tools 1.6.4). Those are
+`https://github.com/Dr-hydra/Better-Endfield` (release `v4.1.4` carries BEM Tools 1.6.5). Those are
 the only supported downloads; do not invent a mirror.
 
 The **native-asset dump path is partly in the repository and partly not**, and the split matters:
@@ -336,7 +348,7 @@ contain several independently managed packages. Multiple packages for one charac
 may be installed, but only one legacy package per character can be enabled. Source key combinations need reviewed reachability
 and resource mapping; do not blindly enumerate them as complete appearances.
 
-BEM Tools 1.6.4 supports BEM 1.4 explicit resources and static meshes; see
+BEM Tools 1.6.5 supports BEM 1.4 explicit resources and static meshes; see
 `references/BEM_V1_4_SPEC.md`. One 1.4 package owns a character or weapon ID and may declare
 multiple resource roots with separate component contracts. Conflict checks use resources
 on the current platform; updates preserve target kind/id. Windows currently executes only

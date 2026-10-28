@@ -23,6 +23,20 @@ final class OverlaySettingsClient {
     private static final OverlayReconnectPolicy reconnect = new OverlayReconnectPolicy();
     /** Installed exclusively by the scoped libxposed entry; never open preferences with the game Context. */
     static void initialize(Supplier<SharedPreferences> preferences) { frameworkPreferences = preferences; }
+    static java.io.InputStream openCore(Context app,String path) throws java.io.IOException {
+        Bundle request=new Bundle();
+        Supplier<SharedPreferences> source=frameworkPreferences;
+        if(source==null)throw new java.io.IOException("Resource bridge is not initialized");
+        request.putString(OverlayWriteAuthorization.REQUEST,source.get().getString(OverlayWriteAuthorization.PREFERENCE,""));
+        request.putString("path",path);
+        try {
+            Bundle reply=app.getContentResolver().call(Uri.parse("content://"+OverlaySettingsProvider.AUTHORITY),"read_resource",null,request);
+            if(reply==null || !reply.getBoolean("success"))throw new java.io.IOException(reply==null?"Resource bridge unavailable":reply.getString("error"));
+            android.os.ParcelFileDescriptor file=reply.getParcelable("file");
+            if(file==null)throw new java.io.IOException("Missing resource descriptor");
+            return new GameResourceStore.VersionedInput(new android.os.ParcelFileDescriptor.AutoCloseInputStream(file),reply.getString("version",""),reply.getLong("length"));
+        }catch(RuntimeException error){throw new java.io.IOException("Resource bridge failed",error);}
+    }
     private static final java.util.concurrent.ExecutorService WORKER = Executors.newSingleThreadExecutor(r -> {
         Thread thread = new Thread(r, "BetterEndfieldNext-OverlaySettings"); thread.setDaemon(true); return thread;
     });

@@ -47,6 +47,15 @@ public final class OverlaySettingsProvider extends ContentProvider {
         long identity = Binder.clearCallingIdentity();
         Bundle result = new Bundle();
         try {
+            if("read_resource".equals(method)) {
+                String path=extras==null?null:extras.getString("path");
+                if(path==null || path.length()>1024)throw new java.io.IOException("Invalid resource request");
+                GameResourceStore.Snapshot snapshot=GameResourceStore.resolve(app,"core");
+                if(snapshot==null)throw new java.io.IOException("Missing Android core resource pack");
+                java.io.File file=snapshot.file(path);
+                result.putParcelable("file",android.os.ParcelFileDescriptor.open(file,android.os.ParcelFileDescriptor.MODE_READ_ONLY));
+                result.putString("version",snapshot.version());result.putLong("length",file.length());result.putBoolean("success",true);return result;
+            }
             boolean models = "read_models".equals(method) || "edit_models".equals(method) || "disable_models".equals(method);
             if (!models && !"read_fov".equals(method) && !"edit_fov".equals(method))
                 throw new IllegalArgumentException("Unknown settings operation");

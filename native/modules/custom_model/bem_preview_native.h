@@ -1,4 +1,4 @@
-// Local static head data for manager previews only. Never participates in installation.
+// External, indexed static head data for previews. Never participates in BEM installation.
 #pragma once
 struct NativePreviewHead {
     J pack;
@@ -6,6 +6,8 @@ struct NativePreviewHead {
     std::map<uint32_t,J> renderers;
     std::map<std::string,size_t> textures;
     std::string diagnostic;
+    std::string reason,version,prefix;
+    J repository;
     uint64_t loaded=0;
     std::vector<uint8_t> Read(const std::string& name,size_t expected=0) {
         auto relative=std::filesystem::u8path(name);
@@ -15,19 +17,55 @@ struct NativePreviewHead {
         auto [a,b]=std::mismatch(base.begin(),base.end(),path.begin(),path.end());
         Require(a==base.end() && b!=path.end(),"Native preview path escapes resource directory");
         auto size=std::filesystem::file_size(path);
+        if(!repository.is_null()) {
+            const auto key=prefix+name;
+            Require(repository.at("files").contains(key) && repository.at("files").at(key).get<uint64_t>()==size,"Unlisted or incomplete native preview payload");
+        }
         Require(size<=32u*1024*1024 && loaded+size<=64u*1024*1024 && (!expected || size==expected),"Invalid native preview payload size");
         loaded+=size;std::vector<uint8_t> bytes(static_cast<size_t>(size));
         std::ifstream input(path,std::ios::binary);input.read(reinterpret_cast<char*>(bytes.data()),std::streamsize(size));
         Require(bool(input),"Truncated native preview payload");return bytes;
     }
     void Load(const std::filesystem::path& directory,const BemPackageInfo& info,const BemResourceInfo* active,
-              const std::string& resource,BemPocData& data) {
+              const std::string& resource,BemPocData& data,bool desktop=false) {
+        diagnostic="unavailable";reason="not_installed";
         if(directory.empty())return;
         root=directory;const auto original=data.textures.size();
         try {
+            reason="invalid_package";
+            if(std::filesystem::is_regular_file(root/"manifest.json")) {
+                repository=J::parse(Read("manifest.json"));
+                reason="unsupported_format";
+                Require(repository.at("schemaVersion")==1 && repository.at("kind")=="betterendfield-resource-pack" &&
+                    repository.at("packageType")=="preview","Unsupported preview repository");
+                reason="wrong_platform";
+                Require(repository.at("platform")== (desktop?"windows":"android"),"Wrong preview platform");
+                version=repository.at("version").get<std::string>();
+                reason="invalid_index";
+                const auto index=J::parse(Read("characters.json"));
+                Require(index.at("schemaVersion")==1,"Unsupported character index");
+                const J* match=nullptr;bool covered=false;
+                for(const auto& entry:index.at("characters")) {
+                    if(entry.at("character")!=info.character_id)continue;
+                    covered=true;bool target=false;
+                    if(active) {for(const auto& asset:entry.at("assetPaths"))if(asset==active->asset_path)target=true;}
+                    else {
+                        const std::string legacy=resource.empty()?info.world_resource:resource;
+                        for(const auto& name:entry.at("resourceRoots"))if(name==legacy || (legacy.empty() && name==info.character_id+"_postmodel"))target=true;
+                    }
+                    if(!target)continue;
+                    Require(!match,"Ambiguous native preview variant");match=&entry;
+                }
+                if(!match){reason=covered?"identity_mismatch":"character_not_covered";return;}
+                const auto relative=match->at("path").get<std::string>();
+                // Validate path and manifest membership before changing the read root.
+                Read(relative+"/pack.json");
+                root/=std::filesystem::u8path(relative);prefix=relative+"/";
+            }
+            reason="invalid_character";
             auto bytes=Read("pack.json");pack=J::parse(bytes);
             Require(pack.at("schema")==1 && pack.at("kind")=="native-head-preview-prototype","Unsupported native preview resources");
-            if(pack.at("character")!=info.character_id){diagnostic="unavailable";return;}
+            if(pack.at("character")!=info.character_id){reason="character_not_covered";return;}
             const auto manifest=J::parse(info.manifest_json);
             // An explicit resource must match its full asset identity. Legacy world/UI
             // targets carry their exact prefab root in world_resource/ui_resource.
@@ -57,7 +95,7 @@ struct NativePreviewHead {
                 }
                 if(match)renderers.emplace(uint32_t(global),*match);
             }
-            if(renderers.empty()){diagnostic="unmatched";return;}
+            if(renderers.empty()){diagnostic="unmatched";reason="identity_mismatch";return;}
             // Only known formats, exact authored mip extents and local bounded payloads.
             for(const auto& t:pack.at("textures")) {
                 BemTexture texture;texture.name=t.at("name");texture.original_name=texture.name;
@@ -72,6 +110,7 @@ struct NativePreviewHead {
                 textures.emplace(id,data.textures.size());data.textures.push_back(std::move(texture));
             }
             diagnostic="ready";
+            reason="ready";
         } catch(const std::exception&) {
             data.textures.resize(original);textures.clear();renderers.clear();diagnostic="invalid";
         }

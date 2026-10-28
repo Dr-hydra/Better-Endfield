@@ -2468,8 +2468,8 @@ public sealed partial class MainWindow : Window
         if (AutoCheckUpdatesToggle.IsOn)
         {
             AboutUpdateSectionHint.Text = isZh
-                ? "启动时自动检查 GitHub Releases，发现新版本时提示更新。"
-                : "Automatically checks GitHub Releases on startup and prompts when a new version is available.";
+                ? "启动时检查软件版本并自动更新未固定的资源，预览包首次按需下载。"
+                : "Checks software and updates unpinned resources on startup; preview resources are an optional first download.";
         }
         else
         {
@@ -2498,6 +2498,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
+            _ = Task.Run(async () => { try { await DistributionService.UpdateResourcesAsync(ResourceGameVersion(), false, false, CancellationToken.None); } catch { } });
             UpdateCheckResult result = await UpdateService.CheckAsync(CancellationToken.None);
             if (result.IsUpdateAvailable && !string.IsNullOrWhiteSpace(result.LatestVersion))
             {
@@ -4630,6 +4631,7 @@ public sealed partial class MainWindow : Window
             ? "终末地登录场景模型与角色配音控制器"
             : "Endfield Title Scene Models & Voice Router Controller";
         CurrentVersionTextBlock.Text = $"{(isZh ? "版本" : "Version")} {UpdateService.CurrentVersion}";
+        LocalizeResourceControls(isZh);
         AboutUpdateSectionTitle.Text = isZh ? "软件更新" : "Software Updates";
         AutoCheckUpdatesToggle.Header = isZh ? "启动时自动检查更新" : "Check for updates on startup";
         UpdateAboutUpdateHint();

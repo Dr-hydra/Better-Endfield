@@ -2353,6 +2353,16 @@
                                     <StackPanel Spacing="14">
                                         <TextBlock x:Name="AboutProjectSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="项目" />
                                         <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button x:Name="ResourceUpdateButton" Content="更新基础资源" Click="ResourceUpdateButton_Click" />
+                                            <Button x:Name="PreviewResourceButton" Content="下载预览资源" Click="PreviewResourceButton_Click" />
+                                            <Button x:Name="ImportResourceButton" Content="导入资源包 / 回退" Click="ImportResourceButton_Click" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button x:Name="ResumeResourceUpdatesButton" Content="恢复资源自动更新" Click="ResumeResourceUpdatesButton_Click" />
+                                            <Button x:Name="CancelResourceUpdateButton" Content="取消下载" Click="CancelResourceUpdateButton_Click" IsEnabled="False" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="ResourceUpdateStatus" Style="{StaticResource FieldHintStyle}" TextWrapping="Wrap" />
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
                                             <Button Click="OpenRepositoryButton_Click">
                                                 <StackPanel Orientation="Horizontal" Spacing="7">
                                                     <SymbolIcon Symbol="Link" />

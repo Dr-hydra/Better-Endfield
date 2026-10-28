@@ -190,10 +190,8 @@ internal static class PresetOptions
 
     private static IReadOnlyList<CharacterOption> LoadCharacters()
     {
-        using Stream stream = Assembly.GetExecutingAssembly()
-            .GetManifestResourceStream(CatalogResourceName) ??
-            throw new InvalidOperationException(
-                $"Embedded preset catalog was not found: {CatalogResourceName}");
+        using Stream? stream = BetterEndfieldNext.UI.Services.GameResourceStore.OpenCore("model/character-presets.json");
+        if (stream is null) return [];
         CharacterPresetCatalog catalog =
             JsonSerializer.Deserialize<CharacterPresetCatalog>(stream, new JsonSerializerOptions
             {
@@ -215,8 +213,7 @@ internal static class PresetOptions
 
     private static JsonDocument? LoadCombatDictionaryDocument()
     {
-        Stream? stream = Assembly.GetExecutingAssembly()
-            .GetManifestResourceStream(CombatDictionaryResourceName);
+        Stream? stream = BetterEndfieldNext.UI.Services.GameResourceStore.OpenCore("combat/combat-dictionary.json");
         if (stream == null) return null;
         using (stream)
         {
@@ -256,8 +253,7 @@ internal static class PresetOptions
     private static IReadOnlyDictionary<string, string> LoadChineseCharacterNames()
     {
         var names = new Dictionary<string, string>(LoadCategoryNames("characters"), StringComparer.OrdinalIgnoreCase);
-        Stream? stream = Assembly.GetExecutingAssembly()
-            .GetManifestResourceStream(ChineseNamesResourceName);
+        Stream? stream = BetterEndfieldNext.UI.Services.GameResourceStore.OpenCore("model/character-names.json");
         if (stream != null)
         {
             using (stream)
@@ -286,8 +282,7 @@ internal static class PresetOptions
     private static IReadOnlyDictionary<string, string> LoadEnglishCharacterNames()
     {
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        Stream? stream = Assembly.GetExecutingAssembly()
-            .GetManifestResourceStream(EnglishNamesResourceName);
+        Stream? stream = BetterEndfieldNext.UI.Services.GameResourceStore.OpenCore("model/character-names-en.json");
         if (stream != null)
         {
             using (stream)

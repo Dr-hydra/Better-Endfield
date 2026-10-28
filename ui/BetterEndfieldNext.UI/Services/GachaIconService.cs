@@ -23,8 +23,7 @@ internal static class GachaIconService
             return CombatHistoryService.LoadAvatar(itemId);
 
         if (!itemId.StartsWith("wpn_", StringComparison.OrdinalIgnoreCase)) return null;
-        string resourceName = $"BetterEndfieldNext.UI.Assets.gacha.weapon.{itemId}.png";
-        using Stream? source = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
+        using Stream? source = GameResourceStore.OpenCore($"icons/items/{itemId}.png");
         if (source is null) return null;
         using var memory = new MemoryStream();
         source.CopyTo(memory);

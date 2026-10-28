@@ -129,6 +129,7 @@ if ($LASTEXITCODE -ne 0) {
     --self-contained true -p:Platform=x64 -p:PublishSingleFile=true `
     -p:DebugType=None -p:DebugSymbols=false "-p:PublishDir=$publishDir\\" `
     "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
+    "-p:BEWorkspaceConfig=$WorkspaceConfig" `
     "-p:BECharacterPresetsPath=$($ws.resource_update.outputs.character_presets)" `
     "-p:BEVoiceCatalogIndexPath=$voiceCatalogIndex" `
     "-p:BECombatDictionaryPath=$($ws.resource_update.outputs.combat_dictionary)"
@@ -189,6 +190,15 @@ Copy-Item -LiteralPath (Join-Path $nativeStage "loaders") -Destination $publishD
 Copy-Item -LiteralPath (Join-Path $nativeStage "payloads") -Destination $publishDir -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $nativeStage "tools") -Destination $publishDir -Recurse -Force
 
+$resourceArgs = @((Join-Path $PSScriptRoot 'BuildResourcePacks.py'), '--platform', 'windows', '--type', 'core', '--output', (Join-Path $publishDir 'resources'))
+foreach ($legacyData in @('model-character-names.json','model-character-names-en.json','actions/pose_aglina.bin','actions/pose_liino.bin','combat-semantics.besem','buff-sources.bemap')) {
+    $legacyFile = Join-Path (Join-Path $publishDir 'modules') $legacyData
+    if (Test-Path -LiteralPath $legacyFile -PathType Leaf) { Remove-Item -LiteralPath $legacyFile -Force }
+}
+if ($WorkspaceConfig) { $resourceArgs += @('--workspace-config', $WorkspaceConfig) }
+& $python @resourceArgs
+if ($LASTEXITCODE -ne 0) { throw 'External core resource staging failed.' }
+
 $forbiddenReleaseMedia = Get-ChildItem -LiteralPath $publishDir -Recurse -File |
     Where-Object { $_.Extension -in @(".becat", ".wem", ".pck", ".bnk") }
 if ($forbiddenReleaseMedia) {
@@ -234,10 +244,6 @@ $requiredReleaseFiles = @(
     "modules\BetterEndfieldNext.CombatOverlay.exe",
     "modules\BetterEndfieldNext.MmdOverlay.exe",
     "modules\BetterEndfieldNext.ModelOverlay.exe",
-    "modules\model-character-names.json",
-    "modules\model-character-names-en.json",
-    "modules\combat-semantics.besem",
-    "modules\buff-sources.bemap",
     "modules\betterendfieldnext.ui.module.ini",
     "modules\betterendfieldnext.camera.module.ini",
     "modules\betterendfieldnext.actions.module.ini",

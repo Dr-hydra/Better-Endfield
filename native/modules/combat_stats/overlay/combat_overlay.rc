@@ -3,4 +3,4 @@
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST
     "combat_overlay.manifest"
 
-#include "avatars.generated.rcinc"
+// Game avatars are read from the external core resource pack.

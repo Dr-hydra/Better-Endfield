@@ -7,6 +7,7 @@ import argparse
 import copy
 import io
 import json
+import re
 from pathlib import Path
 import struct
 import subprocess
@@ -62,6 +63,8 @@ def main():
     ap.add_argument('--character', required=True)
     ap.add_argument('--output', required=True, type=Path)
     ap.add_argument('--astcenc', type=Path)
+    ap.add_argument('--scope', choices=['head','character'], default='head')
+    ap.add_argument('--variants', nargs='+', choices=['original-full','pc-1024','pc-2048','android-1024','android-2048'])
     args = ap.parse_args()
     if args.output.exists():
         raise ValueError('Output must be a new directory')
@@ -72,8 +75,16 @@ def main():
     words = ('face', 'hair', 'iris', 'brow', 'eye', 'head', 'mouth', 'teeth')
     renderers = [r for r in database['renderers'] if r['resource_root'] in roots
                  and '/Mesh_all/lod0/' in r['path']
-                 and any(w in r['name'].lower() for w in words)]
-    if not renderers or any(r['errors'] for r in renderers):
+                 and (args.scope == 'character' or any(w in r['name'].lower() for w in words))]
+    base_only = bool(args.variants) and 'original-full' not in args.variants
+    optional_issues = []
+    required_issues = []
+    for renderer in renderers:
+        for issue in renderer['errors']:
+            match = re.match(r'material [0-9]+/([^:]+): unresolved Texture2D reference:',issue)
+            if base_only and match and match[1] != '_BaseMap':optional_issues.append(issue)
+            else:required_issues.append(issue)
+    if not renderers or required_issues:
         raise ValueError('Head renderers are absent or contain unresolved references')
     args.output.mkdir(parents=True)
     common, meshes, canonical, geometry_keys = {}, [], {}, []
@@ -126,6 +137,10 @@ def main():
     variants = [('original-full', 16384, False, True), ('pc-1024', 1024, False, False), ('pc-2048', 2048, False, False)]
     if args.astcenc:
         variants += [('android-1024', 1024, True, False), ('android-2048', 2048, True, False)]
+    if args.variants:
+        variants = [v for v in variants if v[0] in args.variants]
+        if len(variants) != len(set(args.variants)):
+            raise ValueError('Requested Android variant requires --astcenc')
     for name, limit, astc, full in variants:
         files = dict(common)
         texture_rows = []
@@ -141,7 +156,10 @@ def main():
                     folder.mkdir(parents=True, exist_ok=True)
                     input_image = folder / f'{index}-{level}.png'
                     output_image = input_image.with_suffix('.astc')
-                    bc7_image(w, h, data).save(input_image)
+                    if tex['format']=='RGBA32':
+                        from PIL import Image
+                        Image.frombytes('RGBA',(w,h),data).save(input_image)
+                    else:bc7_image(w, h, data).save(input_image)
                     result = subprocess.run([str(args.astcenc), '-cs' if tex.get('serialized_color_space')==1 else '-cl', str(input_image), str(output_image), '6x6', '-medium', '-j', '4'],
                                             capture_output=True, text=True)
                     if result.returncode:
@@ -167,6 +185,8 @@ def main():
                 m['textures'] = [p for p in m['textures'] if p['property'] == '_BaseMap']
         pack = {'schema': 1, 'kind': 'native-head-preview-prototype', 'character': args.character,
                 'scope': 'all-material-textures' if full else 'base-color-preview',
+                'geometryScope': args.scope,
+                'omittedOptionalReferences': sorted(set(optional_issues)),
                 'snapshot': {'manifestVersion': snapshot.get('manifest_version')} if snapshot else None,
                 'meshes': meshes, 'textures': texture_rows, 'materials': materials, 'skeleton': skeleton,
                 'renderers': [{**r, 'previewMesh': canonical[r['mesh_id']]} for r in renderers],

@@ -8,6 +8,8 @@
 - [配置与日常入口](CONFIGURATION.md)
 - [工作区构建](BUILDING.md)
 - [测试规范](TESTING.md)
+- [双端资源解耦与预览资源包方案（分阶段实施）](RESOURCE_PACK_DECOUPLING_PLAN.md)
+- [外置资源读取接口与基础资源迁移（已实施范围）](RESOURCE_PACKS.md)
 
 ## 研究与阶段记录
 
@@ -23,6 +25,7 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
+| [Better Endfield Next 4.1.4](releases/4.1.4/RELEASE_4_1_4.md) | 双端资源解耦、统一分发、全角色预览与 Tools/DSH 1.6.5 | 发布记录 | Windows 1.6.3 / Android 1.6.4 |
 | [Better Endfield Next 3.4.1（2026-10-01）](releases/3.4.1/RELEASE_3_4_1.md) | 3.4.1双端发布范围、工具/实验开关及验证边界 | 发布记录 | not_applicable |
 | [Better Endfield Next 3.4.2](releases/3.4.2/RELEASE_3_4_2.md) | 3.4.2/Tools1.4.1功能与下载验证记录 | 发布记录 | not_applicable |
 | [Better Endfield Next 3.5.0](releases/3.5.0/RELEASE_3_5_0.md) | 3.5.0/Tools1.5.0发布元数据、构建结果及旧测试失败边界 | 发布记录 | not_applicable |
@@ -46,3 +49,5 @@
 | [终末地资源映射清单](../../manifests/shared/resource-manifest-report.md) | 动作/语音映射的版本、输入与覆盖统计 | 生成报告 | 1.5.3 |
 | [Task C handoff (2026-10-03)](../../native/tests/async_loading/README.md) | Request/Poll/Cancel、所有权/预算接口及独立验证目标 | 维护参考 | not_applicable |
 | [研究归档](../../research/README.md) | 轻量研究范围、postmodel结论名、旧实现与生产边界 | 历史过程 | 1.5.3 |
+
+- [统一分发、双端资源更新与全角色预览生成](DISTRIBUTION.md)

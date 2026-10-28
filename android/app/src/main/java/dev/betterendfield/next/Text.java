@@ -22,6 +22,22 @@ final class Text {
     private static final Map<String, String> ENGLISH = new HashMap<>(1024);
 
     static {
+        put("检查软件版本并自动更新未固定的资源，预览包首次按需下载","Check software and update unpinned resources; preview resources are an optional first download");
+        put("更新基础资源","Update core resources");
+        put("下载预览资源","Download preview resources");
+        put("恢复资源自动更新","Resume resource auto-update");
+        put("取消下载","Cancel download");
+        put("正在下载并校验资源…","Downloading and validating resources…");
+        put("资源检查完成，重启应用及游戏后生效。","Resource check complete; restart the app and game to apply changes.");
+        put("资源更新失败：","Resource update failed: ");
+        put("资源更新正在进行","A resource update is already running");
+        put("资源发布尚未就绪","The resource release is not available yet");
+        put("无法识别游戏版本","Cannot identify the game version");
+        put("已固定版本","Version pinned");
+        put("暂无兼容资源","No compatible resources available");
+        put("导入资源包","Import resource pack");
+        put("资源包已导入：","Resource pack imported: ");
+        put("资源包导入失败：","Resource import failed: ");
         overlay();
         install();
         mmd();

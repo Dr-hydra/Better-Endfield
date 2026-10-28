@@ -1,0 +1,92 @@
+{
+  "version": "4.1.4",
+  "date": "2026-10-28",
+  "status": "ready",
+  "hashes_calculated": false,
+  "windows": {
+    "fileVersion": "4.1.4.0",
+    "architecture": "x64",
+    "signing": "existing Next internal identity",
+    "obfuscation": "Obfuscar"
+  },
+  "android": {
+    "applicationId": "dev.betterendfield.next",
+    "versionName": "4.1.4",
+    "versionCode": 40104,
+    "architecture": "arm64-v8a",
+    "signing": "existing Next release identity",
+    "obfuscation": "R8"
+  },
+  "bem_tools": {
+    "version": "1.6.5",
+    "gui_file_version": "1.6.5.0",
+    "native_composer_bundled": true
+  },
+  "dsh_plugin": {
+    "version": "1.6.5"
+  },
+  "checks": {
+    "windows_release": "passed",
+    "windows_installer": "passed",
+    "android_release": "passed",
+    "bem_tools_packaging": "passed",
+    "android_cli_packaging": "passed",
+    "dsh_packaging_smoke": "passed",
+    "device_and_game_interaction": "not repeated",
+    "native_preview_regressions": "53 tests passed",
+    "distribution_and_resource_pack_regressions": "passed",
+    "windows_distribution_checks": "9 checks passed",
+    "game_resource_store": "passed",
+    "action_ini_preservation": "passed",
+    "dsh_resources": "15 tests passed",
+    "dsh_astc": "4 tests passed",
+    "resource_network_download": "not performed; local resource validation only"
+  },
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.4-Setup.exe",
+      "bytes": 76985976
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.4-Android-arm64.apk",
+      "bytes": 4425464
+    },
+    {
+      "name": "BEM-Tools-1.6.5-win-x64.zip",
+      "bytes": 74378980
+    },
+    {
+      "name": "BEM-Tools-1.6.5-android-arm64.tar.gz",
+      "bytes": 2104417
+    },
+    {
+      "name": "dsh-bem-creator-1.6.5.tgz",
+      "bytes": 2071030
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.4-win-x64.zip",
+      "bytes": 87257743,
+      "published": false
+    }
+  ],
+  "integrated_commits": [
+    "c75a2296",
+    "3b196523",
+    "40bfb46a",
+    "3aa60bb6",
+    "422b8954",
+    "cc37c8e7",
+    "2647c43b",
+    "78c6ec22",
+    "e7110002",
+    "c3664303",
+    "9844a072"
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.4",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.4"
+  }
+}

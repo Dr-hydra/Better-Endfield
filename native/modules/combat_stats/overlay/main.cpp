@@ -1,5 +1,5 @@
 #include "../combat_overlay_protocol.h"
-#include "character_assets.generated.h"
+#include "../../../shared/game_resources.h"
 
 #include <Windows.h>
 #include <objidl.h>
@@ -260,26 +260,32 @@ void AddRoundedRect(GraphicsPath& path, const RectF& rect, float radius) {
     path.CloseFigure();
 }
 
+struct CharacterAsset { std::string id; std::wstring name,name_en; };
+const std::vector<CharacterAsset>& CharacterAssets() {
+    static const auto assets=[] {
+        std::vector<CharacterAsset> result;wchar_t executable[32768]{};GetModuleFileNameW(nullptr,executable,32768);
+        const auto directory=std::filesystem::path(executable).parent_path();
+        try {
+            std::ifstream zh(BetterEndfieldNext::Resources::CoreFile(directory,"model/character-names.json"));
+            std::ifstream en(BetterEndfieldNext::Resources::CoreFile(directory,"model/character-names-en.json"));
+            const auto names=nlohmann::json::parse(zh),english=nlohmann::json::parse(en);
+            for(const auto& [id,value]:names.items())if(value.is_string())
+                result.push_back({id,Utf8ToWide(value.get<std::string>()),Utf8ToWide(english.value(id,id))});
+            result.push_back({"chr_9000_endmin",L"管理员",L"Endministrator"});
+        }catch(const std::exception&){}return result;
+    }();return assets;
+}
 const CharacterAsset* FindCharacter(std::string_view id) {
-    if (id == "chr_0002_endminm" || id == "chr_0003_endminf")
-        id = "chr_9000_endmin";
-    for (const auto& asset : kCharacterAssets) {
-        if (id == asset.id) return &asset;
-    }
+    if(id=="chr_0002_endminm" || id=="chr_0003_endminf")id="chr_9000_endmin";
+    for(const auto& asset:CharacterAssets())if(id==asset.id)return &asset;
     return nullptr;
 }
 
-std::unique_ptr<Bitmap> LoadPngResource(int resource_id) {
-    const HRSRC resource = FindResourceW(g_instance, MAKEINTRESOURCEW(resource_id), L"PNG");
-    if (!resource) return {};
-    const HGLOBAL loaded = LoadResource(g_instance, resource);
-    const DWORD size = SizeofResource(g_instance, resource);
-    const void* bytes = LockResource(loaded);
-    if (!bytes || !size) return {};
-    IStream* stream = SHCreateMemStream(static_cast<const BYTE*>(bytes), size);
-    if (!stream) return {};
-    std::unique_ptr<Bitmap> source(Bitmap::FromStream(stream));
-    stream->Release();
+std::unique_ptr<Bitmap> LoadPngResource(const std::string& id) {
+    wchar_t executable[32768]{};GetModuleFileNameW(nullptr,executable,32768);
+    const auto file=BetterEndfieldNext::Resources::CoreFile(std::filesystem::path(executable).parent_path(),"icons/avatars/"+id+".png");
+    if(file.empty())return {};
+    std::unique_ptr<Bitmap> source(Bitmap::FromFile(file.c_str()));
     if (!source || source->GetLastStatus() != Ok) return {};
     Bitmap* clone = source->Clone(0, 0, source->GetWidth(), source->GetHeight(),
         PixelFormat32bppPARGB);
@@ -292,7 +298,7 @@ Bitmap* AvatarFor(std::string_view id) {
         return found->second.get();
     const CharacterAsset* asset = FindCharacter(id);
     if (!asset) return nullptr;
-    auto image = LoadPngResource(asset->resource_id);
+    auto image = LoadPngResource(asset->id);
     Bitmap* result = image.get();
     g_avatar_cache.emplace(key, std::move(image));
     return result;
@@ -301,7 +307,7 @@ Bitmap* AvatarFor(std::string_view id) {
 std::wstring DisplayName(std::string_view id) {
     const bool is_en = IsEnglish();
     if (const CharacterAsset* asset = FindCharacter(id)) {
-        return (is_en && asset->name_en && asset->name_en[0]) ? asset->name_en : asset->name;
+        return (is_en && !asset->name_en.empty()) ? asset->name_en : asset->name;
     }
     if (id == "<unknown>") return is_en ? L"Unknown" : L"未知来源";
     return Utf8ToWide(id);

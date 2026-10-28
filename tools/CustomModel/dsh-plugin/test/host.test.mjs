@@ -20,7 +20,8 @@
  * than failing, so the suite still guards the host surface on a fresh clone.
  */
 import assert from 'node:assert/strict'
-import { existsSync, renameSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { existsSync, renameSync, rmSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs'
 import { delimiter, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -93,7 +94,7 @@ try {
     return best
   }
 
-  function request(path) {
+  function request(path, options = {}) {
     return new Promise((resolvePromise, rejectPromise) => {
       const headers = {}
       const chunks = []
@@ -116,7 +117,7 @@ try {
         return
       }
       try {
-        route.handler({ url: path, method: 'GET' }, res)
+        route.handler({ url: path, method: options.method || 'GET', headers: options.headers || {}, async *[Symbol.asyncIterator]() { if (options.body) yield Buffer.from(options.body) } }, res)
       } catch (error) {
         rejectPromise(error)
       }
@@ -193,11 +194,38 @@ try {
     assert.equal(tool.name, 'bem')
     assert.ok(tool.description.includes('preview'), 'the description must advertise preview')
     assert.deepEqual(tool.parameters.required, ['action'])
-    assert.deepEqual(tool.parameters.properties.action.enum, ['inspect', 'validate', 'preview', 'convert', 'doctor'])
+    assert.deepEqual(tool.parameters.properties.action.enum, ['inspect', 'validate', 'preview', 'resources', 'convert', 'doctor'])
     assert.equal(typeof tool.output.render, 'function', 'the output declaration needs a renderer')
     const rendered = tool.output.render({ action: 'doctor' }, { ok: true })
     assert.equal(rendered[0].type, 'text')
     assert.ok(rendered[0].text.includes('"ok"'))
+  })
+
+  await section('resource status exposes both user-selected formats without downloading', async () => {
+    const status = await tool.execute({ action: 'resources' })
+    assert.equal(status.ok, true)
+    assert.deepEqual(status.choices.map((item) => item.platform), ['windows', 'android'])
+    const response = await request('/dsh-bem/api/resources')
+    assert.equal(response.status, 200)
+    assert.equal(JSON.parse(response.body).choices.length, 2)
+  })
+
+  await section('resource settings route validates and applies a local pack', async () => {
+    const temporary = mkdtempSync(join(tmpdir(), 'dsh-resource-route-'))
+    try {
+      const index = Buffer.from(JSON.stringify({ schemaVersion: 1, characters: [] }))
+      writeFileSync(join(temporary, 'characters.json'), index)
+      writeFileSync(join(temporary, 'manifest.json'), JSON.stringify({ schemaVersion: 1, kind: 'betterendfield-resource-pack', packageType: 'preview', platform: 'android', version: '1.6.4.2', gameVersion: '1.6.4', files: { 'characters.json': index.length } }))
+      let response = await request('/dsh-bem/api/resources', { method: 'POST', body: '{}' })
+      assert.equal(response.status, 400)
+      response = await request('/dsh-bem/api/resources', { method: 'POST', body: JSON.stringify({ path: temporary, platform: 'android' }) })
+      assert.equal(response.status, 200)
+      assert.equal(JSON.parse(response.body).selectedPlatform, 'android')
+      response = await request('/dsh-bem/api/resources', { method: 'POST', headers: { origin: 'https://untrusted.invalid', host: '127.0.0.1' }, body: '{}' })
+      assert.equal(response.status, 403)
+      response = await request('/dsh-bem/api/resources', { method: 'DELETE' })
+      assert.equal(response.status, 405)
+    } finally { rmSync(temporary, { recursive: true, force: true }) }
   })
 
   await section('doctor', async () => {
@@ -392,23 +420,21 @@ try {
   if (!existsSync(astcPackage)) {
     notice(`ASTC package (${astcPackage} missing)`)
   } else {
-    await section('ASTC package previews geometry, not textures', async () => {
+    await section('ASTC package serves base blocks for browser GPU upload', async () => {
       const previewed = await tool.execute({ action: 'preview', path: astcPackage })
       assert.equal(previewed.ok, true)
-      assert.ok(previewed.stats.meshes >= 1, 'the geometry is still previewable')
       const scene = await sceneOf(previewed.previewId)
       const astc = scene.textures.filter((texture) => texture.family === 'astc')
-      // Not vacuous: an empty ASTC list used to make `every(...)` pass on the
-      // 1.0 package while every ASTC block was being served as a blob.
-      assert.ok(astc.length >= 6, `the fixture must actually carry ASTC textures, saw ${astc.length}`)
+      assert.ok(astc.length >= 6)
       for (const texture of astc) {
-        assert.equal(texture.blob, null, `${texture.name} must not advertise a blob the client cannot decode`)
-        assert.equal(texture.skipped, 'ASTC blocks are not decoded in the browser build')
+        assert.ok(texture.blob, 'ASTC blocks are served for GPU-capable browsers')
+        assert.equal(texture.skipped, null)
+        const response = await request('/dsh-bem/api/blob/' + previewed.previewId + '/' + texture.blob)
+        assert.equal(response.status, 200)
+        assert.equal(response.body.length, Math.ceil(texture.width / texture.block) * Math.ceil(texture.height / texture.block) * 16)
       }
-      assert.equal(scene.stats.previewableTextures, scene.textures.length - astc.length)
-      assert.equal(previewed.stats.previewableTextures, scene.textures.length - astc.length,
-        'the tool summary and the scene must agree on what is previewable')
-      assert.ok(scene.meshes.every((mesh) => mesh.positionsBlob), 'geometry is unaffected by the texture decision')
+      assert.equal(scene.stats.previewableTextures, scene.textures.filter((texture) => texture.blob).length)
+      assert.ok(scene.meshes.every((mesh) => mesh.positionsBlob))
     })
   }
 

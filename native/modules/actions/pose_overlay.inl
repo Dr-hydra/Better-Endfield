@@ -65,7 +65,8 @@ bool LoadPoseBank(const CharacterProfile* profile){
     wchar_t name[32768]{};HMODULE module=nullptr;
     if(!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS|GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,reinterpret_cast<LPCWSTR>(&g_pose_bank),&module)||
        !GetModuleFileNameW(module,name,static_cast<DWORD>(std::size(name))))return false;
-    const auto file=std::filesystem::path(name).parent_path()/L"actions"/profile->pose_file;
+    const auto file=BetterEndfieldNext::Resources::CoreFile(std::filesystem::path(name).parent_path(),
+        "actions/"+std::filesystem::path(profile->pose_file).string());
 #else
     // Android has no per-module DLL to locate the banks next to. The host
     // publishes the directory it materialized them into; the file names are the

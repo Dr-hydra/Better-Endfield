@@ -352,7 +352,7 @@ final class BemInstaller {
                     boolean astc=AstcSupport.available();
                     status=astc?Text.of("正在转换 ASTC 纹理；大包可能需要数分钟…"):Text.of("设备未报告 ASTC，正在生成 RGBA32 资源…");
                     String rules;
-                    try(InputStream in=app.getAssets().open("android-normal-rules.json");
+                    try(InputStream in=GameResourceStore.openCore(app,"model/android-normal-rules.json");
                         ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
                         byte[] buffer=new byte[8192];int count;
                         while((count=in.read(buffer))!=-1) bytes.write(buffer,0,count);
@@ -630,7 +630,7 @@ final class BemInstaller {
                 checkpoint();
                 loadCodec();
                 String rules = "{}";
-                try(InputStream in = app.getAssets().open("android-normal-rules.json");
+                try(InputStream in = GameResourceStore.openCore(app,"model/android-normal-rules.json");
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
                     byte[] buffer = new byte[8192]; int count;
                     while((count = in.read(buffer)) != -1) bytes.write(buffer, 0, count);

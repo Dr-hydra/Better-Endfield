@@ -1,3 +1,4 @@
+#include "../../../shared/game_resources.h"
 #include "win32_overlay_window.h"
 #include "model_library.h"
 #include "../runtime_ini_win32.h"
@@ -71,9 +72,9 @@ std::wstring CharacterName(const std::string& id) {
         loaded=true;wchar_t executable[32768]{};GetModuleFileNameW(nullptr,executable,32768);
         const auto directory=std::filesystem::path(executable).parent_path();
         for(const auto& [filename,target]:std::initializer_list<std::pair<const wchar_t*,std::map<std::string,std::string>*>>{
-                {L"model-character-names.json",&chinese},{L"model-character-names-en.json",&english}}) {
+                {L"model/character-names.json",&chinese},{L"model/character-names-en.json",&english}}) {
             try {
-                const auto names=Management::Json::parse(Settings::ReadFile(directory/filename));
+                const auto names=Management::Json::parse(Settings::ReadFile(BetterEndfieldNext::Resources::CoreFile(directory,std::filesystem::path(filename).string())));
                 if(names.is_object()) for(const auto& [key,value]:names.items())
                     if(value.is_string()) target->emplace(key,value.get<std::string>());
             } catch(const std::exception&) { }

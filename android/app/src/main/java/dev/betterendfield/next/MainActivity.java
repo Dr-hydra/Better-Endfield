@@ -130,6 +130,11 @@ public final class MainActivity extends Activity {
     private void checkUpdateOnStartup() {
         android.content.SharedPreferences prefs = FrameworkSettings.open(this);
         if (!prefs.getBoolean(ModuleSettings.AUTO_CHECK_UPDATES, true)) return;
+        boolean missingCore=GameResourceStore.resolve(this,"core")==null;
+        new Thread(() -> {try {
+            DistributionUpdater.update(getApplicationContext(),false,false);
+            if(missingCore && GameResourceStore.resolve(this,"core")!=null)runOnUiThread(()->{if(!isFinishing() && !isDestroyed())recreate();});
+        }catch(Exception ignored){}},"startup-resource-update").start();
         new Thread(() -> {
             try {
                 AppUpdateChecker.Result result = AppUpdateChecker.check();
@@ -197,6 +202,19 @@ public final class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        if(request==7412 && result==RESULT_OK && data!=null && data.getData()!=null) {
+            Uri uri=data.getData();
+            if(!DistributionUpdater.busy.compareAndSet(false,true)){Toast.makeText(this,Text.of("资源更新正在进行"),Toast.LENGTH_LONG).show();return;}
+            DistributionUpdater.cancelled.set(false);
+            new Thread(()->{try {
+                String installed;
+                try(java.io.InputStream source=new java.io.FilterInputStream(getContentResolver().openInputStream(uri)) {
+                    @Override public int read(byte[] b,int offset,int length)throws java.io.IOException {DistributionUpdater.checkCancelled();return super.read(b,offset,length);}
+                }) {installed=GameResourceStore.install(this,source);}
+                runOnUiThread(()->{Toast.makeText(this,Text.of("资源包已导入：")+installed,Toast.LENGTH_LONG).show();recreate();});
+            }catch(Exception error){runOnUiThread(()->Toast.makeText(this,Text.of("资源包导入失败：")+error.getMessage(),Toast.LENGTH_LONG).show());}finally{DistributionUpdater.busy.set(false);}},"resource-import").start();
+            return;
+        }
         if (bemPage != null) bemPage.onActivityResult(request, result, data);
     }
 
@@ -1103,6 +1121,24 @@ public final class MainActivity extends Activity {
         LinearLayout page = findViewById(R.id.about_section);
         aboutPage = new AboutPage(this);
         page.addView(aboutPage);
+        Button resources=new Button(this);resources.setText(Text.of("导入资源包"));
+        resources.setOnClickListener(v->startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("application/zip").addCategory(Intent.CATEGORY_OPENABLE),7412));
+        page.addView(resources);
+        TextView resourceStatus=new TextView(this);page.addView(resourceStatus);
+        for(String mode:List.of("core","preview","resume")) {
+            Button button=new Button(this);button.setText(Text.of(mode.equals("core")?"更新基础资源":mode.equals("preview")?"下载预览资源":"恢复资源自动更新"));
+            button.setOnClickListener(v->{
+                resourceStatus.setText(Text.of("正在下载并校验资源…"));
+                new Thread(()->{
+                    try {
+                        String result=DistributionUpdater.update(getApplicationContext(),mode.equals("preview"),mode.equals("resume"));
+                        runOnUiThread(()->{resourceStatus.setText(Text.of("资源检查完成，重启应用及游戏后生效。")+"\n"+result);});
+                    }catch(Exception error){runOnUiThread(()->resourceStatus.setText(Text.of("资源更新失败：")+error.getMessage()));}
+                },"resource-update").start();
+            });
+            page.addView(button);
+        }
+        Button cancel=new Button(this);cancel.setText(Text.of("取消下载"));cancel.setOnClickListener(v->DistributionUpdater.cancelled.set(true));page.addView(cancel);
     }
 
     private void applyResponsiveShell() {

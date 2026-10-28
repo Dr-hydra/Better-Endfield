@@ -1121,7 +1121,7 @@ def build_summary(actions: dict[str, Any], voices: dict[str, Any]) -> str:
     if version_inputs:
         for item in version_inputs["files"]:
             lines.append(
-                f"- `{item['path']}`：`{item['sha256']}`（{item['size']} bytes）"
+                f"- `{item['path']}`：`{item.get('sha256', 'not calculated')}`（{item['size']} bytes）"
             )
     else:
         lines.append("- 未提供 VFS Overlay 输入快照。")

@@ -213,6 +213,7 @@ def parse_blc_records(
     blc_path: Path,
     layer: str,
     target: re.Pattern[str],
+    chunk_ids: set[str] | None = None,
 ) -> list[VfsRecord]:
     plain = unpacker.decrypt_blc(str(blc_path))
     offset = 0
@@ -251,6 +252,8 @@ def parse_blc_records(
             _chunk_extension, offset = unpacker.read_i32(plain, offset)
         files_in_chunk, offset = unpacker.read_i32(plain, offset)
         chunk = chunk_md5.hex().upper()
+        if chunk_ids is not None:
+            chunk_ids.add(chunk)
         for _ in range(files_in_chunk):
             filename_length, offset = unpacker.read_u16(plain, offset)
             filename, offset = unpacker.read_string(

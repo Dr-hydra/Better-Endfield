@@ -31,6 +31,14 @@ final class AppUpdateChecker {
     }
 
     static Result check() throws Exception {
+        JSONObject distribution=DistributionUpdater.index();
+        if(distribution!=null) {
+            JSONObject software=distribution.getJSONObject("software");
+            String version=software.getString("version"),link=software.getString("releaseUrl");
+            if(!link.startsWith(RELEASES+"/"))throw new java.io.IOException("Invalid release URL");
+            boolean available=compareVersions(version,BuildConfig.VERSION_NAME)>0;
+            return new Result(available,version,BuildConfig.VERSION_NAME,link,available?Text.of("发现新版本 ")+version:Text.of("已是最新版本 · ")+BuildConfig.VERSION_NAME);
+        }
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL("https://api.github.com/repos/Dr-hydra/Better-Endfield/releases?per_page=30").openConnection();

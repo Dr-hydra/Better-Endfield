@@ -53,12 +53,12 @@ final class ActionPoseAssets {
 
     private static boolean copy(Context module, String name, File target) throws IOException {
         String asset = ASSET_DIRECTORY + "/" + name;
-        try (InputStream source = module.getAssets().open(asset)) {
-            // available() is exact for an uncompressed asset, and these banks are
-            // stored, not deflated. A size match means the copy is already current;
-            // rewriting 1.3 MB on every launch would be pure start-up cost.
-            int expected = source.available();
-            if (target.isFile() && expected > 0 && target.length() == expected) return true;
+        try (InputStream source = GameResourceStore.openCore(module,asset)) {
+            // Resource revision, not size alone, invalidates the game-side copy.
+            GameResourceStore.VersionedInput resource=(GameResourceStore.VersionedInput)source;
+            File marker=new File(target.getParentFile(),name+".resource-version");
+            if(target.isFile() && target.length()==resource.length && marker.isFile() &&
+                    new String(java.nio.file.Files.readAllBytes(marker.toPath()),java.nio.charset.StandardCharsets.UTF_8).equals(resource.version))return true;
             File temporary = new File(target.getParentFile(), name + ".tmp");
             try (FileOutputStream sink = new FileOutputStream(temporary, false)) {
                 byte[] buffer = new byte[64 * 1024];
@@ -71,6 +71,7 @@ final class ActionPoseAssets {
                 temporary.delete();
                 throw new IOException("could not publish " + target);
             }
+            java.nio.file.Files.write(marker.toPath(),resource.version.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             return true;
         }
     }

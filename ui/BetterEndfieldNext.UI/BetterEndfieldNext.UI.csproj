@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\..\resources\bem-preview\*" Exclude="..\..\resources\bem-preview\native-head-android.zip">
+    <EmbeddedResource Include="..\..\resources\bem-preview\*" Exclude="..\..\resources\bem-preview\*.zip">
       <LogicalName>BetterEndfieldNext.BemPreview.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
@@ -63,36 +63,19 @@
     <EmbeddedResource
       Include="Assets\shared\gilberta.ico"
       LogicalName="BetterEndfieldNext.UI.Assets.shared.gilberta.ico" />
-    <EmbeddedResource
-      Include="$(BECharacterPresetsPath)"
-      Link="Assets\model\character-presets.json"
-      LogicalName="BetterEndfieldNext.UI.Assets.model.character-presets.json" />
-    <EmbeddedResource
-      Include="Assets\model\character-names.json"
-      LogicalName="BetterEndfieldNext.UI.Assets.model.character-names.json" />
-    <EmbeddedResource
-      Include="Assets\model\character-names-en.json"
-      LogicalName="BetterEndfieldNext.UI.Assets.model.character-names-en.json" />
-    <EmbeddedResource
-      Include="$(BEVoiceCatalogIndexPath)"
-      Link="Assets\voice\voice-catalog-index.json"
-      LogicalName="BetterEndfieldNext.UI.Assets.voice.voice-catalog-index.json" />
-    <EmbeddedResource
-      Include="$(BECombatDictionaryPath)"
-      Link="Assets\combat\combat-dictionary.json"
-      LogicalName="BetterEndfieldNext.UI.Assets.combat.combat-dictionary.json" />
+
+
+
+
+
     <EmbeddedResource
       Include="..\..\manifests\shared\optiscaler.lock.json"
       LogicalName="BetterEndfieldNext.UI.Assets.shared.optiscaler.lock.json" />
     <EmbeddedResource
       Include="Assets\locales\*.json"
       LogicalName="BetterEndfieldNext.UI.Assets.locales.%(Filename)%(Extension)" />
-    <EmbeddedResource Include="..\..\native\modules\combat_stats\assets\avatars\*.png">
-      <LogicalName>BetterEndfieldNext.UI.Assets.combat.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\..\web\public\icons\items\wpn_*.png">
-      <LogicalName>BetterEndfieldNext.UI.Assets.gacha.weapon.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
+
+
   </ItemGroup>
 
   <Target
@@ -107,5 +90,14 @@
       SourceFiles="@(WinUICompiledResource)"
       DestinationFolder="$(PublishDir)"
       SkipUnchangedFiles="true" />
+  </Target>
+  <PropertyGroup>
+    <BECoreConfigArg Condition="'$(BEWorkspaceConfig)' != ''">--workspace-config &quot;$(BEWorkspaceConfig)&quot;</BECoreConfigArg>
+  </PropertyGroup>
+  <Target Name="StageExternalCoreForBuild" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="python &quot;$(BEWorkspaceRoot)scripts\BuildResourcePacks.py&quot; $(BECoreConfigArg) --character-presets &quot;$(BECharacterPresetsPath)&quot; --voice-index &quot;$(BEVoiceCatalogIndexPath)&quot; --combat-dictionary &quot;$(BECombatDictionaryPath)&quot; --platform windows --type core --output &quot;$(TargetDir)resources&quot;" />
+  </Target>
+  <Target Name="StageExternalCoreForPublish" AfterTargets="Publish">
+    <Exec Command="python &quot;$(BEWorkspaceRoot)scripts\BuildResourcePacks.py&quot; $(BECoreConfigArg) --character-presets &quot;$(BECharacterPresetsPath)&quot; --voice-index &quot;$(BEVoiceCatalogIndexPath)&quot; --combat-dictionary &quot;$(BECombatDictionaryPath)&quot; --platform windows --type core --output &quot;$(PublishDir)resources&quot;" />
   </Target>
 </Project>

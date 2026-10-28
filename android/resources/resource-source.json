@@ -2,170 +2,22 @@
   "schemaVersion": 1,
   "kind": "betterendfield-android-resource-source",
   "platform": "Android",
-  "updatedAtUtc": "2026-10-15T10:30:58.805512+00:00",
-  "device": {
-    "schemaVersion": 1,
-    "platform": "Android",
-    "device": "192.168.31.13:34843",
-    "package": "com.hypergryph.endfield",
-    "versionName": "1.6.4",
-    "versionCode": 61,
-    "retrievedAtUtc": "2026-10-15T10:25:42.515087+00:00",
-    "vfsRoot": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS",
-    "files": [
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/1CDDBF1F/1CDDBF1F.blc",
-        "localPath": "persistent-vfs/1CDDBF1F/1CDDBF1F.blc",
-        "size": 240,
-        "sha256": "489F075AE766B9CF2EF947E4B5B6D0C9103DD9E5D09CE3621679906976D16281"
-      },
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/42A8FCA6/42A8FCA6.blc",
-        "localPath": "persistent-vfs/42A8FCA6/42A8FCA6.blc",
-        "size": 94181,
-        "sha256": "9CA64638151808D6854E823523FE8F8DA083FD402C298D31FDAA95C6C87276C3"
-      },
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/775A31D1/775A31D1.blc",
-        "localPath": "persistent-vfs/775A31D1/775A31D1.blc",
-        "size": 3345449,
-        "sha256": "2C2780B61F06280C16C4C8FDADC56E49354506B31834FF6CC5A2B1A7B13C7726"
-      },
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E1E7D7CE/E1E7D7CE.blc",
-        "localPath": "persistent-vfs/E1E7D7CE/E1E7D7CE.blc",
-        "size": 428,
-        "sha256": "B84963081CFE338C6A9B721934D2C16EF9EA39CFF39FA605F6635224C29E4D20"
-      },
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/A31457D0.blc",
-        "localPath": "persistent-vfs/A31457D0/A31457D0.blc",
-        "size": 610,
-        "sha256": "5A5807160A1EFD6052C6D4B33F7607A57D42E0D3698C7348B40B559D9439317B"
-      },
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/F668D4EE.blc",
-        "localPath": "persistent-vfs/F668D4EE/F668D4EE.blc",
-        "size": 617,
-        "sha256": "DD76CC01DE52A3F3C9BD0CDFF69F6D28BE3E3EB542D1271C44E15F99D417E8B1"
-      },
-      {
-        "devicePath": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/E9D31017.blc",
-        "localPath": "persistent-vfs/E9D31017/E9D31017.blc",
-        "size": 603,
-        "sha256": "E1E772EC48A6F576FFA0C2DB83523D004B5E61A94A6B4190774CBE89E7AB7E8F"
-      }
-    ],
-    "properties": {
-      "ro.product.manufacturer": "Xiaomi",
-      "ro.product.model": "25102RKBEC",
-      "ro.build.version.release": "17",
-      "ro.build.version.sdk": "37"
-    }
-  },
-  "packages": [
-    {
-      "path": "audio/E1E7D7CE/180B2C93B86645E3E79C472F1D3B7977.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E1E7D7CE/180B2C93B86645E3E79C472F1D3B7977.chk",
-      "vfsPath": "Audio/PCK/Android/Chinese/default_chinese_banks.pck",
-      "size": 1949492,
-      "readSize": 1949492,
-      "sha256": "0759FF00F5D94E01FA54771E46FA9CCF038E6EC575E8B59216FC4D2914319113"
-    },
-    {
-      "path": "audio/E1E7D7CE/C8B18CE5AF55BDC131CE168D08FADE69.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E1E7D7CE/C8B18CE5AF55BDC131CE168D08FADE69.chk",
-      "vfsPath": "Audio/PCK/Android/Chinese/default_chinese_stream.pck",
-      "size": 1495706257,
-      "readSize": 827260,
-      "sha256": "2452097F21C80A8E301A4E3731BAFC882D0A7FE8CC89AD3EB411F6E28829CEF3"
-    },
-    {
-      "path": "audio/A31457D0/C12D3104949826AAC5443A6E51F7A3D1.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/C12D3104949826AAC5443A6E51F7A3D1.chk",
-      "vfsPath": "Audio/PCK/Android/English/default_english_banks.pck",
-      "size": 1947897,
-      "readSize": 1947897,
-      "sha256": "F682B7C08E4BCC2ECDE1A71B64CB9313272C3975C4B4059CAB1D8DA57D8ED62F"
-    },
-    {
-      "path": "audio/A31457D0/C830E93FDB642740B99BD3EEF9FDD6E2.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/C830E93FDB642740B99BD3EEF9FDD6E2.chk",
-      "vfsPath": "Audio/PCK/Android/English/default_english_stream_0.pck",
-      "size": 1610580377,
-      "readSize": 818576,
-      "sha256": "D69D936ACAD708062F345B1DAFC49D30FFE2EE1DF2B936AD3796AE38A138AAEB"
-    },
-    {
-      "path": "audio/A31457D0/9A51A883293C0A72B8D2C171B3F51726.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/A31457D0/9A51A883293C0A72B8D2C171B3F51726.chk",
-      "vfsPath": "Audio/PCK/Android/English/default_english_stream_1.pck",
-      "size": 45151833,
-      "readSize": 8292,
-      "sha256": "586D796AF6574A06002858AD8EC976428EE26D4AD83B7A704CFB36E89F834429"
-    },
-    {
-      "path": "audio/F668D4EE/505E6233720793555F425515EE0FB312.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/505E6233720793555F425515EE0FB312.chk",
-      "vfsPath": "Audio/PCK/Android/Japanese/default_japanese_banks.pck",
-      "size": 1948621,
-      "readSize": 1948621,
-      "sha256": "F4B4F46850F539903A5EF3672D10F96CB7BC43877F4F01B558012330F253758F"
-    },
-    {
-      "path": "audio/F668D4EE/62CFCED4F31B46803AFD058CF4CB1643.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/62CFCED4F31B46803AFD058CF4CB1643.chk",
-      "vfsPath": "Audio/PCK/Android/Japanese/default_japanese_stream_0.pck",
-      "size": 1610513909,
-      "readSize": 795812,
-      "sha256": "C4C70D75BC563FAB6E3D6835ADFDFCD358B4FDF47D2F4AC4F91383145361174F"
-    },
-    {
-      "path": "audio/F668D4EE/93937607BD7D32C4E905DEA36C0E4CB6.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/F668D4EE/93937607BD7D32C4E905DEA36C0E4CB6.chk",
-      "vfsPath": "Audio/PCK/Android/Japanese/default_japanese_stream_1.pck",
-      "size": 138719150,
-      "readSize": 30976,
-      "sha256": "B77CEA09224B081E2F61884300616613585E1928260DF091F26F4DB3D3632BF5"
-    },
-    {
-      "path": "audio/E9D31017/61F9F0B751CA8455AFD28C14D0706D96.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/61F9F0B751CA8455AFD28C14D0706D96.chk",
-      "vfsPath": "Audio/PCK/Android/Korean/default_korean_banks.pck",
-      "size": 1947932,
-      "readSize": 1947932,
-      "sha256": "92B8E9E68019CB3701AB6119FA487E37FBCDA9D97759ADFDEC46EBCBB8467012"
-    },
-    {
-      "path": "audio/E9D31017/B8D63126D7ED7F01EBF5C756668D685D.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/B8D63126D7ED7F01EBF5C756668D685D.chk",
-      "vfsPath": "Audio/PCK/Android/Korean/default_korean_stream_0.pck",
-      "size": 1610561454,
-      "readSize": 778512,
-      "sha256": "F2D2C131607A5249354081D25DE86BFD0E000B83E69A331C4D1B0EF42DD7351F"
-    },
-    {
-      "path": "audio/E9D31017/196C7041D4C16FC42431C5C7E1820A59.chk",
-      "source": "/sdcard/Android/data/com.hypergryph.endfield/files/VFS/E9D31017/196C7041D4C16FC42431C5C7E1820A59.chk",
-      "vfsPath": "Audio/PCK/Android/Korean/default_korean_stream_1.pck",
-      "size": 135126582,
-      "readSize": 48428,
-      "sha256": "61CE6EDF7E9AA735BE829651F6D91EC68C345DF7E49E00F5967886120D1E64DA"
-    }
-  ],
-  "missingLanguages": [],
+  "updatedAtUtc": "2026-10-28T03:50:27.793430+00:00",
   "provenance": {
-    "generator": "scripts/GenerateResourceManifests.py + GenerateVoiceCatalogIndex.py",
     "gameVersion": "1.6.4",
-    "versionCode": 61,
-    "device": "192.168.31.13:34843",
-    "mappedVoiceCount": 660,
-    "languages": [
-      "Chinese",
-      "English",
-      "Japanese",
-      "Korean"
-    ],
-    "catalogCount": 140
-  }
+    "source": "rooted adb; current VFS"
+  },
+  "device": {
+    "package": "com.hypergryph.endfield",
+    "versionName": "1.6.4"
+  },
+  "counts": {
+    "manifestAssets": 368313,
+    "manifestBundles": 271511,
+    "audioDialogRows": 33273,
+    "prefabInfoCount": 37
+  },
+  "inputSnapshot": "inputs/current-distribution/Android/input-snapshot.json",
+  "pckSnapshot": "inputs/current-distribution/Android/pck-snapshot.json",
+  "coverage": "37 playable models; current four-language voice indexes; no streamed audio payloads distributed"
 }
