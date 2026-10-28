@@ -26,7 +26,7 @@ Windows Release 构建及动作策略、特效生命周期、外部动画、双�
 | --- | --- | --- | --- |
 | Perform | `CharIntPerform_Aglina_Spdash` | `CharIntPerform_Liino_Spdash` | `CharIntPerform_Jsspsi_SpdashL/R` |
 | 姿态数据 | `actions/pose_aglina.bin`（226 骨骼，周期 103 帧 / 1.717 秒） | `actions/pose_liino.bin`（339 骨骼，低位半速循环 40 帧 / 0.667 秒） | 无（轻量原生回绕，不依赖外部姿态包）；可选项 `jsspsi_quality` 用模块内置的 `jsspsi_quality_data.h` |
-| Animator 回绕 | 136/208 → 80/208，周期 56/208 | 107/173 → 55/173，周期 52/173 | 0.315 → 0.126，周期 0.189 |
+| Animator 回绕（归一化时间） | 136/208 → 80/208，周期 56/208 | 107/173 → 55/173，周期 52/173 | 0.315 → 0.126，周期 0.189；5.667 秒剪辑下即 0.714–1.785 秒，尾部 3.88 秒不进播放区间 |
 | 额外保持 | 两套持续粒子、`Aglina_SprintDashSp_Flying_Stop` 延后、道具隐藏（logic 11，2.4 秒）延后 | 网格组隐藏（2.2 秒收板）延后 | 坐骑墨兽同帧回绕、伴随墨兽时间窗回绕、墨兽材质消散冻结、收尾水花抑制；质量选项另从首次回绕起保持 0–5、13 号特效 |
 
 祀的持续冲刺支持基于 GitHub Issue #32（zhuran24）逆向研究成果精简实现，采用原生 Animator 回绕与坐骑墨兽对象同步，未引入外部附属件姿态覆写及磁盘接缝修正。
@@ -38,6 +38,10 @@ Windows Release 构建及动作策略、特效生命周期、外部动画、双�
 3. **骨骼姿态覆盖**：`TailLateTick` 之后按数据文件写入局部位移和旋转，独立时钟，进出各约 0.12 秒淡化。写入前记录原生基线，只回收自己写过且未被原生改动的值。不替换 Controller、不禁用 Animator、不动世界坐标、不写缩放。
 
 `external_loop=false` 时只做前两层，姿态覆盖关闭。祀没有姿态数据，第 3 层对她不起作用；`jsspsi_quality=true` 时她在同一个 TailLate 入口另做接缝修正和附属件循环（`loop_quality.inl`），与 `external_loop` 无关。
+
+### 结束都是打断，没有退场动画
+
+三个角色都没有原生退场设计。松手令 `CanMove` 失效（`IsDashOrGroundSprint` 要求 `!airborne && (dash || (grounded && sprint && moving))`），模块在 `Cancel("movement or owner ended", true)` 里主动调 `InterruptSpDashPerform`，再由原生 `_DoExit` / `Clear` 收尾；保持期间被抑制的三把锁在这一帧同时松开。`jsspsi_quality` 的接缝因此是当帧整体还原、只让附属件淡 0.4 秒（`QualityFadeFrame`），这是刻意的：游戏此时已经开始自己的 crossfade，继续写骨只会污染那段过渡。祀比另两人多出来的只有 `_ClearTmpObjects` 销毁墨兽；另两人原生早松手同样是硬切。回绕窗口到不了剪辑尾部（祀 3.88 秒、梨诺 1.10 秒、洁尔佩塔 1.20 秒），所以「把尾部落地播完」属于新增功能，不是恢复原生行为。
 
 ## 配置
 
