@@ -51,6 +51,16 @@ diagnostics=true
 
 `jsspsi_quality`（默认 false）在 Windows 启动器的「冲刺持续」页里是祀下面的「高质量过渡」开关，保存时和 `characters` 一起写进 `[betterendfieldnext.actions]`；手改 INI 的写法同样有效，启动器保存时原样保留（`ActionIniPreservation`）。Android 设置页没有这个开关，生成的配置不写它，按默认关运行。
 
+日志分两级。`diagnostics`（默认 true，启动器固定写入）只留每次冲刺的一行摘要和所有失败路径；逐帧、逐特效的追踪挪到 `verbose`（默认 false，启动器不写，排查时手加一行）：
+
+```ini
+[betterendfieldnext.actions]
+diagnostics=true
+verbose=true
+```
+
+`verbose=true` 才输出 `animation progress`（每 0.1 秒一条）、`normalized bob blend`、`effect <槽> continuous particles prepared`、`held target effect lifetime`、`mesh group … call=`（一次冲刺最多 12 行）、`Perform interrupt command` 和 `Clear stack (GameAssembly-relative)` 调用栈。正常游玩不要开：一次 11 秒的持续冲刺会从约 10 行涨到约 200 行。
+
 ## 日志
 
 `Sustained dash armed for <角色>`、`Sustained dash v12: bone-pose file loaded for <角色>`、`Sustained dash v12: bone overlay bound: matched=<数量>`、`Sustained dash v12: TailLate pose applied`。`Sustained dash: mesh group hook unavailable` 表示可选钩子缺失，只影响隐藏动作延后。

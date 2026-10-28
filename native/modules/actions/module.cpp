@@ -115,6 +115,11 @@ constexpr size_t kCharacterCount = std::size(kCharacters);
 struct Configuration {
     bool enabled = false;
     bool diagnostics = true;
+    // Second, opt-in level for per-tick and per-effect traces. Everything it
+    // guards was needed while the loop timing was being reverse engineered; a
+    // release install only needs one line per dash and the failure paths, so
+    // this stays off unless someone is chasing a regression.
+    bool verbose = false;
     bool external_loop = false; // v12: external bone-pose data, not AnimationClip bundles.
     bool liino_clean = false; // Optional dash features default off.
     bool jsspsi_quality = false;
@@ -123,6 +128,11 @@ struct Configuration {
     uint32_t characters = (1u << kCharacterCount) - 1;
     bool operator==(const Configuration&) const = default;
 };
+// Per-tick and per-effect traces. Both switches have to be on: diagnostics is
+// what a support log carries, verbose is the one a timing investigation adds.
+inline bool Verbose(const std::shared_ptr<const Configuration>& config) {
+    return config && config->diagnostics && config->verbose;
+}
 #if defined(_WIN32)
 using ConfigurationSlot = std::atomic<std::shared_ptr<const Configuration>>;
 #else
@@ -593,7 +603,7 @@ void MaintainEffects() {
             Log("Sustained dash v9: particle setup failed; original instance settings restored.");
         } else {
             effect.prepared = true;
-            if (g_session.config->diagnostics) {
+            if (Verbose(g_session.config)) {
                 char message[144];
                 std::snprintf(message, sizeof(message), "Sustained dash v9: effect %d continuous particles prepared: count=%d", slot, effect.count);
                 Log(message);
@@ -989,7 +999,7 @@ void __fastcall EffectDurationDetour(void* instance, float delta, const void* me
     if (GetCurrentThreadId() == g_game_thread.load(std::memory_order_relaxed)) {
         for (auto& effect : g_session.effects) {
             if (effect.object == instance && effect.prepared && ShouldHold(g_session.component)) {
-                if (++effect.ticks == 1 && g_session.config->diagnostics)
+                if (++effect.ticks == 1 && Verbose(g_session.config))
                     Log("Sustained dash v9: held target effect lifetime/auto-fade clock; particles keep simulating.");
                 delta = 0; // Only the effect lifetime clock, not ParticleSystem/FollowTick.
                 break;
@@ -1122,7 +1132,7 @@ void __fastcall MeshGroupShowDetour(void* handle, void* entity, int group, bool 
         g_session.policy.active && ShouldHold(g_session.component);
     // Model parts are what the player sees appear and disappear, so record every
     // toggle this perform makes rather than only the first deferral.
-    if (owned && g_session.config->diagnostics && g_session.mesh_group_calls < 12) {
+    if (owned && Verbose(g_session.config) && g_session.mesh_group_calls < 12) {
         char text[160];
         std::snprintf(text, sizeof(text), "Sustained dash: mesh group %d show=%d deferred=%d, call=%u",
             group, show ? 1 : 0, defer ? 1 : 0, ++g_session.mesh_group_calls);
@@ -1175,7 +1185,7 @@ uint32_t __fastcall AudioEntityDetour(void* entity, uint32_t hash, int callback_
 }
 void __fastcall PerformClearDetour(void* handle, bool releasing, const void* method) {
     if (handle == g_session.handle && g_session.component) {
-        if (g_session.config->diagnostics) {
+        if (Verbose(g_session.config)) {
             void* stack[12]{};
             USHORT count = CaptureStackBackTrace(0, 12, stack, nullptr);
             auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(L"GameAssembly.dll"));
@@ -1193,7 +1203,7 @@ void __fastcall PerformClearDetour(void* handle, bool releasing, const void* met
     g_perform_clear(handle, releasing, method);
 }
 void __fastcall CommandDetour(void* handle, int reason, int type, bool weak, const void* method) {
-    if (handle == g_session.handle && g_session.component && g_session.config->diagnostics) {
+    if (handle == g_session.handle && g_session.component && Verbose(g_session.config)) {
         char text[144];
         std::snprintf(text, sizeof(text), "Sustained dash Perform interrupt command: reason=%d, type=%d, weak=%d", reason, type, weak);
         Log(text);
@@ -1317,7 +1327,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                     ++g_session.animation_replays;
                     if (g_session.profile->freeze_render_vfx) FreezeVfx();
                     if (g_session.profile->rewind_mount) SyncTmpObjects(duration, offset);
-                    if (g_session.config->diagnostics && (g_session.animation_replays <= 4 || g_session.animation_replays % 16 == 0)) {
+                    if (Verbose(g_session.config) && (g_session.animation_replays <= 4 || g_session.animation_replays % 16 == 0)) {
                         char text[240];
                         std::snprintf(text, sizeof(text), "Sustained dash %s: hash=%d, source=%.3f, target=%.3f, duration=%.3f, count=%u",
                             g_session.external_confirmed ? "v11 imported loop wrap" : "v9 normalized bob blend", hash, frame.time, offset, duration, g_session.animation_replays);
@@ -1361,7 +1371,7 @@ void __fastcall PreLateDetour(void* component, float delta, const void* method) 
                 int bucket = static_cast<int>(std::min(100.0f, std::max(0.0f, frame.time)) * 10.0f);
                 if (bucket != g_session.last_progress_bucket) {
                     g_session.last_progress_bucket = bucket;
-                    if (g_session.config->diagnostics) {
+                    if (Verbose(g_session.config)) {
                         char text[224];
                         std::snprintf(text, sizeof(text), "Sustained dash animation progress: time=%.3f, next=%.3f, transition=%d, length=%.3f, clip_loop=%s, deferred=%u",
                             frame.time, frame.next_time, frame.transitioning, frame.length, ClipLoopText(frame.clip_loop), g_session.natural_end_deferrals);
@@ -1451,6 +1461,7 @@ BE_Result BE_CALL Configure(const char* raw) {
         if (key == "schema_version") { schema_present = true; valid &= value == "1" || value == "2" || value == "3"; }
         else if (key == "enabled") valid &= ParseBool(value, config->enabled);
         else if (key == "diagnostics") valid &= ParseBool(value, config->diagnostics);
+        else if (key == "verbose") valid &= ParseBool(value, config->verbose);
         else if (key == "external_loop") valid &= ParseBool(value, config->external_loop);
         else if (key == "liino_clean") valid &= ParseBool(value, config->liino_clean);
         else if (key == "jsspsi_quality") valid &= ParseBool(value, config->jsspsi_quality);

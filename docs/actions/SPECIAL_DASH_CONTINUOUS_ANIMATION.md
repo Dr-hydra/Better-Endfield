@@ -92,7 +92,7 @@
 
 `AkSoundEngine` 和两个枚举处于空命名空间。停音不需要 playing id 捕获，也不调用停止对象上全部声音的方法。
 
-**配置。** Windows 启动器「冲刺持续」页的祀下面有「高质量过渡」开关（`jsspsi_quality`），保存时和 `characters` 一起写进 `[betterendfieldnext.actions]`。启动器保存时会整节重写这一节，手改的 `jsspsi_quality`、`external_loop` 仍原样保留（`ActionIniPreservation`）；Android 设置页没有这个开关，生成的配置不写这个键，按默认关运行。键名只认 `true`、`false`、`1`、`0`，写错时整节判为无效（`Invalid action configuration; special dash disabled.`）。改这个键会发布新的配置快照，正在进行的持续冲刺以 `configuration changed` 结束。选项关着时，已测配置及冲刺调用轨迹与轻量版一致；初始化多解析两个可选音频方法，缺失时多一条诊断（见模块 README 的「祀的高质量过渡测试」）。
+**配置。** Windows 启动器「冲刺持续」页的祀下面有「高质量过渡」开关（`jsspsi_quality`），保存时和 `characters` 一起写进 `[betterendfieldnext.actions]`。启动器保存时会整节重写这一节，手改的 `jsspsi_quality`、`external_loop` 仍原样保留（`ActionIniPreservation`）；Android 设置页没有这个开关，生成的配置不写这个键，按默认关运行。键名只认 `true`、`false`、`1`、`0`，写错时整节判为无效（`Invalid action configuration; special dash disabled.`）。改这个键会发布新的配置快照，正在进行的持续冲刺以 `configuration changed` 结束。选项关着时，已测配置及冲刺调用轨迹与轻量版一致；初始化多解析两个可选音频方法，缺失时多一条诊断（见模块 README 的「祀的高质量过渡测试」）。逐帧、逐特效的日志另由 `verbose`（默认 false）控制，正常游玩不开，见模块 README 的「配置」。
 
 **每帧开销。** 选项开着、接缝生效时，每帧对约 440 根骨各做 `IsChildOf`、读、写三次托管调用，约 1300 次；梨诺姿态覆盖是 339 根骨、同样三次。没有在游戏里量过耗时；释放时的日志 `quality: released … mean_apply_us=` 给出每帧平均微秒数。
 
@@ -155,14 +155,14 @@ diagnostics=true
 
 开启诊断后应看到 `Sustained dash armed for <角色>`、`Sustained dash v12: bone-pose file loaded for <角色>`、`Sustained dash v12: bone overlay bound: matched=<骨骼数>`。`matched` 应为 226（洁尔佩塔）或 339（梨诺）。出现 `bone binding rejected` 说明必需骨骼路径与实机层级不符。
 
-祀开着 `jsspsi_quality` 时，日志行以 `Sustained dash Jsspsi quality:` 开头。配置载入时有 `on (pose=1 lease=1 sound=1)`，三项依次是姿态契约（TailLate 钩子）、宿主写骨租约、两个可选音频方法是否都可用；某项为 0 只关掉对应部分。一次正常的冲刺（`diagnostics=true`）依次出现：
+祀开着 `jsspsi_quality` 时，日志行以 `Sustained dash Jsspsi quality:` 开头。配置载入时有 `on (pose=1 lease=1 sound=1)`，三项依次是姿态契约（TailLate 钩子）、宿主写骨租约、两个可选音频方法是否都可用；某项为 0 只关掉对应部分。一次正常的冲刺（`diagnostics=true`）依次出现（`mean_apply_us` 是每帧写骨的平均耗时，`max_apply_us` 是其中最慢的一帧，用来判断有没有尖峰）：
 
 | 时机 | 日志 |
 | --- | --- |
 | 进入冲刺状态 | `rider bound side=right seam=380 accessory=30 missing=0.`（左侧 `seam=368`） |
 | 第一圈 | `mount bound seam=32 missing=0.`，随后 `seam armed for rider and mount; rewinds are hard cuts.` |
-| 第一次回绕 | `dash sound stop requested event=1063030539 object=… result=1 ok=1.` 或 `dash sound object not captured; native sound kept.`；`ok=0` 表示调用异常或 AKRESULT 不是成功，`ok=1` 也不等于已实测声音停止；共享的 `Sustained dash v9 normalized bob blend: … duration=0.000` 表示硬切；`accessory lap started u=0.316 phi=0.005 bones=30.` |
-| 松手后约 0.4 秒 | `released seam_frames=… accessory_frames=… mean_apply_us=… restored=1.` |
+| 第一次回绕 | `dash sound stop requested event=1063030539 object=… result=1 ok=1.` 或 `dash sound object not captured; native sound kept.`；`ok=0` 表示调用异常或 AKRESULT 不是成功，`ok=1` 也不等于已实测声音停止；`accessory lap started u=0.316 phi=0.005 bones=30.`。硬切本身没有日志：`Sustained dash v9 normalized bob blend: … duration=0.000` 和 `animation progress` 现在只在 `verbose=true` 时写 |
+| 松手后约 0.4 秒 | `released seam_frames=… accessory_frames=… mean_apply_us=… max_apply_us=… restored=1.` |
 
 出问题时：`pose ownership unavailable or another visual writer is active`（租约被占）、`rider binding rejected: matched=… missing=… window=…`（骨不到八成或回绕区间不符）、`seam unavailable (<原因>); lightweight crossfade kept.`（只关接缝和硬切，附属件照常；原因如 `mount not bound before the first half lap`、`rider and mount out of step: rider=… mount=…`、`bone write failed`）、`rider root or pose ownership changed`、`accessory bone left its root`（整次冲刺退回轻量版）。前两条和后两条不受 `diagnostics` 控制。
 

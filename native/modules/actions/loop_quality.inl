@@ -30,7 +30,7 @@ struct QualityOwner {
     bool rider_failed = false, seam_failed = false, seam_armed = false;
     int last_frame = -1;
     uint32_t seam_frames = 0, accessory_frames = 0;
-    double microseconds = 0;
+    double microseconds = 0, max_microseconds = 0;
     bool fading = false;
     float fade = 0;
     uint32_t sound_event = 0;
@@ -100,8 +100,9 @@ void ReleaseLoopQuality(bool restore) {
     }
     if (old.diagnostics && (old.seam_frames || old.accessory_frames)) {
         char text[192];
-        std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: released seam_frames=%u accessory_frames=%u mean_apply_us=%.1f restored=%d.",
-            old.seam_frames, old.accessory_frames, old.microseconds / std::max(1u, std::max(old.seam_frames, old.accessory_frames)), restore);
+        std::snprintf(text, sizeof(text), "Sustained dash Jsspsi quality: released seam_frames=%u accessory_frames=%u mean_apply_us=%.1f max_apply_us=%.1f restored=%d.",
+            old.seam_frames, old.accessory_frames, old.microseconds / std::max(1u, std::max(old.seam_frames, old.accessory_frames)),
+            old.max_microseconds, restore);
         Log(text);
     }
     FreeQualityRoot(old.rider);
@@ -482,7 +483,11 @@ void ApplyLoopQuality(void* component, float delta) {
         if (generation != g_quality_generation) return;
     }
     QueryPerformanceCounter(&end);
-    g_quality.microseconds += (end.QuadPart - begin.QuadPart) * 1e6 / frequency.QuadPart;
+    // Per-frame cost of the write pass; the peak matters more than the mean
+    // because one long frame is what a hitch is made of.
+    const double used = (end.QuadPart - begin.QuadPart) * 1e6 / frequency.QuadPart;
+    g_quality.microseconds += used;
+    if (used > g_quality.max_microseconds) g_quality.max_microseconds = used;
 }
 // Game 1.6.4 global-metadata.dat, AK.Wwise.Unity.API.dll enum fields:
 // AkActionOnEventType_Stop = 0, AkCurveInterpolation_Linear = 4,

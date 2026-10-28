@@ -3,7 +3,8 @@ namespace BetterEndfieldNext.UI.Services;
 internal static class ActionIniPreservation
 {
     // No UI control owns these native settings. Preserve explicit opt-in/opt-out.
-    private static readonly string[] NativeKeys = ["external_loop", "jsspsi_quality"];
+    // verbose is the hand-added second log level; a launcher save must not drop it.
+    private static readonly string[] NativeKeys = ["external_loop", "jsspsi_quality", "verbose"];
 
     internal static string PreserveNativeSettings(string existing, string replacement)
     {
