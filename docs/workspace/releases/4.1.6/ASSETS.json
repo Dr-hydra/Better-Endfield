@@ -1,0 +1,61 @@
+{
+  "version": "4.1.6",
+  "date": "2026-10-30",
+  "status": "ready",
+  "android_version_code": 40106,
+  "bem_tools_version": "1.6.5",
+  "dsh_version": "1.6.5",
+  "hashes_calculated": false,
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.6-Setup.exe",
+      "bytes": 76812136
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.6-Android-arm64.apk",
+      "bytes": 6396127
+    },
+    {
+      "name": "BEM-Tools-1.6.5-win-x64.zip",
+      "bytes": 74378980,
+      "reused_from": "v4.1.4"
+    },
+    {
+      "name": "BEM-Tools-1.6.5-android-arm64.tar.gz",
+      "bytes": 2104417,
+      "reused_from": "v4.1.4"
+    },
+    {
+      "name": "dsh-bem-creator-1.6.5.tgz",
+      "bytes": 2071030,
+      "reused_from": "v4.1.4"
+    }
+  ],
+  "local_only_assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.6-win-x64.zip",
+      "bytes": 86174235,
+      "published": false
+    }
+  ],
+  "checks": {
+    "windows_release": "passed: publish complete, 26 modules plus loaders/payloads/runtime/tools",
+    "windows_installer": "passed: ISCC compile, file version 4.1.6.0, self-signed-internal",
+    "android_release": "passed: gradle assembleRelease, versionName 4.1.6 versionCode 40106 re-read with aapt2",
+    "gacha_regression": "passed: GachaRecordStoreTests, 9 checks on the plain assembly and 10 on the Obfuscar output, including the anonymous-export reproduction of #36",
+    "tools_reuse": "BEM Tools, the Android CLI tarball and the DSH plugin ship byte-identical from v4.1.4; rebuilding 1.6.5 drops 4 api-ms-win-core stubs, so the rebuild is not shipped"
+  },
+  "integrated_commits": [
+    "583c0576",
+    "549e71c3",
+    "d3958397",
+    "0f06e601",
+    "0ccbd084",
+    "24c7d534"
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.6",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.6"
+  }
+}

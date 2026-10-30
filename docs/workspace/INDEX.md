@@ -26,6 +26,8 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
+| [Better Endfield Next 4.1.6](releases/4.1.6/RELEASE_4_1_6.md) | 预览资源缺失提示、寻访导出崩溃（#36）与导出异常处理 | 发布记录 | 未变（同 4.1.5） |
+| [Better Endfield Next 4.1.5](releases/4.1.5/RELEASE_4_1_5.md) | 单文件资源定位、Android 内置基础包、包可见性与语言切换 | 发布记录 | Windows 1.6.3 / Android 1.6.4 |
 | [Better Endfield Next 4.1.4](releases/4.1.4/RELEASE_4_1_4.md) | 双端资源解耦、统一分发、全角色预览与 Tools/DSH 1.6.5 | 发布记录 | Windows 1.6.3 / Android 1.6.4 |
 | [Better Endfield Next 3.4.1（2026-10-01）](releases/3.4.1/RELEASE_3_4_1.md) | 3.4.1双端发布范围、工具/实验开关及验证边界 | 发布记录 | not_applicable |
 | [Better Endfield Next 3.4.2](releases/3.4.2/RELEASE_3_4_2.md) | 3.4.2/Tools1.4.1功能与下载验证记录 | 发布记录 | not_applicable |
