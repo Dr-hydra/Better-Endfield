@@ -9,3 +9,6 @@ tools/CustomModel/android/** text eol=lf
 tools/CustomModel/android/wheels/*.whl binary
 # Archived source digests describe the original bytes, including mixed EOLs.
 legacy/retired-before-next/** -text
+
+# 钩子脚本走 sh 执行，CRLF 会让 shebang 失效。
+.githooks/** text eol=lf
