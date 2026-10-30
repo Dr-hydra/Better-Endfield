@@ -199,7 +199,10 @@ public sealed partial class GachaPage : UserControl
             string path = await _store.ExportAsync(_characters.Concat(_weapons), _poolInfos.Values);
             SetStatus("exported", path);
         }
-        catch (IOException ex) { SetStatus("export-failed", ex.Message); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or NotSupportedException or InvalidOperationException)
+        {
+            SetStatus("export-failed", ex.Message);
+        }
         finally { ExportButton.IsEnabled = true; }
     }
 

@@ -24,6 +24,8 @@ final class Text {
         put("检查软件版本并自动更新未固定的资源，预览包首次按需下载","Check software and update unpinned resources; preview resources are an optional first download");
         put("更新基础资源","Update core resources");
         put("下载预览资源","Download preview resources");
+        put("未下载预览资源。请前往「关于」页点击「下载预览资源」，下载完成后重新打开预览。",
+            "Preview resources are not downloaded. Go to About and select Download preview resources. Reopen the preview after the download completes.");
         put("恢复资源自动更新","Resume resource auto-update");
         put("取消下载","Cancel download");
         put("正在下载并校验资源…","Downloading and validating resources…");

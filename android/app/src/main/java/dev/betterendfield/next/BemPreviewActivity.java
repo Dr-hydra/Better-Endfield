@@ -58,6 +58,8 @@ public final class BemPreviewActivity extends ModuleActivity {
         if(session!=null)try{composition=BemComposeSession.open(this,session);inspection=composition.read("inspection.json");addCompositionBar();}catch(Exception failure){error(failure.getMessage());return;}
         else if(generation==null || !generation.matches("[a-f0-9-]{36}")) {error("Invalid installed package");return;}
         setTitle(Text.of("模型预览"));
+        if(GameResourceStore.resolve(this,"preview")==null)
+            error(Text.of("未下载预览资源。请前往「关于」页点击「下载预览资源」，下载完成后重新打开预览。"));
         directory=new File(getCacheDir(),"bem-preview-"+UUID.randomUUID());
         cancelFile=new File(directory,"cancel");
         try {

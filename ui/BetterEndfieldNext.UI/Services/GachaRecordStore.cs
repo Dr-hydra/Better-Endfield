@@ -6,7 +6,20 @@ namespace BetterEndfieldNext.UI.Services;
 public sealed class GachaRecordStore
 {
     public sealed record ImportData(List<GachaRecord> Records, List<GachaPoolInfo> Pools);
-    private readonly string _directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BetterEndfieldNext");
+    private readonly string _directory;
+    private readonly string _exportDirectory;
+
+    public GachaRecordStore() : this(
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BetterEndfieldNext"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BetterEndfieldNext"))
+    {
+    }
+
+    internal GachaRecordStore(string directory, string exportDirectory)
+    {
+        _directory = directory;
+        _exportDirectory = exportDirectory;
+    }
     private string RecordsPath => Path.Combine(_directory, "gacha-records.json");
     private string PoolInfoPath => Path.Combine(_directory, "gacha-pools.json");
     public async Task SaveAsync(IEnumerable<GachaRecord> records)
@@ -40,10 +53,15 @@ public sealed class GachaRecordStore
 
     public async Task<string> ExportAsync(IEnumerable<GachaRecord> records, IEnumerable<GachaPoolInfo> infos)
     {
-        string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "BetterEndfieldNext");
+        string directory = _exportDirectory;
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, $"gacha-export-{DateTime.Now:yyyyMMdd-HHmmss}.json");
-        var payload = new { exportedAt = DateTimeOffset.Now, records = records.ToList(), pools = infos.ToList() };
+        var payload = new GachaExportPayload
+        {
+            ExportedAt = DateTimeOffset.Now,
+            Records = records.ToList(),
+            Pools = infos.ToList()
+        };
         await File.WriteAllTextAsync(path, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
         return path;
     }

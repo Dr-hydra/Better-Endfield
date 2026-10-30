@@ -63,6 +63,9 @@ internal sealed class BemPreviewView : Grid, IDisposable
     public BemPreviewView(BemPackage package, string installRoot, BemPackageService? service, Action saved)
     {
         _package = package; _installRoot = installRoot; _service = service; _saved = saved;
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        Grid.SetRow(_status, 1);
         _status.Text = Text("正在初始化预览…", "Initializing preview…");
         Children.Add(_status);
         Loaded += Initialize;
@@ -107,6 +110,19 @@ internal sealed class BemPreviewView : Grid, IDisposable
         if (_initialized || _closed) return; _initialized = true;
         try
         {
+            _nativeAssets = GameResourceStore.Resolve("preview")?.Root ?? "";
+            if (string.IsNullOrEmpty(_nativeAssets))
+            {
+                Children.Add(new InfoBar
+                {
+                    IsOpen = true,
+                    IsClosable = false,
+                    Severity = InfoBarSeverity.Warning,
+                    Title = Text("未下载预览资源", "Preview resources are not downloaded"),
+                    Message = Text("请前往「关于」页，点击「下载预览资源」。下载完成后重新打开预览。",
+                        "Go to About and select Download preview resources. Reopen the preview after the download completes.")
+                });
+            }
             // No WebView construction or runtime access on the manager startup path.
             _ = CoreWebView2Environment.GetAvailableBrowserVersionString();
             Directory.CreateDirectory(_directory);
@@ -116,8 +132,7 @@ internal sealed class BemPreviewView : Grid, IDisposable
                 using var input = assembly.GetManifestResourceStream("BetterEndfieldNext.BemPreview." + name) ?? throw new IOException("Missing preview asset: " + name);
                 using var output = File.Create(Path.Combine(_directory, name)); input.CopyTo(output);
             }
-            _nativeAssets = GameResourceStore.Resolve("preview")?.Root ?? "";
-            _view = new WebView2(); Children.Insert(0, _view);
+            _view = new WebView2(); Grid.SetRow(_view, 1); Children.Insert(0, _view);
             var profile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BetterEndfieldNext", "BemPreviewWebView");
             var environment = await CoreWebView2Environment.CreateWithOptionsAsync(null, profile, null);
             if (_closed) return;
@@ -148,6 +163,7 @@ internal sealed class BemPreviewView : Grid, IDisposable
             _view?.Close(); if (_view is not null) Children.Remove(_view); _view = null;
             _status.Visibility = Visibility.Visible;
             var panel = new StackPanel { Margin = new Thickness(16), Spacing = 12 };
+            Grid.SetRow(panel, 1);
             Children.Remove(_status); _status.Margin = new Thickness(0);
             _status.Text = Text("无法打开预览。若缺少 Microsoft Edge WebView2 Runtime，请安装后重试。其他管理功能不受影响。", "Preview unavailable. If Microsoft Edge WebView2 Runtime is missing, install it and try again. Other manager features remain available.") + "\n\n" + ex.Message;
             panel.Children.Add(_status);

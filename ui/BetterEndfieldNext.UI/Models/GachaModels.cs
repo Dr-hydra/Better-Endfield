@@ -59,3 +59,14 @@ public sealed class GachaPoolInfo
     // Different weapon pools remain isolated until this metadata is supplied.
     public string? PityCarryGroup { get; init; }
 }
+
+/// <summary>
+/// Stable wire model for exported gacha data. Keep this as a property-based
+/// class so serialization does not depend on constructor parameter metadata.
+/// </summary>
+public sealed class GachaExportPayload
+{
+    [JsonPropertyName("exportedAt")] public DateTimeOffset ExportedAt { get; set; }
+    [JsonPropertyName("records")] public List<GachaRecord> Records { get; set; } = [];
+    [JsonPropertyName("pools")] public List<GachaPoolInfo> Pools { get; set; } = [];
+}
