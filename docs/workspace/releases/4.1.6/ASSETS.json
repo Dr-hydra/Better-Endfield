@@ -43,6 +43,7 @@
     "windows_installer": "passed: ISCC compile, file version 4.1.6.0, self-signed-internal",
     "android_release": "passed: gradle assembleRelease, versionName 4.1.6 versionCode 40106 re-read with aapt2",
     "gacha_regression": "passed: GachaRecordStoreTests, 9 checks on the plain assembly and 10 on the Obfuscar output, including the anonymous-export reproduction of #36",
+    "distribution_index": "passed: published index refreshed to 4.1.6; CheckDistributionIndex.py reports software.version, releaseUrl, all 5 asset sizes and the tools urls consistent, with the 4 resource entries preserved",
     "tools_reuse": "BEM Tools, the Android CLI tarball and the DSH plugin ship byte-identical from v4.1.4; rebuilding 1.6.5 drops 4 api-ms-win-core stubs, so the rebuild is not shipped"
   },
   "integrated_commits": [

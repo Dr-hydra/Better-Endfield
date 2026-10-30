@@ -54,4 +54,6 @@ ZIP 根包含 manifest.json 和 payload。Windows 也可解压到 resources/<类
 
 发布先完成不可变 ZIP 上传及字节数验证，再替换索引，最后公开初始草稿。已有版本按逐字节比较确认，不用同名覆盖不同内容。后续软件 PublishRelease.py 发布成功后自动刷新索引中的软件/工具版本，保留资源历史。
 
+软件发布必须走 PublishRelease.py：只有它的 --publish 分支会在公开 release 之后刷新索引（--refresh-software，旧索引保留为 distribution-index.previous.json）。用 gh release create 或网页直接发布会跳过这一步，索引仍停在上一版，已装客户端读 software.version 后判定为最新，收不到更新提示。发完用 CheckDistributionIndex.py 自检，它比对最新稳定 release 与已发布索引的 software.version、releaseUrl、资产名与字节数、tools 下载地址，不一致时退出码为 1。索引过期时单独补跑：PublishResourceRelease.py --refresh-software --publish --output <目录>/distribution-index.json。
+
 默认不计算产物哈希。已有音频来源协议要求的输入 PCK 完整性字段继续保留；它们不属于分发 ZIP 的额外产物哈希。源码、生成输入、资源版本与设备实测边界分别记录。

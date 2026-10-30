@@ -220,3 +220,4 @@ __pycache__/
 # AI 会话与本地工作区目录不进入版本库（docs/workspace/COMMIT_POLICY.md）。
 /.workbuddy/
 /.workbuddy-ai/
+!scripts/CheckDistributionIndex.py
