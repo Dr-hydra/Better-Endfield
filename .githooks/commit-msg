@@ -1,0 +1,32 @@
+#!/bin/sh
+# 拒绝 AI 工具署名与维护者以外的身份，规则见 docs/workspace/COMMIT_POLICY.md。
+msg_file="$1"
+status=0
+
+if grep -qiE '^(co-authored-by|co-developed-by|generated-by):[[:space:]]*(claude|codex|chatgpt|copilot|gemini|cursor)' "$msg_file"; then
+	printf '%s\n' "commit-msg: 提交信息不得包含 AI 工具署名（docs/workspace/COMMIT_POLICY.md）" >&2
+	status=1
+fi
+if grep -qiE '^claude-session:' "$msg_file"; then
+	printf '%s\n' "commit-msg: 提交信息不得包含工具会话标识（docs/workspace/COMMIT_POLICY.md）" >&2
+	status=1
+fi
+
+# git 不保证把身份导出到钩子环境，统一从 git var 取，命令行 -c 覆盖也生效。
+ident_email() {
+	git var "$1" 2>/dev/null | sed -n 's/.*<\(.*\)>.*/\1/p'
+}
+allow='dr-hydra@users.noreply.github.com 116339679+dr-hydra@users.noreply.github.com'
+check_identity() {
+	label="$1"
+	email=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')
+	case " $allow " in
+		*" $email "*) return 0 ;;
+	esac
+	printf '%s\n' "commit-msg: $label 必须是维护者，当前为 '$2'（docs/workspace/COMMIT_POLICY.md）" >&2
+	return 1
+}
+check_identity "作者" "$(ident_email GIT_AUTHOR_IDENT)" || status=1
+check_identity "提交者" "$(ident_email GIT_COMMITTER_IDENT)" || status=1
+
+exit $status

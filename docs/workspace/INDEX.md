@@ -5,6 +5,7 @@
 ## 现行说明与维护入口
 
 - [工作区政策](WORKSPACE_POLICY.md)
+- [提交署名规范](COMMIT_POLICY.md)
 - [配置与日常入口](CONFIGURATION.md)
 - [工作区构建](BUILDING.md)
 - [测试规范](TESTING.md)
@@ -46,6 +47,7 @@
 | [Third-Party Notices](../../THIRD_PARTY_NOTICES.md) | EIEM/Endfield-Poser来源、许可及本地UPSTREAM说明 | 来源/证据 | 1.5.3 |
 | [工作区测试规范与入口](TESTING.md) | parent/test 维护的工作区说明 | 维护参考 | not_applicable |
 | [工作区迁移与资料管理规范（方案草案）](WORKSPACE_POLICY.md) | parent/test 维护的工作区说明 | 工作约束 | not_applicable |
+| [提交署名规范](COMMIT_POLICY.md) | 作者身份、工具署名、外部贡献与发布记录提交号的判定依据 | 工作约束 | not_applicable |
 | [终末地资源映射清单](../../manifests/shared/resource-manifest-report.md) | 动作/语音映射的版本、输入与覆盖统计 | 生成报告 | 1.5.3 |
 | [Task C handoff (2026-10-03)](../../native/tests/async_loading/README.md) | Request/Poll/Cancel、所有权/预算接口及独立验证目标 | 维护参考 | not_applicable |
 | [研究归档](../../research/README.md) | 轻量研究范围、postmodel结论名、旧实现与生产边界 | 历史过程 | 1.5.3 |

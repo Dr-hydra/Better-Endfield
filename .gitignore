@@ -216,3 +216,7 @@ __pycache__/
 # These remain ignored after explicit maintenance-script inclusion rules.
 /scripts/**/__pycache__/
 /scripts/**/*.pyc
+
+# AI 会话与本地工作区目录不进入版本库（docs/workspace/COMMIT_POLICY.md）。
+/.workbuddy/
+/.workbuddy-ai/
