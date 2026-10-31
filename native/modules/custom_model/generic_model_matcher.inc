@@ -54,7 +54,11 @@ bool BuildGenericRendererIndex(const CharacterAdapter& adapter,void* asset,void*
             Log("BuildGenericRendererIndex path/alive reject: path=" + path);
             return false;
         }
-        if (adapter.explicit_resource && std::none_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity){
+        if (adapter.explicit_resource &&
+#if defined(_WIN32)
+            GenericMatching::ClassifyReceiver(path)!=GenericMatching::Region::DesktopProxy &&
+#endif
+            std::none_of(adapter.components.begin(),adapter.components.end(),[&](const auto& identity){
             if (identity.static_mesh == IsStaticRenderer(c.renderer)) {
                 if (path == identity.receiver_path) return true;
 #if defined(__ANDROID__)

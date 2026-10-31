@@ -314,13 +314,14 @@ MethodContract g_methods[]{
     {"android.texture_loaded_mip", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_loadedMipmapLevel",nullptr,"System.Int32",0},false},
     {"android.texture_desired_mip", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_desiredMipmapLevel",nullptr,"System.Int32",0},false},
     {"android.texture_requested_mip", {"UnityEngine.CoreModule.dll","UnityEngine","Texture2D","get_requestedMipmapLevel",nullptr,"System.Int32",0},false},
-    {"android.shadow_get", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","get_shadowCastingMode",nullptr,"UnityEngine.Rendering.ShadowCastingMode",0},true},
     {"android.all_renderers", {"UnityEngine.CoreModule.dll","UnityEngine","Resources","FindObjectsOfTypeAll","System.Type","UnityEngine.Object[]",1},true},
     {"android.renderer_visible", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","get_isVisible",nullptr,"System.Boolean",0},true},
+#endif
+    // Retain the historical keys for shared Android/Windows shadow transactions.
+    {"android.shadow_get", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","get_shadowCastingMode",nullptr,"UnityEngine.Rendering.ShadowCastingMode",0},true},
     {"android.shadow_set", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","set_shadowCastingMode","UnityEngine.Rendering.ShadowCastingMode","System.Void",1},true},
     {"android.shadow_mesh_get", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","get_shadowProxyMesh",nullptr,"UnityEngine.Mesh",0},true},
     {"android.shadow_mesh_set", {"UnityEngine.CoreModule.dll","UnityEngine","Renderer","set_shadowProxyMesh","UnityEngine.Mesh","System.Void",1},true},
-#endif
     {"skinned.get_shared_mesh",
         {"UnityEngine.CoreModule.dll", "UnityEngine", "SkinnedMeshRenderer",
             "get_sharedMesh", nullptr, "UnityEngine.Mesh", 0}, true},
@@ -2224,7 +2225,7 @@ struct PreparedBinding {
 #endif
     bool original_enabled=true;
     bool custom_enabled=true;
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
     bool change_shadow=false;
     int32_t original_shadow=0,custom_shadow=0;
     void* original_shadow_mesh=nullptr;
@@ -2318,7 +2319,11 @@ bool MakeReceiverKey(const CharacterAdapter& adapter,void* asset,void* renderer,
         }
         return false;
     });
-    if (adapter.explicit_resource && !declared && region!=GenericMatching::Region::MobileProxy) return false;
+    if (adapter.explicit_resource && !declared && region!=GenericMatching::Region::MobileProxy
+#if defined(_WIN32)
+        && region!=GenericMatching::Region::DesktopProxy
+#endif
+        ) return false;
     key={adapter.id,std::move(resource),path,adapter.explicit_resource?GenericMatching::Region::Explicit:region};
     return (adapter.explicit_resource || !path.empty()) && key.region!=GenericMatching::Region::Unknown;
 }
@@ -2725,7 +2730,7 @@ bool PrepareRendererMaterialCache(const PreparedBinding& binding,bool inspect_on
 bool ApplyRendererMaterialCache(const PreparedBinding& binding);
 bool RestoreRendererMaterialCache(const PreparedBinding& binding);
 bool ApplyPreparedBinding(PreparedBinding& binding) {
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
     if (binding.change_shadow) {
         void* mode[]{&binding.custom_shadow}; void* mesh[]{binding.custom_shadow_mesh}; int32_t read=-1;void* read_mesh=nullptr;
         if (!InvokeVoid(Contract("android.shadow_set"),binding.renderer,mode) ||
@@ -2765,11 +2770,11 @@ bool RestorePreparedBinding(PreparedBinding& binding) {
     const bool enabled=SetRendererEnabled(binding.renderer,binding.original_enabled) &&
         GetRendererEnabled(binding.renderer,read) && read==binding.original_enabled;
     bool shadow=true;
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
     if (binding.change_shadow) {
-        void* mode[]{&binding.original_shadow}; void* proxy[]{binding.original_shadow_mesh}; int32_t read=-1;void* read_mesh=nullptr;
+        void* mode[]{&binding.original_shadow}; void* proxy[]{binding.original_shadow_mesh}; int32_t read_mode=-1;void* read_mesh=nullptr;
         const bool restored_mode=InvokeVoid(Contract("android.shadow_set"),binding.renderer,mode) &&
-            InvokeValue(Contract("android.shadow_get"),binding.renderer,nullptr,read) && read==binding.original_shadow;
+            InvokeValue(Contract("android.shadow_get"),binding.renderer,nullptr,read_mode) && read_mode==binding.original_shadow;
         const bool restored_proxy=InvokeVoid(Contract("android.shadow_mesh_set"),binding.renderer,proxy) &&
             ReadNullableObject(Contract("android.shadow_mesh_get"),binding.renderer,read_mesh) && read_mesh==binding.original_shadow_mesh;
         shadow=restored_mode && restored_proxy;
@@ -2811,6 +2816,9 @@ bool ValidatePayloadAdapter(const CharacterAdapter& adapter,const BemPocData& be
 thread_local void* g_ready_resource=nullptr;
 thread_local const std::vector<PreparedBinding>* g_ready_bindings=nullptr;
 bool CaptureGenericResourceBindings(const CharacterAdapter&,const BemPocData&,void*,std::vector<PreparedBinding>&);
+#if defined(_WIN32)
+bool PrepareWindowsShadows(const CharacterAdapter&,const BemPocData&,void*,std::vector<PreparedBinding>&);
+#endif
 #if defined(__ANDROID__)
 bool PrepareExplicitAndroidShadows(const CharacterAdapter&,const BemPocData&,void*,std::vector<PreparedBinding>&);
 #endif
@@ -2847,6 +2855,9 @@ bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void*
             }
         }
     }
+    #if defined(_WIN32)
+    if (!PrepareWindowsShadows(adapter,bem,asset,bindings)) return false;
+    #endif
     #if defined(__ANDROID__)
     if (!PrepareExplicitAndroidShadows(adapter,bem,asset,bindings)) return false;
     #endif
@@ -3060,7 +3071,7 @@ struct SavedOriginalBinding {
     bool enabled=true;
     std::string visual_root_path;
     Float3 visual_pristine{};
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
     bool change_shadow=false;
     int32_t shadow=0;
     StrongReference shadow_mesh;
@@ -3093,7 +3104,7 @@ struct SavedOriginalBinding {
         material_present=other.material_present; material_names=other.material_names;
         enabled=other.enabled; bone_paths=other.bone_paths;
         visual_root_path=other.visual_root_path; visual_pristine=other.visual_pristine;
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
         change_shadow=other.change_shadow; shadow=other.shadow;
         shadow_mesh_pin=other.shadow_mesh_pin;
 #endif
@@ -3243,7 +3254,7 @@ struct CompletedBinding {
     bool enabled=false;
     bool generated_mesh=false;
     bool generated_materials=false;
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
     bool check_shadow=false;
     int32_t shadow=0;
     WeakObject shadow_mesh;
@@ -3788,7 +3799,7 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
                 auto local_original=std::make_shared<SavedOriginalBinding>();
                 local_original->CopyIdentity(*old.original);
                 if (!local_original->mesh.Is(binding.donor_mesh) || !local_original->bones.Set(mapped)) return refuse("local-Original-capture-failed");
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
                 local_original->change_shadow=old.original->change_shadow; local_original->shadow=old.original->shadow;
                 if (!local_original->shadow_mesh.Set(old.original->shadow_mesh.Get())) return refuse("Original-shadow-unavailable");
 #endif
@@ -3839,7 +3850,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
                 if (!ResourceRelativePath(asset,ArrayValue(DonorBones(binding),i),path)) return false;
                 original->bone_paths.push_back(std::move(path));
             }
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
             original->change_shadow=binding.change_shadow; original->shadow=binding.original_shadow;
             if (!original->shadow_mesh.Set(binding.original_shadow_mesh)) return false;
             if (binding.change_shadow && binding.original_shadow_mesh && binding.original_shadow_mesh!=binding.custom_shadow_mesh) {
@@ -3854,7 +3865,7 @@ bool RememberResource(const CharacterAdapter& adapter,void* asset,
             !completed.original->material_cache_materials.Set(original_base_materials)) return false;
         // Pin only an Original the receiver is about to stop referencing.
         if (completed.original && binding.custom_mesh!=DonorMesh(binding)) completed.original->EnsurePinned(DonorMesh(binding));
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
         if (completed.original && binding.change_shadow && !completed.original->shadow_mesh_pin) {
             if (void* original=completed.original->shadow_mesh.Get();original && original!=binding.custom_shadow_mesh) {
                 completed.original->shadow_mesh_pin=AcquireOriginalMeshPin(original);
@@ -3925,7 +3936,7 @@ bool IsCompletedResource(const CharacterAdapter& adapter,void* asset,std::string
             bool enabled=false;
             if (!renderer || !binding.mesh.Is(GetRendererMesh(renderer)) ||
                 !GetRendererEnabled(renderer,enabled) || enabled!=binding.enabled) { matches=false; break; }
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
             if (binding.check_shadow) {
                 int32_t mode=-1;void* proxy=nullptr;
                 if (!InvokeValue(Contract("android.shadow_get"),renderer,nullptr,mode) || mode!=binding.shadow ||
@@ -4463,7 +4474,7 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
     }
     return !g_construction->failed;
 }
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
 bool AndroidShadowContractsAvailable() {
     for (const auto* key:{"android.shadow_get","android.shadow_set","android.shadow_mesh_get","android.shadow_mesh_set"}) {
         const auto* method=Contract(key);if (!method || !method->resolved) return false;
@@ -4480,7 +4491,12 @@ bool RestoreSavedShadowState(PreparedBinding& binding) {
     binding.change_shadow=true;binding.custom_shadow=binding.saved_original->shadow;
     binding.custom_shadow_mesh=binding.saved_original->shadow_mesh.Get();return true;
 }
+#endif
+#if defined(__ANDROID__)
 #include "explicit_android_shadows.inc"
+#endif
+#if defined(_WIN32)
+#include "windows_shadows.inc"
 #endif
 struct PayloadCacheEntry {
     std::filesystem::path path;
@@ -4661,7 +4677,7 @@ void PublishCompleted(CompletedResource&& record,void* asset) {
     std::erase_if(g_completed,[&](const auto& old){ return old.root.Is(asset); });
     // A receiver that shows its Original Mesh again keeps it alive itself.
     for (auto& binding:record.bindings) if (binding.original && !binding.generated_mesh) binding.original->mesh_pin.reset();
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
     for (auto& binding:record.bindings) if (binding.original && binding.check_shadow &&
         binding.shadow_mesh.Is(binding.original->shadow_mesh.Get())) binding.original->shadow_mesh_pin.reset();
 #endif
@@ -4700,7 +4716,7 @@ bool PrepareDisabledResource(void* asset,const CharacterAdapter* adapter,std::ve
         binding.custom_bones=DonorBones(binding); binding.custom_enabled=binding.donor_enabled;
         for (int b=0;b<ArrayLength(binding.custom_bones);++b)
             binding.bone_names.push_back(ObjectName(ArrayValue(binding.custom_bones,b)));
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
         if (binding.saved_original->change_shadow) {
             binding.change_shadow=true; binding.custom_shadow=binding.saved_original->shadow;
             binding.custom_shadow_mesh=binding.saved_original->shadow_mesh.Get();

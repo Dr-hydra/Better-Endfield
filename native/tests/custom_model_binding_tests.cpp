@@ -12,11 +12,13 @@ struct Fake {
     std::string name;
     std::vector<void*> array;
     void* bones=nullptr; void* poses=nullptr; void* materials=nullptr; void* mesh=nullptr;
+    int32_t shadow_mode=0;void* shadow_mesh=nullptr;
     void* root_bone=nullptr;
     bool enabled=true;
     bool active_self=true,active_hierarchy=true;
     bool visible=false;
     bool alive=true;
+    bool component_api_allowed=true;
     void* parent=nullptr;
     void* transforms=nullptr;
     void* shader=nullptr;
@@ -92,7 +94,10 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
             "non-GameObject receiver reached a GameObject-specific runtime API");
         ++game_object_calls;
     }
-    if (key=="component.get_transform") return n->transform?n->transform:object;
+    if (key=="component.get_transform") {
+        Check(n && n->component_api_allowed,"non-Component receiver reached Component.get_transform");
+        return n->transform?n->transform:object;
+    }
     if (key=="component.get_game_object") return n->game_object;
     if (key=="audit.active_self") return Scalar(n->active_self);
     if (key=="audit.active_hierarchy") return Scalar(n->active_hierarchy);
@@ -155,6 +160,10 @@ void* BE_CALL InvokeFake(void*,const void* method,void* object,void** args,void*
         return nullptr;
     }
     if (key=="renderer.get_enabled") return Scalar(n->enabled);
+    if (key=="android.shadow_get") return Scalar(n->shadow_mode);
+    if (key=="android.shadow_set") {++fake_binding_write_calls;n->shadow_mode=*static_cast<int32_t*>(args[0]);return nullptr;}
+    if (key=="android.shadow_mesh_get") return n->shadow_mesh;
+    if (key=="android.shadow_mesh_set") {++fake_binding_write_calls;n->shadow_mesh=args[0];return nullptr;}
     if (key=="renderer.is_visible") return Scalar(n->visible);
     if (key=="renderer.set_enabled") { ++fake_binding_write_calls; n->enabled=*static_cast<bool*>(args[0]); return nullptr; }
     if (key=="material.copy") { auto* donor=static_cast<Fake*>(args[0]);if (!donor->shader) donor->shader=Make("shader");n->shader=donor->shader;n->name=donor->name; n->textures=donor->textures; return nullptr; }
@@ -1646,7 +1655,129 @@ void SkinBindingAuditTests() {
     g_host=nullptr;g_weak_new=nullptr;g_weak_target=nullptr;
     std::cout<<"PASS passive skin audit: palette reorder/count, mesh/rootBone replacement, bindpose changes, optional API, zero receiver writes and no retained GC roots"<<std::endl;
 }
+void WindowsShadowTests() {
+    static std::string shadow_test_log;shadow_test_log.clear();
+    BE_HostApiV1 host{};host.runtime_invoke=InvokeFake;host.object_unbox=UnboxFake;host.copy_managed_string=StringFake;
+    host.log=[](void*,const char*,const char* message) {shadow_test_log+=std::string(message)+'\n';};
+    host.object_new=NewFake;host.gchandle_new=TrackedRoot;host.gchandle_free=TrackedFree;g_host=&host;
+    fake_transform_type=Make("TransformType");
+    host.resolve_class=[](void*,const char*,const char*,const char* name,BE_ResolvedClassV1* type)->BE_Result {
+        if (std::string_view(name)!="Transform") return BE_Result_NotReady;
+        type->class_info=fake_transform_type;type->type_object=fake_transform_type;return BE_Result_Ok;
+    };
+    g_weak_new=TrackedWeak;g_weak_target=[](uint32_t h)->void* {auto it=tracked_handles.find(h);return it==tracked_handles.end()?nullptr:it->second;};
+    ConfigureFakeObjectClasses();g_array_new_specific=[](void*,uintptr_t n)->void* {auto* a=Make();a->array.resize(n);return a;};
+    for (auto& method:g_methods) {method.method_info=&method;method.resolved=true;}
+    g_renderer_class.type_object=Make("Renderer");g_skinned_renderer_class.class_info=Make("SkinnedRenderer");
+    auto* asset=GameObject("shadow_postmodel");auto* mesh_all=Make("Mesh_all");mesh_all->parent=asset;
+    auto* lod=Make("lod0");lod->parent=mesh_all;auto* bone=Make("Bone");bone->parent=asset;
+    auto* shadow_root=Make("Shadow_Proxy");shadow_root->parent=asset;auto* desktop=Make("SP_Desktop");desktop->parent=shadow_root;
+    auto* visible=Make("body_lod0");visible->parent=lod;visible->runtime_class=const_cast<void*>(g_skinned_renderer_class.class_info);
+    auto* original=Make("body_lod0");auto* replacement=Make("custom_body");auto* reduced=Make("reduced_body");
+    original->component_api_allowed=false;replacement->component_api_allowed=false;
+    reduced->component_api_allowed=false;asset->component_api_allowed=false;
+    visible->mesh=original;visible->bones=Array({bone});visible->materials=Array({Make("body_material")});visible->shadow_mesh=reduced;
+    auto* proxy=Make("body_shadowProxyDesktop");proxy->parent=desktop;proxy->runtime_class=visible->runtime_class;
+    proxy->mesh=reduced;proxy->bones=Array({bone});proxy->materials=visible->materials;
+    // Live instances can rotate the visible/proxy axes independently by 90
+    // degrees. Exact ownership must still support commit, rebind and restore.
+    proxy->matrix.m[5]=0;proxy->matrix.m[6]=-1;proxy->matrix.m[9]=1;proxy->matrix.m[10]=0;
+    auto* other=Make("hair_shadowProxyDesktop");other->parent=desktop;other->runtime_class=visible->runtime_class;
+    other->mesh=Make("unrelated_reduced");other->bones=Array({bone});other->materials=visible->materials;
+    asset->array={visible,proxy,other};asset->transforms=Array({bone});
+    const std::array<ComponentIdentity,1> components{{{"body_lod0",6,"Mesh_all/lod0/body_lod0",false}}};
+    const CharacterAdapter adapter{"shadow_role","shadow_postmodel","shadow_postmodel","",false,components,"character","assets/shadow.prefab",0,true};
+    BemPocData bem;bem.components.resize(1);bem.components[0].info.component_id=0;bem.components[0].info.original_index_count=6;
+    {
+        ConstructionScope scope;std::vector<PreparedBinding> baseline;
+        Check(CaptureGenericResourceBindings(adapter,bem,asset,baseline) && baseline.size()==1,"desktop visible capture failed");
+        std::vector<GenericRendererCandidate> index;
+        Check(BuildGenericRendererIndex(adapter,asset,asset,index) && index.size()==3,"desktop proxy missing from explicit clone index");
+        auto tx=baseline;tx[0].custom_mesh=replacement;tx[0].custom_materials=visible->materials;
+        const auto writes=fake_binding_write_calls;
+        Check(PrepareWindowsShadows(adapter,bem,asset,tx) && tx.size()==2 && fake_binding_write_calls==writes,
+            "desktop preparation mutated Unity or failed to include exact proxy");
+        Check(tx[0].custom_shadow==1 && !tx[0].custom_shadow_mesh && !tx[1].custom_enabled,"desktop caster takeover policy incorrect");
+        visible->shadow_mesh=nullptr;auto reduced_tx=baseline;
+        Check(PrepareWindowsShadows(adapter,bem,asset,reduced_tx) && reduced_tx.size()==2,
+            "independent reduced proxy without a shadowMesh link was not recognized");
+        visible->shadow_mesh=reduced;
+        reject_material_renderer=proxy;rejected=false;
+        Check(CommitResource<PreparedBinding>(tx,ApplyPreparedBinding,RestorePreparedBinding)!=CommitResult::Committed &&
+            visible->mesh==original && visible->shadow_mode==0 && visible->shadow_mesh==reduced && proxy->enabled,
+            "failed desktop transaction did not restore mesh/casting/proxy");
+        reject_material_renderer=nullptr;rejected=false;scope.failed=false;
+        CompletedResource record;Check(RememberResource(adapter,asset,tx,record,"shadow-test",true),"desktop Original capture failed");
+        Check(CommitResource<PreparedBinding>(tx,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Committed &&
+            visible->shadow_mode==1 && !visible->shadow_mesh && !proxy->enabled && other->enabled,"desktop projection handoff failed");
+        PublishCompleted(std::move(record),asset);
+        Check(IsCompletedResource(adapter,asset,"shadow-test"),"desktop completion did not recognize shadow state");
+        visible->shadow_mesh=reduced;Check(!IsCompletedResource(adapter,asset,"shadow-test"),"stale game proxy writeback was not detected");
+        visible->shadow_mesh=nullptr;
+        std::vector<PreparedBinding> hot;
+        Check(CaptureGenericResourceBindings(adapter,bem,asset,hot),"rotated proxy hot-switch capture failed");
+        auto* switched=Make("switched_body");switched->component_api_allowed=false;
+        hot[0].custom_mesh=switched;hot[0].custom_materials=visible->materials;
+        const auto before_hot=fake_binding_write_calls;
+        Check(PrepareWindowsShadows(adapter,bem,asset,hot) && hot.size()==2 &&
+            fake_binding_write_calls==before_hot,"rotated proxy hot-switch prepare failed or wrote bindings");
+        CompletedResource switched_record;
+        Check(RememberResource(adapter,asset,hot,switched_record,"shadow-hot-test",true) &&
+            CommitResource<PreparedBinding>(hot,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Committed &&
+            visible->mesh==switched && visible->shadow_mode==1 && !visible->shadow_mesh && !proxy->enabled,
+            "rotated proxy hot-switch commit failed");
+        PublishCompleted(std::move(switched_record),asset);
+        Check(IsCompletedResource(adapter,asset,"shadow-hot-test"),"rotated proxy hot-switch readback failed");
+        auto kept=bem;kept.components[0].info.flags=kComponentFlagNoGeometry;std::vector<PreparedBinding> keep;
+        Check(CaptureGenericResourceBindings(adapter,kept,asset,keep),"desktop keep capture failed");
+        keep[0].custom_mesh=DonorMesh(keep[0]);keep[0].custom_materials=visible->materials;
+        Check(PrepareWindowsShadows(adapter,kept,asset,keep) && keep.size()==2 && keep[1].custom_enabled,
+            "keep after replacement did not restore independent proxy");
+        Check(CommitResource<PreparedBinding>(keep,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Committed &&
+            visible->shadow_mode==0 && visible->shadow_mesh==reduced && proxy->enabled,"keep did not restore original shadow policy");
+        g_completed.clear();
+        auto material_only=baseline;kept.components[0].info.flags=kComponentFlagNoGeometry;
+        Check(PrepareWindowsShadows(adapter,kept,asset,material_only) && material_only.size()==1 && !material_only[0].change_shadow,
+            "material-only edit changed shadow policy");
+        auto hidden=bem;hidden.components[0].info.flags=kComponentFlagNoGeometry|kComponentFlagHidden;
+        auto hide=baseline;hide[0].custom_enabled=false;
+        Check(PrepareWindowsShadows(adapter,hidden,asset,hide) && hide.size()==2 && !hide[1].custom_enabled,"hidden part retained old proxy");
+        proxy->matrix.m[5]=1;proxy->matrix.m[6]=0;proxy->matrix.m[9]=0;proxy->matrix.m[10]=1;
+        auto* foreign=Make("ForeignBone");proxy->bones=Array({foreign});auto invalid=baseline;
+        Check(!PrepareWindowsShadows(adapter,bem,asset,invalid) && invalid.size()==1 && proxy->enabled,
+            "same-name proxy with foreign skeleton was accepted or preparation leaked");
+        shadow_test_log.clear();
+        // Mesh-identity ownership also only toggles enabled state: different
+        // coordinates must neither block it nor hide competing owners.
+        proxy->name="fallback_shadowProxyDesktop";
+        proxy->bones=Array({bone});proxy->matrix.m[12]=3;invalid=baseline;
+        g_verified_mesh_space_roots={asset,nullptr};
+        const auto fallback_writes=fake_binding_write_calls;
+        auto* matrix_getter=const_cast<MethodContract*>(Contract("transform.local_to_world"));
+        matrix_getter->resolved=false;
+        const bool fallback_prepared=PrepareWindowsShadows(adapter,bem,asset,invalid);
+        matrix_getter->resolved=true;
+        Check(fallback_prepared && invalid.size()==2 && !invalid[1].custom_enabled &&
+            fake_binding_write_calls==fallback_writes,"different-space fallback ownership was blocked or mutated bindings");
+        auto* competing=Make("competing_lod0");competing->parent=lod;competing->runtime_class=visible->runtime_class;
+        competing->mesh=reduced;competing->bones=Array({bone});competing->materials=visible->materials;
+        asset->array.push_back(competing);invalid=baseline;
+        Check(!PrepareWindowsShadows(adapter,bem,asset,invalid) && invalid.size()==1 &&
+            shadow_test_log.find("ambiguous desktop proxy owner")!=std::string::npos,
+            "different-space competing owner was ignored");
+        asset->array.pop_back();
+        g_verified_mesh_space_roots={};proxy->matrix.m[12]=0;
+        proxy->name="body_shadowProxyDesktop";
+        auto* contract=const_cast<MethodContract*>(Contract("android.shadow_mesh_set"));contract->resolved=false;invalid=baseline;
+        Check(!PrepareWindowsShadows(adapter,bem,asset,invalid),"missing desktop setter was ignored");contract->resolved=true;
+    }
+    g_completed.clear();g_original_mesh_pins.clear();
+    Check(roots==0 && tracked_handles.empty(),"desktop shadow test leaked Original handles");
+    g_host=nullptr;g_weak_new=nullptr;g_weak_target=nullptr;g_renderer_class={};g_skinned_renderer_class={};fake_transform_type=nullptr;
+    std::cout<<"PASS Windows shadow casting, exact desktop ownership, rollback, completion readback, keep/hidden restore and refusal\n";
+}
 int main(int argc,char** argv) {
+    if(argc==2 && std::string_view(argv[1])=="--windows-shadows") {WindowsShadowTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--material-cache-sync") {MaterialCacheSyncTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--retired-resources") {RetiredResourceCleanupTests();return 0;}
     if(argc==2 && std::string_view(argv[1])=="--skin-binding-audit") {SkinBindingAuditTests();return 0;}

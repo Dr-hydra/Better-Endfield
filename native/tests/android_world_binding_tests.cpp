@@ -72,6 +72,7 @@ struct PreparedBinding {
     void* custom_mesh=nullptr;
     void* custom_bones=nullptr;
     void* custom_materials=nullptr;
+    std::vector<BemMaterialOverrides> material_overrides;
     bool saved_original=false,donor_enabled=true,original_enabled=true,custom_enabled=true;
     bool change_shadow=false;
     int32_t original_shadow=0,custom_shadow=0;

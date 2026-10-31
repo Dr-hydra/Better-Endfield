@@ -65,7 +65,7 @@ bool ProtectCurrentGeneratedAssets(std::unordered_set<int32_t>& protected_ids) {
                 int32_t id=0;if (!InvokeValue(Contract("object.instance_id"),mesh,nullptr,id)) return false;
                 protected_ids.insert(id);
             }
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
             if (void* mesh=Invoke(Contract("android.shadow_mesh_get"),renderer,nullptr,false)) {
                 int32_t id=0;if (!InvokeValue(Contract("object.instance_id"),mesh,nullptr,id)) return false;
                 protected_ids.insert(id);

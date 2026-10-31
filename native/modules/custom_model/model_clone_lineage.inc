@@ -42,7 +42,7 @@ std::shared_ptr<const ModelCloneLineage> CaptureModelCloneLineage(void* delivere
         GenericMatching::MeshIdentity identity;
         if (!ReadGenericMeshIdentity(old.original->ResolveMesh(found->mesh),GenericMatching::DonorOrigin::SavedOriginal,identity)) return {};
         lineage->bindings.push_back({old.receiver_key,old.mesh.instance_id,old.component_id,identity.name,identity.indices,IsStaticRenderer(found->renderer),
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
             old.check_shadow,old.shadow,
 #else
             false,0,
@@ -149,7 +149,7 @@ bool AdoptObservedModelClone(void* asset,const EnabledMod& mod,const ModelCloneL
             }
             if (!binding.original->bones.Set(original_bones)) return refuse("clone Original palette capture failed");
         }
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
         binding.check_shadow=source.check_shadow;binding.shadow=source.shadow;
         if (source.check_shadow) {
             int32_t mode=-1;void* shadow_mesh=nullptr;

@@ -512,7 +512,7 @@ bool ModelBindingsUnchanged(const std::vector<PreparedBinding>& bindings) {
         void* bones=GetRendererBones(b.renderer);
         if (ArrayLength(bones)!=ArrayLength(b.original_bones)) return false;
         for (int i=0;i<ArrayLength(bones);++i) if (ArrayValue(bones,i)!=ArrayValue(b.original_bones,i)) return false;
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(_WIN32)
         if (b.change_shadow) {
             int32_t mode=-1;void* proxy=nullptr;
             if (!InvokeValue(Contract("android.shadow_get"),b.renderer,nullptr,mode) || mode!=b.original_shadow ||
@@ -529,6 +529,10 @@ bool CommitModelJob(ModelBuildJob& job,uint64_t frame) {
     if (!ModelBindingsUnchanged(job.bindings)) return JobFail(job,"captured bindings changed before commit");
     auto transaction=job.bindings;CompletedResource completed,ui_completed;
     void* paired_ui=nullptr;
+#if defined(_WIN32)
+    if (!PrepareWindowsShadows(*job.mod.adapter,job.plan->data,job.asset,transaction))
+        return JobFail(job,"Windows shadow transaction unavailable (see preceding log)");
+#endif
 #if defined(__ANDROID__)
     if (job.mod.adapter->explicit_resource && !PrepareExplicitAndroidShadows(*job.mod.adapter,job.plan->data,job.asset,transaction))
         return JobFail(job,"explicit Android shadow ownership or transaction unavailable");
