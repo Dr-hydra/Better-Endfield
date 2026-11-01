@@ -3283,6 +3283,32 @@ bool SameAdapter(const CharacterAdapter& a,const CharacterAdapter& b) {
         std::string_view(a.ui_resource)==b.ui_resource && std::string_view(a.resource_id)==b.resource_id &&
         a.explicit_resource==b.explicit_resource && a.receiver_lod==b.receiver_lod;
 }
+// Package schemas describe one physical receiver differently: legacy adapters
+// pair world/UI and classify LOD paths, while explicit adapters select one
+// resource and mark every declared path Explicit. Keep selection equality
+// strict; only Original lineage may bridge these descriptions on Windows.
+bool SameReceiverLineage(const GenericMatching::ReceiverKey& a,const GenericMatching::ReceiverKey& b) {
+    if (a==b) return true;
+#if defined(_WIN32)
+    if (a.character!=b.character || a.resource!=b.resource || a.path!=b.path) return false;
+    const auto region=GenericMatching::ClassifyReceiver(a.path);
+    return region!=GenericMatching::Region::Unknown &&
+        ((a.region==GenericMatching::Region::Explicit && b.region==region) ||
+         (b.region==GenericMatching::Region::Explicit && a.region==region));
+#else
+    return false;
+#endif
+}
+bool SameResourceLineage(const CharacterAdapter& a,const CharacterAdapter& b,std::string_view resource) {
+    if (SameAdapter(a,b)) return true;
+#if defined(_WIN32)
+    return std::string_view(a.id)==b.id &&
+        (resource==a.world_resource || resource==a.ui_resource) &&
+        (resource==b.world_resource || resource==b.ui_resource);
+#else
+    return false;
+#endif
+}
 // The clock is single-package. Keep the adapter alive across registry swaps,
 // and retain its selection until the old targets have been restored.
 struct DriverResourceOwner {
@@ -3727,13 +3753,13 @@ bool UseSavedOriginal(void* asset,PreparedBinding& binding,bool require_material
     const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
         GenericMatching::ReceiverKey key;
         return record.root.Is(asset) && MakeReceiverKey(*record.adapter,asset,binding.renderer,key) &&
-            (binding.receiver_key.character.empty() || binding.receiver_key==key) &&
+            (binding.receiver_key.character.empty() || SameReceiverLineage(binding.receiver_key,key)) &&
             std::any_of(record.bindings.begin(),record.bindings.end(),[&](const auto& old) {return old.receiver_key==key;});
     });
     for (auto record=g_completed.rbegin();record!=g_completed.rend();++record) {
         GenericMatching::ReceiverKey key;
         if (!MakeReceiverKey(*record->adapter,asset,binding.renderer,key) ||
-            (!binding.receiver_key.character.empty() && binding.receiver_key!=key)) continue;
+            (!binding.receiver_key.character.empty() && !SameReceiverLineage(binding.receiver_key,key))) continue;
         for (const auto& old:record->bindings) {
             if (!old.original || old.receiver_key!=key) continue;
             const bool same_root=record->root.Is(asset);
@@ -4181,9 +4207,9 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
     // A receiver's own completed record is stronger evidence than another
     // template/clone sharing an unchanged Mesh. Retired records must not veto it.
     const bool owns_record=std::any_of(g_completed.begin(),g_completed.end(),[&](const auto& record) {
-        return SameAdapter(*record.adapter,adapter) && record.root.Is(asset) &&
+        return SameResourceLineage(*record.adapter,adapter,candidate.key.resource) && record.root.Is(asset) &&
             std::any_of(record.bindings.begin(),record.bindings.end(),[&](const auto& binding) {
-                return binding.receiver_key==candidate.key;
+                return SameReceiverLineage(binding.receiver_key,candidate.key);
             });
     });
     bool saw_completed=false;
@@ -4198,8 +4224,8 @@ bool ReadGenericPristineMesh(const CharacterAdapter& adapter,void* asset,
             InvokeValue(Contract("object.instance_id"),a,nullptr,x) &&
             InvokeValue(Contract("object.instance_id"),b,nullptr,y) && x==y));
     };
-    for (const auto& record:g_completed) if (SameAdapter(*record.adapter,adapter)) for (const auto& old:record.bindings) {
-        if (old.receiver_key!=candidate.key) continue;
+    for (const auto& record:g_completed) if (SameResourceLineage(*record.adapter,adapter,candidate.key.resource)) for (const auto& old:record.bindings) {
+        if (!SameReceiverLineage(old.receiver_key,candidate.key)) continue;
         const bool same_root=record.root.Is(asset);
         if (owns_record && !same_root) continue;
         const bool same_mesh=old.mesh.Is(lineage_mesh);

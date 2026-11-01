@@ -1687,6 +1687,11 @@ void WindowsShadowTests() {
     asset->array={visible,proxy,other};asset->transforms=Array({bone});
     const std::array<ComponentIdentity,1> components{{{"body_lod0",6,"Mesh_all/lod0/body_lod0",false}}};
     const CharacterAdapter adapter{"shadow_role","shadow_postmodel","shadow_postmodel","",false,components,"character","assets/shadow.prefab",0,true};
+    const CharacterAdapter legacy_adapter{"shadow_role","shadow_postmodel","shadow_uimodel","",false,components};
+    Check(!SameAdapter(adapter,legacy_adapter),"package selection identities were incorrectly merged");
+    // Replacements keep the original name but have different geometry counts,
+    // exactly as live packages do. Only the saved Original may validate them.
+    replacement->name="body_lod0";replacement->index_count=12;
     BemPocData bem;bem.components.resize(1);bem.components[0].info.component_id=0;bem.components[0].info.original_index_count=6;
     {
         ConstructionScope scope;std::vector<PreparedBinding> baseline;
@@ -1714,8 +1719,69 @@ void WindowsShadowTests() {
         Check(IsCompletedResource(adapter,asset,"shadow-test"),"desktop completion did not recognize shadow state");
         visible->shadow_mesh=reduced;Check(!IsCompletedResource(adapter,asset,"shadow-test"),"stale game proxy writeback was not detected");
         visible->shadow_mesh=nullptr;
+        std::vector<PreparedBinding> legacy;
+        Check(CaptureGenericResourceBindings(legacy_adapter,bem,asset,legacy) && legacy.size()==1 &&
+            legacy[0].original_mesh==replacement && DonorMesh(legacy[0])==original && legacy[0].saved_original,
+            "explicit to legacy switch lost the pristine geometry/rollback donor");
+        auto* legacy_mesh=Make("body_lod0");legacy_mesh->index_count=18;legacy_mesh->component_api_allowed=false;
+        legacy[0].custom_mesh=legacy_mesh;legacy[0].custom_materials=visible->materials;
+        Check(PrepareWindowsShadows(legacy_adapter,bem,asset,legacy) && legacy.size()==2 &&
+            legacy[1].saved_original && !legacy[1].custom_enabled,
+            "cross-format switch lost desktop proxy Original state");
+        reject_material_renderer=proxy;rejected=false;
+        Check(CommitResource<PreparedBinding>(legacy,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Restored &&
+            visible->mesh==replacement && visible->shadow_mode==1 && !visible->shadow_mesh && !proxy->enabled,
+            "failed cross-format package switch did not retain the previous appearance");
+        reject_material_renderer=nullptr;rejected=false;scope.failed=false;
+        CompletedResource legacy_record;
+        Check(RememberResource(legacy_adapter,asset,legacy,legacy_record,"shadow-legacy-test",true) &&
+            CommitResource<PreparedBinding>(legacy,ApplyPreparedBinding,RestorePreparedBinding)==CommitResult::Committed,
+            "explicit to legacy package switch failed");
+        PublishCompleted(std::move(legacy_record),asset);
+        Check(IsCompletedResource(legacy_adapter,asset,"shadow-legacy-test") &&
+            !IsCompletedResource(adapter,asset,"shadow-legacy-test"),
+            "cross-format lineage weakened package completion identity");
+        // An already-spawned instance still shares the legacy generation's
+        // Mesh, but must recover its own bones when the explicit package wins.
+        auto* clone=GameObject("shadow_postmodel(Clone)");
+        auto* clone_mesh_all=Make("Mesh_all");clone_mesh_all->parent=clone;
+        auto* clone_lod=Make("lod0");clone_lod->parent=clone_mesh_all;
+        auto* clone_bone=Make("Bone");clone_bone->parent=clone;
+        auto* clone_visible=Make("body_lod0");clone_visible->parent=clone_lod;
+        clone_visible->runtime_class=visible->runtime_class;clone_visible->mesh=legacy_mesh;
+        clone_visible->materials=visible->materials;clone_visible->bones=Array({clone_bone});clone_visible->shadow_mode=1;
+        auto* clone_shadow=Make("Shadow_Proxy");clone_shadow->parent=clone;
+        auto* clone_desktop=Make("SP_Desktop");clone_desktop->parent=clone_shadow;
+        auto* clone_proxy=Make("body_shadowProxyDesktop");clone_proxy->parent=clone_desktop;
+        clone_proxy->runtime_class=proxy->runtime_class;clone_proxy->mesh=reduced;
+        clone_proxy->materials=proxy->materials;clone_proxy->bones=clone_visible->bones;clone_proxy->enabled=false;
+        clone->array={clone_visible,clone_proxy};clone->transforms=Array({clone_bone});
+        std::vector<PreparedBinding> clone_bindings;
+        Check(CaptureGenericResourceBindings(adapter,bem,clone,clone_bindings) &&
+            DonorMesh(clone_bindings[0])==original && ArrayValue(DonorBones(clone_bindings[0]),0)==clone_bone &&
+            PrepareWindowsShadows(adapter,bem,clone,clone_bindings) && clone_bindings.size()==2 &&
+            clone_bindings[1].saved_original && clone_bindings[1].donor_enabled,
+            "legacy scene clone lost Original geometry, local bones or proxy state during explicit switch");
+        auto rekeyed=adapter;rekeyed.resource_id="other-package-resource-id";
+        std::vector<PreparedBinding> rekeyed_bindings;
+        Check(CaptureGenericResourceBindings(rekeyed,bem,asset,rekeyed_bindings) &&
+            DonorMesh(rekeyed_bindings[0])==original,
+            "package-local resource id blocked Original lineage");
+        auto* unknown_mesh=Make("body_lod0");visible->mesh=unknown_mesh;
+        std::vector<PreparedBinding> unknown;
+        Check(!CaptureGenericResourceBindings(adapter,bem,asset,unknown),
+            "cross-format lineage accepted an unrecorded Mesh with a matching name/count");
+        visible->mesh=legacy_mesh;
         std::vector<PreparedBinding> hot;
-        Check(CaptureGenericResourceBindings(adapter,bem,asset,hot),"rotated proxy hot-switch capture failed");
+        Check(CaptureGenericResourceBindings(adapter,bem,asset,hot) &&
+            hot[0].original_mesh==legacy_mesh && DonorMesh(hot[0])==original && hot[0].saved_original,
+            "legacy to explicit switch validated the old package instead of the pristine Mesh");
+        auto foreign_key=hot[0].receiver_key;foreign_key.character="other-role";
+        Check(!SameReceiverLineage(foreign_key,hot[0].receiver_key),"cross-role Original lineage was accepted");
+        foreign_key=hot[0].receiver_key;foreign_key.resource="shadow_uimodel";
+        Check(!SameReceiverLineage(foreign_key,hot[0].receiver_key),"cross-resource Original lineage was accepted");
+        foreign_key=hot[0].receiver_key;foreign_key.path="Mesh_all/lod1/body_lod1";
+        Check(!SameReceiverLineage(foreign_key,hot[0].receiver_key),"cross-LOD Original lineage was accepted");
         auto* switched=Make("switched_body");switched->component_api_allowed=false;
         hot[0].custom_mesh=switched;hot[0].custom_materials=visible->materials;
         const auto before_hot=fake_binding_write_calls;
