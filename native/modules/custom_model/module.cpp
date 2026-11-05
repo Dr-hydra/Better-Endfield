@@ -11,6 +11,8 @@
 #include "mod_registry.h"
 #include "resource_policy.h"
 #include "generic_model_matcher.h"
+#include "compat_registry.h"
+#include "compat_records.inc"
 #include "aurora_legacy_compat.h"
 #include "texture_binding_policy.h"
 #if defined(__ANDROID__)
@@ -4361,6 +4363,17 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
         return found!=index.end() && candidate.pristine.mesh && !GenericCandidateContractError(asset,*found,static_mesh);
     };
     auto match=GenericMatching::SelectUnique(candidates,request,candidate_valid);
+    // Registered compatibility repairs get exactly one chance, and only after
+    // the ordinary match found nothing. Ambiguous is never repaired. A repair
+    // that sticks wins over the platform fallbacks below, which stay in place
+    // for the cases that are not registered yet.
+    if (match.status==GenericMatching::MatchStatus::Missing) {
+        GenericMatching::RepairContext context{adapter,asset,candidates,component_id,request,match};
+        match=GenericMatching::SelectRepaired(context,candidate_valid,[](const char* id,const char* note) {
+            Log("Compatibility repair applied: id="+std::string(id?id:"")+" note="+std::string(note?note:""));
+        });
+        if (match.status==GenericMatching::MatchStatus::Matched) return match;
+    }
 #if defined(_WIN32)
     const bool is_legacy_aurora = windows_compat &&
         AuroraLegacy::IsLegacyTarget(adapter.id,request.resource,component_id,request.mesh_name,request.indices,adapter.explicit_resource);

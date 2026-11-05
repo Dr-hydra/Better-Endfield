@@ -893,7 +893,8 @@ bool HasCompatibleAndroidLegacyWorld(const EnabledMod& mod,void* asset,std::stri
     if (!BuildModelDiscoveryIndex(adapter,donor,ui_index,ui_candidates,reason) ||
         !BuildModelDiscoveryIndex(adapter,asset,world_index,world_candidates,reason)) return false;
     std::vector<void*> ui_receivers,world_receivers;
-    for (const auto& identity:adapter.components) {
+    for (size_t component=0;component<adapter.components.size();++component) {
+        const auto& identity=adapter.components[component];
         const auto compatible=[&](void* root,const auto& index,const auto& candidate) {
             const auto entry=std::find_if(index.begin(),index.end(),[&](const auto& value){return value.renderer==candidate.renderer;});
             return entry!=index.end() && ArrayLength(entry->bones)>0 &&
@@ -901,8 +902,11 @@ bool HasCompatibleAndroidLegacyWorld(const EnabledMod& mod,void* asset,std::stri
         };
         GenericMatching::Request ui_request{adapter.id,adapter.ui_resource,identity.name,
             GenericMatching::Region::Lod0,identity.indices,!mod.skip_validation,""};
-        const auto source=GenericMatching::SelectUnique(ui_candidates,ui_request,
-            [&](const auto& c){return compatible(donor,ui_index,c);});
+        GenericMatching::RepairContext ui_context{adapter,donor,ui_candidates,uint32_t(component),ui_request,{}};
+        const auto source=GenericMatching::SelectRepaired(ui_context,[&](const auto& c){return compatible(donor,ui_index,c);},
+            [](const char* id,const char* note) {
+                Log("Android legacy UI donor repaired: id="+std::string(id?id:"")+" note="+std::string(note?note:""));
+            });
         if (source.status!=GenericMatching::MatchStatus::Matched) {
             reason="Android-legacy-UI-donor="+std::string(identity.name)+
                 DescribeGenericDonorFailure(donor,ui_index,ui_candidates,ui_request,source.status,false);return false;
@@ -932,8 +936,11 @@ bool HasCompatibleAndroidLegacyWorld(const EnabledMod& mod,void* asset,std::stri
         }
         GenericMatching::Request world_request{adapter.id,adapter.world_resource,relation.target_mesh,
             GenericMatching::Region::Lod1,relation.target_indices,!mod.skip_validation && relation.target_indices_known,relation.target_path};
-        const auto target=GenericMatching::SelectUnique(world_candidates,world_request,
-            [&](const auto& c){return compatible(asset,world_index,c);});
+        GenericMatching::RepairContext world_context{adapter,asset,world_candidates,uint32_t(component),world_request,{}};
+        const auto target=GenericMatching::SelectRepaired(world_context,[&](const auto& c){return compatible(asset,world_index,c);},
+            [](const char* id,const char* note) {
+                Log("Android legacy world receiver repaired: id="+std::string(id?id:"")+" note="+std::string(note?note:""));
+            });
         if (target.status!=GenericMatching::MatchStatus::Matched) {
             reason="Android-legacy-world-donor="+std::string(identity.name)+
                 DescribeGenericDonorFailure(asset,world_index,world_candidates,world_request,target.status,false);return false;
