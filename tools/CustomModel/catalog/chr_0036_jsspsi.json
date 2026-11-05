@@ -5,12 +5,13 @@
   "name": "祀",
   "platform": "windows-x64",
   "profile_id": "chr_0036_jsspsi-pc",
-  "revision": "20261015-1.6.3-identities1",
+  "revision": "20261105-1.6.3-identities2",
   "verified": true,
   "world_resource": "chr_0036_jsspsi_postmodel",
   "ui_resource": "chr_0036_jsspsi_uimodel",
   "source_snapshot": {
-    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418",
+    "manifest_hash": "4a7c2fe9fb35c33828391ea9a29b3770"
   },
   "components": {
     "0": {
@@ -1513,6 +1514,12 @@
             "path": "chr_0036_jsspsi_uimodel/Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0"
           }
         }
+      },
+      "layer_mapping": {
+        "slot": "S_actor_jsspsi_vfxpart_01_lod0",
+        "rendered_mesh": "S_actor_jsspsi_cloth_06_lod0",
+        "vertex_count": 1194,
+        "index_count": 4680
       }
     },
     "7": {
@@ -1809,6 +1816,12 @@
             "path": "chr_0036_jsspsi_uimodel/Mesh_all/lod0/S_actor_jsspsi_cloth_08_lod0"
           }
         }
+      },
+      "layer_mapping": {
+        "slot": "S_actor_jsspsi_vfxpart_04_lod0",
+        "rendered_mesh": "S_actor_jsspsi_cloth_08_lod0",
+        "vertex_count": 456,
+        "index_count": 1752
       }
     },
     "9": {
@@ -4772,5 +4785,63 @@
       "reason": "not a complete single-submesh index region"
     }
   ],
-  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1"
+  "identity_policy": "efmi-dx11-region-texture0-fullchain-v1",
+  "layer_mappings": [
+    {
+      "slot": "S_actor_jsspsi_vfxpart_01_lod0",
+      "rendered_mesh": "S_actor_jsspsi_cloth_06_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_01_lod0",
+      "changed": true,
+      "vertex_count": 1194,
+      "index_count": 4680
+    },
+    {
+      "slot": "S_actor_jsspsi_vfxpart_02_lod0",
+      "rendered_mesh": "S_actor_jsspsi_vfxpart_02_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_02_lod0",
+      "changed": false,
+      "vertex_count": 219,
+      "index_count": 924
+    },
+    {
+      "slot": "S_actor_jsspsi_vfxpart_03_lod0",
+      "rendered_mesh": "S_actor_jsspsi_vfxpart_03_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_03_lod0",
+      "changed": false,
+      "vertex_count": 1255,
+      "index_count": 5376
+    },
+    {
+      "slot": "S_actor_jsspsi_vfxpart_04_lod0",
+      "rendered_mesh": "S_actor_jsspsi_cloth_08_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_04_lod0",
+      "changed": true,
+      "vertex_count": 456,
+      "index_count": 1752
+    },
+    {
+      "slot": "S_actor_jsspsi_vfxpart_05_lod0",
+      "rendered_mesh": "S_actor_jsspsi_vfxpart_05_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_05_lod0",
+      "changed": false,
+      "vertex_count": 418,
+      "index_count": 1800
+    },
+    {
+      "slot": "S_actor_jsspsi_vfxpart_06_lod0",
+      "rendered_mesh": "S_actor_jsspsi_vfxpart_06_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_06_lod0",
+      "changed": false,
+      "vertex_count": 208,
+      "index_count": 900
+    },
+    {
+      "slot": "S_actor_jsspsi_vfxpart_07_lod0",
+      "rendered_mesh": "S_actor_jsspsi_vfxpart_07_lod0",
+      "slot_mesh": "S_actor_jsspsi_vfxpart_07_lod0",
+      "changed": false,
+      "vertex_count": 550,
+      "index_count": 2316
+    }
+  ]
 }
