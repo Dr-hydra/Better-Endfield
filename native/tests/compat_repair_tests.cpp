@@ -76,10 +76,11 @@ CharacterAdapter Adapter(const char* id,bool explicit_resource) {
     return adapter;
 }
 Candidate Slot(const char* character,const char* path,Region region,void* renderer,void* mesh,
-    const char* mesh_name,uint64_t indices,bool indices_known=true) {
+    const char* mesh_name,uint64_t indices,bool indices_known=true,
+    const char* resource="chr_0036_jsspsi_postmodel") {
     Candidate candidate;
     candidate.key.character=character;
-    candidate.key.resource="chr_0036_jsspsi_postmodel";
+    candidate.key.resource=resource;
     candidate.key.path=path;
     candidate.key.region=region;
     candidate.renderer=renderer;
@@ -289,6 +290,26 @@ void AmbiguousRefusalChecks() {
             "a slot record answered an ambiguity it could not resolve");
         Check(request.verified_receiver_path.empty(),
             "a refused slot record left the request rewritten");
+    }
+    {
+        // The UI resource keeps its own records: the Android legacy route looks
+        // the donor up in the UI resource first, so a record scoped to the world
+        // one would not be consulted there.
+        auto candidates=std::vector<Candidate>{
+            Slot("chr_0036_jsspsi","Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",Region::Lod0,
+                &renderer_slot,&mesh_shared,"S_actor_jsspsi_cloth_06_lod0",4680,true,
+                "chr_0036_jsspsi_uimodel"),
+            Slot("chr_0036_jsspsi","Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0",Region::Lod0,
+                &renderer_owner,&mesh_shared,"S_actor_jsspsi_cloth_06_lod0",4680,true,
+                "chr_0036_jsspsi_uimodel"),
+        };
+        Request request{"chr_0036_jsspsi","chr_0036_jsspsi_uimodel","S_actor_jsspsi_cloth_06_lod0",
+            Region::Lod0,4680,true,""};
+        auto run=Repair(adapter,candidates,request,1u);
+        Check(run.match.status==MatchStatus::Matched && run.match.index==1,
+            "UI slot record did not disambiguate the UI resource");
+        Check(run.applied_id && std::string_view(run.applied_id)=="jsspsi-cloth06-slot-ui",
+            "UI slot record was not the one that ran");
     }
     {
         // Wrong geometry count: the slot is not the one the record describes.
