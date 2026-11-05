@@ -65,9 +65,41 @@ inline constexpr GenericMatching::FunctionRepair kCompatFunctionRepairs[]={
     {"chr_0014_aurora",nullptr,1,&RepairAuroraLegacy,nullptr,
         /*also_when_unchecked=*/true},
 };
+#elif defined(__ANDROID__)
+// Android packs the world prefab one LOD above what a package declares, so an
+// explicit-resource component can fail on the LOD digit alone even though the
+// renderer sits in the same Mesh_all slot. The candidate index admits those
+// sibling paths only here (generic_model_matcher.inc), which is why this is a
+// platform registration rather than a data record.
+//
+// It takes the first sibling candidate that would also pass the caller's
+// contract check, exactly as the branch it replaces did. Order is the index
+// order, which is the renderer order of the prefab.
+GenericMatching::RepairResult RepairAndroidSiblingLod(GenericMatching::RepairContext& ctx,const void*) {
+    using GenericMatching::RepairResult;
+    if (!ctx.adapter.explicit_resource) return {};
+    for (size_t i=0;i<ctx.candidates.size();++i) {
+        const auto& candidate=ctx.candidates[i];
+        if (!candidate.renderer) continue;
+        if (candidate.key.character!=ctx.request.character ||
+            candidate.key.resource!=ctx.request.resource) continue;
+        if (!GenericMatching::SiblingLodPathMatches(ctx.request.verified_receiver_path,candidate.key.path))
+            continue;
+        if (!GenericMatching::Accepts(ctx,candidate)) continue;
+        RepairResult result;
+        result.kind=RepairResult::Kind::PickCandidate;
+        result.candidate_index=i;
+        result.id="android-sibling-lod";
+        result.note="sibling LOD candidate";
+        return result;
+    }
+    return {};
+}
+
+inline constexpr GenericMatching::FunctionRepair kCompatFunctionRepairs[]={
+    {nullptr,nullptr,-1,&RepairAndroidSiblingLod,nullptr,/*also_when_unchecked=*/false},
+};
 #else
-// The aurora donor contract is a Windows resource observation. Android keeps
-// its own UI-lod0 -> world-lod1 route and registers nothing here.
 inline constexpr std::span<const GenericMatching::FunctionRepair> kCompatFunctionRepairs{};
 #endif
 

@@ -1,6 +1,6 @@
 # 模型兼容修复层方案
 
-状态：阶段 0、1 已实施（2026-11-05），阶段 2 未开始。契约与实施记录见正文、第 12 节与第 13 节。
+状态：阶段 0、1、2 已实施（2026-11-05），阶段 3 明确不做。契约与实施记录见正文、第 12~14 节。
 日期：2026-11-05。工作位置：`F:\Better Endfield`。
 
 ## 1. 目标与边界
@@ -474,6 +474,72 @@ RepairResult RepairAuroraLegacy(RepairContext& ctx) {
 
 ### 13.5 仍然没做的
 
-- 阶段 2：`android_lod_relations.generated.h` 入册、清 `#elif defined(__ANDROID__)`。
+- 阶段 2：`android_lod_relations.generated.h` 入册、清 `#elif defined(__ANDROID__)`。（已于同日完成，见第 14 节）
 - 安卓 world lod1 的记录（同上，无实测数据）。
 - `DataRepairRecord` 与 `FunctionRepair` 之外的第三种形态目前没有需求，不加。
+
+## 14. 实施记录（2026-11-05，阶段 2：清掉最后一个平台分支）
+
+### 14.1 结果
+
+`SelectCompatibleModelDonor` 现在**没有任何平台条件编译**。原来的 `#elif defined(__ANDROID__)` 兄弟 LOD 分支搬进注册表，成为 `RepairAndroidSiblingLod`：
+
+```cpp
+#elif defined(__ANDROID__)
+inline constexpr FunctionRepair kCompatFunctionRepairs[]={
+    {nullptr,nullptr,-1,&RepairAndroidSiblingLod,nullptr,/*also_when_unchecked=*/false},
+};
+#else
+inline constexpr std::span<const FunctionRepair> kCompatFunctionRepairs{};
+#endif
+```
+
+平台差异没有变成"记录上的字段"，而是变成"**这个平台上注册了哪些修复**"——三处 `#if` 全部收敛到 `compat_handlers.inc` 一个文件里，匹配流程不再分裂。
+
+### 14.2 为什么它是函数而不是 N 类数据记录
+
+计划里写的是"把 `android_lod_relations.generated.h` 注册进 registry"。核对后没有那样做，理由有三条：
+
+1. **这张表不修任何失败。** `FindExactAndroidLod1Relation` 在 `HasCompatibleAndroidLegacyWorld` 的第 3 步被调用，那时 UI 侧的匹配**已经成功**了，它是"下一个槽位在哪"的定位表，不是"匹配失败后改写期望"。把它包成 `RepairFn` 需要先造一个并不存在的调用时机。
+2. **它和兄弟 LOD 分支不是一回事。** 表解决的是"世界侧部件名带变体后缀"（`_lod1_11`），分支解决的是"包声明 lod0、渲染器在 lod1"。前者是名字映射，后者是槽位定位。
+3. **真正的兄弟分支无法用数据描述。** 它没有角色/部件清单，是"任何 explicit-resource 组件在 Missing 时，去候选里找同槽位的另一个 LOD"。写成数据等于给每个角色每个部件枚举一遍。
+
+所以：N 类表保持原样（格式、生成器、调用点都不动），兄弟分支变成一个纯定位函数。两者都留在原来的位置上，共同点是"平台差异不再写在匹配流程里"。
+
+### 14.3 为此新增的一个层能力
+
+`RepairContext` 增加 `accept` / `accept_user`，配一个 `Accepts(ctx,candidate)`：
+
+```cpp
+bool (*accept)(const void* user,const Candidate&) = nullptr;
+const void* accept_user = nullptr;
+```
+
+`SelectRepairedFrom` 把调用方自己的 `validate` 装进去。原因很具体：旧分支是"**第一个既满足兄弟 LOD、又能过 `candidate_valid` 的候选**"，不是"第一个兄弟候选"。没有这个能力，处理器只能返回第一个，遇到不合法的候选就会放弃整条修复，与原行为不符。测试里 `PinAlternate` 也改成先用 `Accepts` 筛，另配一条 `PickRegardless` 专门验证"绕过契约的 pick 仍然被层拒绝"。
+
+### 14.4 验证
+
+| 项目 | 结果 |
+| --- | --- |
+| Windows `BetterEndfieldNext.CustomModel` | 编译通过 |
+| Android `module.cpp`（NDK 27.2 / arm64-v8a / android-29） | 编译通过 |
+| Android `libbetterendfieldnext_android.so` 链接 | 只报一个未解析符号 `AMEDIAFORMAT_KEY_SLICE_HEIGHT`（`media_screen`，本次未改；是我手工配置的 minSdk 与 gradle 实际参数不一致所致）。**没有本次新增的符号**，说明两个注册表访问器在安卓侧正常解析 |
+| `CustomModelBindingTests` | 通过 |
+| `CustomModelBindingTests --aurora-legacy` | PASS 674 |
+| `AndroidWorldBindingTests` | PASS 213 |
+| `AndroidModelLodTests` | PASS 68 |
+| `CompatRepairTests` | PASS 55 |
+
+**必须说清的边界**：兄弟 LOD 修复的注册是编译期的，Windows 测试二进制里根本没有这条注册，所以它在本机**没有运行时验证**。依据是逐行等价（同样的候选、同样的匹配条件、同样的"取第一个能过校验的"）+ 安卓侧编译通过。要真验需要一台设备加一个安卓 explicit-resource 包。
+
+### 14.5 现在的整体形态
+
+| 位置 | 内容 |
+| --- | --- |
+| `compat_registry.h` | 入口层：上下文、结果、调度、数据记录解释器、`Accepts` |
+| `compat_records.inc` | 数据记录：祀的 4 条身份改写 |
+| `compat_handlers.inc` | 函数修复：Windows 的 aurora、Android 的兄弟 LOD，各自带平台条件 |
+| `SelectCompatibleModelDonor` | 只剩"普通匹配 → 咨询注册表 → 返回"，无平台分支 |
+| `HasCompatibleAndroidLegacyWorld` | 两次匹配都走 `SelectRepaired`（入口 2、3） |
+
+新增第 N 个角色时，成本是：能说清"原来是什么、现在是什么"就加一行数据；说不清就写一个函数挂进 `kCompatFunctionRepairs`。不需要动匹配流程，也不需要加平台分支。

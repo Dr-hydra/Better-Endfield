@@ -29,11 +29,28 @@ RepairResult PinAlternate(RepairContext& ctx,const void*) {
     if (ctx.request.mesh_name!="Pinned_lod0_20") return {};
     for (size_t i=0;i<ctx.candidates.size();++i) {
         if (ctx.candidates[i].key.path!="Mesh_all/lod0/Pinned_lod0") continue;
+        if (!Accepts(ctx,ctx.candidates[i])) continue;
         RepairResult result;
         result.kind=RepairResult::Kind::PickCandidate;
         result.candidate_index=i;
         result.id="test-pin";
         result.note="picked by test repair";
+        return result;
+    }
+    return {};
+}
+
+// Ignores the caller's contract check on purpose: the layer still has to refuse
+// what it returns.
+RepairResult PickRegardless(RepairContext& ctx,const void*) {
+    if (ctx.request.mesh_name!="Weak_lod0_20") return {};
+    for (size_t i=0;i<ctx.candidates.size();++i) {
+        if (ctx.candidates[i].key.path!="Mesh_all/lod0/Weak_lod0") continue;
+        RepairResult result;
+        result.kind=RepairResult::Kind::PickCandidate;
+        result.candidate_index=i;
+        result.id="test-weak";
+        result.note="ignored the contract";
         return result;
     }
     return {};
@@ -44,6 +61,7 @@ namespace BetterEndfieldNext::CustomModel::GenericMatching {
 inline constexpr FunctionRepair kCompatFunctionRepairs[]={
     {"chr_pin_on",nullptr,-1,&PinAlternate,nullptr,/*also_when_unchecked=*/true},
     {"chr_pin_off",nullptr,-1,&PinAlternate,nullptr,/*also_when_unchecked=*/false},
+    {"chr_pin_weak",nullptr,-1,&PickRegardless,nullptr,/*also_when_unchecked=*/true},
 };
 std::span<const FunctionRepair> CompatFunctionRepairs() { return kCompatFunctionRepairs; }
 }
@@ -279,6 +297,24 @@ void HandWrittenRepairChecks() {
         Check(match.status==MatchStatus::Matched && match.index==0,
             "picked candidate bypassed the caller's validation");
         Check(!applied,"a refused pick was still reported as applied");
+    }
+    {
+        // A repair that ignores the contract check cannot smuggle its pick out.
+        auto weak=std::vector<Candidate>{
+            Slot("chr_pin_weak","Mesh_all/lod0/Other_lod0",Region::Lod0,
+                &renderer_owner,&mesh_other,"Weak_lod0_20",100),
+            Slot("chr_pin_weak","Mesh_all/lod0/Weak_lod0",Region::Lod0,
+                &renderer_alternate,&mesh_other,"Weak_actual_lod0",200),
+        };
+        const auto weak_adapter=Adapter("chr_pin_weak",false);
+        Request request=Ask("Weak_lod0_20",100,Region::Lod0,"",/*check_indices=*/false,"chr_pin_weak");
+        RepairContext context{weak_adapter,nullptr,weak,0u,request,{}};
+        auto reject=[](const Candidate& c) { return c.renderer!=&renderer_alternate; };
+        const char* applied=nullptr;
+        const auto match=SelectRepaired(context,reject,[](const char*,const char*) {},&applied);
+        Check(match.status==MatchStatus::Matched && match.index==0,
+            "a repair that skipped the contract check got its pick accepted");
+        Check(!applied,"an unacceptable pick was reported as applied");
     }
     {
         // A repair that did not declare itself for unchecked matches stays out.

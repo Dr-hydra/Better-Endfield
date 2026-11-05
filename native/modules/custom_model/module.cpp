@@ -4380,26 +4380,10 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
         [](const char* id,const char* note) {
             Log("Compatibility repair applied: id="+std::string(id?id:"")+" note="+std::string(note?note:""));
         },&repair);
-    if (repair) {
-        // The aurora donor still needs its binding-time palette check and the
-        // remap of the two moved bone slots; the repair id carries that.
-        legacy_aurora=std::string_view(repair)==GenericMatching::kAuroraLegacyRepairId;
-        return match;
-    }
-#if defined(__ANDROID__)
-    if (match.status==GenericMatching::MatchStatus::Missing && adapter.explicit_resource) {
-        for (size_t i=0;i<candidates.size();++i) {
-            const auto& c=candidates[i];
-            if (c.renderer && c.key.character==request.character && c.key.resource==request.resource &&
-                GenericMatching::SiblingLodPathMatches(request.verified_receiver_path, c.key.path) && candidate_valid(c)) {
-                match.status=GenericMatching::MatchStatus::Matched;
-                match.index=i; match.valid_count=1;
-                Log("SelectCompatibleModelDonor: matched sibling LOD candidate path=" + c.key.path);
-                break;
-            }
-        }
-    }
-#endif
+    // The aurora donor still needs its binding-time palette check and the remap
+    // of the two moved bone slots; the repair id carries that. Every other
+    // registered repair answers purely through the match it returns.
+    if (repair) legacy_aurora=std::string_view(repair)==GenericMatching::kAuroraLegacyRepairId;
     return match;
 }
 bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPocData& bem,void* asset,

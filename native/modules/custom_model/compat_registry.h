@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <span>
 #include <string_view>
+#include <type_traits>
 
 #include "generic_model_matcher.h"
 #include "mod_registry.h"
@@ -38,7 +39,16 @@ struct RepairContext {
     uint32_t component_id;
     Request& request;
     Match failed;
+    // The caller's own read-only contract check, so a repair that picks a
+    // candidate can ask whether it would be accepted instead of guessing.
+    // Installed by SelectRepairedFrom; never null while a repair runs.
+    bool (*accept)(const void* user,const Candidate&) = nullptr;
+    const void* accept_user = nullptr;
 };
+
+inline bool Accepts(const RepairContext& ctx,const Candidate& candidate) {
+    return !ctx.accept || ctx.accept(ctx.accept_user,candidate);
+}
 
 struct RepairResult {
     enum class Kind {
@@ -175,6 +185,10 @@ template<class Validate,class Report>
 Match SelectRepairedFrom(RepairContext ctx,Match match,Validate&& validate,Report&& report,
     const char** applied=nullptr) {
     if (applied) *applied=nullptr;
+    ctx.accept=[](const void* user,const Candidate& candidate) {
+        return (*static_cast<const std::remove_reference_t<Validate>*>(user))(candidate);
+    };
+    ctx.accept_user=&validate;
     if (match.status==MatchStatus::Ambiguous || match.status==MatchStatus::InvalidIndex) return match;
 
     // Only an unchecked satisfied match is re-opened; a checked one is already
