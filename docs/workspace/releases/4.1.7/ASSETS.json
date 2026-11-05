@@ -1,0 +1,55 @@
+{
+  "version": "4.1.7",
+  "date": "2026-11-05",
+  "status": "ready",
+  "android_version_code": 40107,
+  "bem_tools_version": "1.6.6",
+  "dsh_version": "1.6.6",
+  "hashes_calculated": false,
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.1.7-Setup.exe",
+      "bytes": 77057752
+    },
+    {
+      "name": "BetterEndfieldNext-4.1.7-Android-arm64.apk",
+      "bytes": 6413507
+    },
+    {
+      "name": "BEM-Tools-1.6.6-win-x64.zip",
+      "bytes": 74462167
+    },
+    {
+      "name": "BEM-Tools-1.6.6-android-arm64.tar.gz",
+      "bytes": 2084440
+    },
+    {
+      "name": "dsh-bem-creator-1.6.6.tgz",
+      "bytes": 2071089
+    }
+  ],
+  "checks": {
+    "windows_release": "passed: publish complete, 26 modules plus loaders/payloads/runtime/tools",
+    "windows_installer": "passed: ISCC compile, file version 4.1.7.0, self-signed-internal",
+    "android_release": "passed: gradle assembleRelease, versionName 4.1.7 versionCode 40107",
+    "tools": "passed: BEM Tools 1.6.6 and DSH 1.6.6 packaged and signed"
+  },
+  "integrated_commits": [
+    "5df3a5b0",
+    "554e7851",
+    "297b471b",
+    "f24e3d38",
+    "356212ab",
+    "aaaff9c1",
+    "b0b7e42f",
+    "d09a599d",
+    "915f1624",
+    "9ebb82bc",
+    "f74e275f"
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.1.7",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.1.7"
+  }
+}
