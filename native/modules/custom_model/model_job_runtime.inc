@@ -982,7 +982,7 @@ bool HasCompatibleModelTarget(const EnabledMod& mod,void* asset,std::string& rea
             identity.indices,!mod.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
         bool legacy_aurora=false;
         const auto match=SelectCompatibleModelDonor(adapter,asset,index,candidates,uint32_t(component),identity.static_mesh,
-            request,platform==ModelDiscoveryPlatform::Windows,legacy_aurora);
+            request,legacy_aurora);
         if (match.status!=GenericMatching::MatchStatus::Matched) {
             reason="donor="+std::string(identity.name)+DescribeGenericDonorFailure(asset,index,candidates,request,match.status,identity.static_mesh);
             return false;

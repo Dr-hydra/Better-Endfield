@@ -91,11 +91,17 @@ struct FunctionRepair {
     int32_t component;     // -1 = any component
     RepairFn fn;
     const void* user;
+    // Consulted even when the ordinary match already succeeded, because the
+    // package asked for an unchecked match (check_indices == false) and a
+    // satisfied name therefore proves nothing about geometry. Declared per
+    // repair on purpose: it is a choice, not a default.
+    bool also_when_unchecked;
 };
 
-// Defined by compat_records.inc, which must be included after this header.
-inline std::span<const DataRepairRecord> CompatDataRepairRecords();
-inline std::span<const FunctionRepair> CompatFunctionRepairs();
+// Defined once per program: the data table lives in compat_records.inc, the
+// hand written repairs in compat_handlers.inc.
+std::span<const DataRepairRecord> CompatDataRepairRecords();
+std::span<const FunctionRepair> CompatFunctionRepairs();
 
 namespace detail {
 inline bool RepairScopeMatches(const DataRepairRecord& r,const RepairContext& ctx) {
@@ -159,25 +165,39 @@ inline RepairResult RepairFromDataRecord(RepairContext& ctx,const void* user) {
     return detail::ApplyDataRecord(ctx,*static_cast<const DataRepairRecord*>(user));
 }
 
-// Consult the registry after an ordinary match failed. Returns the original
-// failure unless a repair produced a verified Matched result.
+// Consult the registry given an already computed ordinary match.
+// Returns the original result unless a repair produced a verified Matched one.
+//
+// `applied` receives the id of the repair that produced the result, or nullptr.
+// That is the only channel a caller needs to know it did not get an ordinary
+// match, so no repair has to leak its own state into the caller.
 template<class Validate,class Report>
-Match SelectRepaired(RepairContext ctx,Validate&& validate,Report&& report) {
-    Match match=SelectUnique(ctx.candidates,ctx.request,validate);
-    if (match.status!=MatchStatus::Missing) return match;
+Match SelectRepairedFrom(RepairContext ctx,Match match,Validate&& validate,Report&& report,
+    const char** applied=nullptr) {
+    if (applied) *applied=nullptr;
+    if (match.status==MatchStatus::Ambiguous || match.status==MatchStatus::InvalidIndex) return match;
 
+    // Only an unchecked satisfied match is re-opened; a checked one is already
+    // the exact answer the package asked for.
+    const bool consult_matched=match.status==MatchStatus::Matched && !ctx.request.check_indices;
     const Request original=ctx.request;
-    for (const auto& r:CompatDataRepairRecords()) {
-        auto result=RepairFromDataRecord(ctx,&r);
-        if (result.kind==RepairResult::Kind::NotApplied) { ctx.request=original; continue; }
-        auto retry=SelectUnique(ctx.candidates,result.request,validate);
-        if (retry.status!=MatchStatus::Matched) { ctx.request=original; continue; }
-        ctx.request=result.request;
-        report(result.id,result.note);
-        return retry;
+
+    if (match.status==MatchStatus::Missing) {
+        for (const auto& r:CompatDataRepairRecords()) {
+            auto result=RepairFromDataRecord(ctx,&r);
+            if (result.kind==RepairResult::Kind::NotApplied) { ctx.request=original; continue; }
+            auto retry=SelectUnique(ctx.candidates,result.request,validate);
+            if (retry.status!=MatchStatus::Matched) { ctx.request=original; continue; }
+            ctx.request=result.request;
+            report(result.id,result.note);
+            if (applied) *applied=result.id;
+            return retry;
+        }
     }
     for (const auto& e:CompatFunctionRepairs()) {
         if (!e.fn) continue;
+        if (match.status!=MatchStatus::Missing && !(consult_matched && e.also_when_unchecked)) continue;
+        if (e.character && !ctx.adapter.id) continue;
         if (e.character && std::string_view(e.character) != std::string_view(ctx.adapter.id)) continue;
         if (e.resource && std::string_view(e.resource) != ctx.request.resource) continue;
         if (e.component >= 0 && uint32_t(e.component) != ctx.component_id) continue;
@@ -185,18 +205,29 @@ Match SelectRepaired(RepairContext ctx,Validate&& validate,Report&& report) {
         if (result.kind==RepairResult::Kind::NotApplied) { ctx.request=original; continue; }
         if (result.kind==RepairResult::Kind::PickCandidate) {
             if (result.candidate_index>=ctx.candidates.size() ||
-                !ctx.candidates[result.candidate_index].renderer) { ctx.request=original; continue; }
+                !ctx.candidates[result.candidate_index].renderer ||
+                !validate(ctx.candidates[result.candidate_index])) { ctx.request=original; continue; }
+            // A picked candidate answers the match; the request is left as the
+            // package declared it so a failed repair cannot leave a rewrite.
             ctx.request=original;
             report(result.id,result.note);
+            if (applied) *applied=result.id;
             return {MatchStatus::Matched,result.candidate_index,1};
         }
         auto retry=SelectUnique(ctx.candidates,result.request,validate);
         if (retry.status!=MatchStatus::Matched) { ctx.request=original; continue; }
         ctx.request=result.request;
         report(result.id,result.note);
+        if (applied) *applied=result.id;
         return retry;
     }
     ctx.request=original;
     return match;
+}
+
+template<class Validate,class Report>
+Match SelectRepaired(RepairContext ctx,Validate&& validate,Report&& report,const char** applied=nullptr) {
+    auto match=SelectUnique(ctx.candidates,ctx.request,validate);
+    return SelectRepairedFrom(ctx,match,validate,report,applied);
 }
 }

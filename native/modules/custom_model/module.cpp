@@ -4354,47 +4354,39 @@ bool ValidateAuroraLegacyCandidate(const CharacterAdapter& adapter,void* asset,u
     return ValidateAuroraLegacyParts(asset,candidate.key,component,identity.mesh,material,bones);
 }
 #endif
+// The repairs are declared in CustomModel::GenericMatching, so they are
+// included outside this translation unit's unnamed namespace. The unnamed
+// namespace is reopened right after; both definitions share it.
+}
+#include "compat_handlers.inc"
+namespace {
 GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapter,void* asset,
     const std::vector<GenericRendererCandidate>& index,const std::vector<GenericMatching::Candidate>& candidates,
-    uint32_t component_id,bool static_mesh,GenericMatching::Request& request,bool windows_compat,bool& legacy_aurora) {
+    uint32_t component_id,bool static_mesh,GenericMatching::Request& request,bool& legacy_aurora) {
     legacy_aurora=false;
     const auto candidate_valid=[&](const auto& candidate) {
         const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==candidate.renderer;});
         return found!=index.end() && candidate.pristine.mesh && !GenericCandidateContractError(asset,*found,static_mesh);
     };
     auto match=GenericMatching::SelectUnique(candidates,request,candidate_valid);
-    // Registered compatibility repairs get exactly one chance, and only after
-    // the ordinary match found nothing. Ambiguous is never repaired. A repair
-    // that sticks wins over the platform fallbacks below, which stay in place
-    // for the cases that are not registered yet.
-    if (match.status==GenericMatching::MatchStatus::Missing) {
-        GenericMatching::RepairContext context{adapter,asset,candidates,component_id,request,match};
-        match=GenericMatching::SelectRepaired(context,candidate_valid,[](const char* id,const char* note) {
+    // Registered compatibility repairs get the first word once the ordinary
+    // match found nothing, and also after an unchecked match succeeded - the
+    // package asked for a name-only comparison there. Ambiguous is never
+    // repaired. What is still unregistered falls through to the platform
+    // fallback below.
+    const char* repair=nullptr;
+    GenericMatching::RepairContext context{adapter,asset,candidates,component_id,request,match};
+    match=GenericMatching::SelectRepairedFrom(context,match,candidate_valid,
+        [](const char* id,const char* note) {
             Log("Compatibility repair applied: id="+std::string(id?id:"")+" note="+std::string(note?note:""));
-        });
-        if (match.status==GenericMatching::MatchStatus::Matched) return match;
+        },&repair);
+    if (repair) {
+        // The aurora donor still needs its binding-time palette check and the
+        // remap of the two moved bone slots; the repair id carries that.
+        legacy_aurora=std::string_view(repair)==GenericMatching::kAuroraLegacyRepairId;
+        return match;
     }
-#if defined(_WIN32)
-    const bool is_legacy_aurora = windows_compat &&
-        AuroraLegacy::IsLegacyTarget(adapter.id,request.resource,component_id,request.mesh_name,request.indices,adapter.explicit_resource);
-    if (is_legacy_aurora && (match.status==GenericMatching::MatchStatus::Missing || !request.check_indices)) {
-        // The package/header contract remains unchanged. When the normal match has no candidate
-        // or when check_indices was bypassed (e.g. skip_validation=true), adapt to the verified
-        // 1.6.3 donor so the exact receiver path and 10-slot bone remapping are always enforced.
-        request.indices=AuroraLegacy::kCurrentIndices;
-        request.verified_receiver_path=AuroraLegacy::kReceiverPath;
-        auto adapted_match=GenericMatching::SelectUnique(candidates,request,[&](const auto& candidate) {
-            if (!candidate_valid(candidate)) return false;
-            const auto found=std::find_if(index.begin(),index.end(),[&](const auto& entry){return entry.renderer==candidate.renderer;});
-            return ValidateAuroraLegacyCandidate(adapter,asset,component_id,*found,candidate.pristine);
-        });
-        if (adapted_match.status==GenericMatching::MatchStatus::Matched) {
-            match=adapted_match;
-            legacy_aurora=true;
-        }
-    }
-#elif defined(__ANDROID__)
-    (void)windows_compat;
+#if defined(__ANDROID__)
     if (match.status==GenericMatching::MatchStatus::Missing && adapter.explicit_resource) {
         for (size_t i=0;i<candidates.size();++i) {
             const auto& c=candidates[i];
@@ -4407,8 +4399,6 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
             }
         }
     }
-#else
-    (void)windows_compat;
 #endif
     return match;
 }
@@ -4439,7 +4429,7 @@ bool CaptureGenericResourceBindings(const CharacterAdapter& adapter,const BemPoc
             identity.indices,!bem.skip_validation,adapter.explicit_resource?identity.receiver_path:""};
         bool compatible_aurora=false;
         const auto match=SelectCompatibleModelDonor(adapter,asset,index,candidates,component.info.component_id,
-            component.static_mesh,request,true,compatible_aurora);
+            component.static_mesh,request,compatible_aurora);
         if (match.status!=GenericMatching::MatchStatus::Matched) {
             Log("Generic model donor is missing/ambiguous: "+std::string(identity.name)+
                 DescribeGenericDonorFailure(asset,index,candidates,request,match.status,component.static_mesh));return false;

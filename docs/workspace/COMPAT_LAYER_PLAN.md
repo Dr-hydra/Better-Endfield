@@ -1,6 +1,6 @@
 # 模型兼容修复层方案
 
-状态：阶段 0 已实施（2026-11-05），阶段 1、2 未开始。契约与实施记录见正文与第 12 节。
+状态：阶段 0、1 已实施（2026-11-05），阶段 2 未开始。契约与实施记录见正文、第 12 节与第 13 节。
 日期：2026-11-05。工作位置：`F:\Better Endfield`。
 
 ## 1. 目标与边界
@@ -429,7 +429,51 @@ RepairResult RepairAuroraLegacy(RepairContext& ctx) {
 
 ### 12.5 仍然没做的
 
-- 阶段 1：昼雪迁移。`#if defined(_WIN32)` 分支原样保留。
+- 阶段 1：昼雪迁移。`#if defined(_WIN32)` 分支原样保留。（已于同日完成，见第 13 节）
 - 阶段 2：N 类表入册、清 `#elif defined(__ANDROID__)`。
 - 安卓 world lod1 的记录：没有实测过 `S_actor_jsspsi_vfxpart_01_lod1` 这一侧的网格名，按"不猜"原则不写。入口 3 已挂上，测到之后加一行即可。
-- `PickCandidate` 分支目前没有真实用例，测试也未覆盖（函数修复表为空）。
+- `PickCandidate` 分支目前没有真实用例，测试也未覆盖（函数修复表为空）。（阶段 1 已补齐真实用例与测试，见 13.3）
+
+## 13. 实施记录（2026-11-05，阶段 1：昼雪入册）
+
+### 13.1 改了什么
+
+| 文件 | 改动 |
+| --- | --- |
+| `native/modules/custom_model/compat_handlers.inc` | 新增。`RepairAuroraLegacy`（普通函数，非虚接口）+ 函数修复表 |
+| `native/modules/custom_model/compat_registry.h` | `FunctionRepair` 增加 `also_when_unchecked`；`SelectRepaired` 拆出 `SelectRepairedFrom`（接受已算好的 ordinary match）并新增 `applied` 出参；`PickCandidate` 现在也要过调用方的 `validate` |
+| `native/modules/custom_model/module.cpp` | 删掉整段 `#if defined(_WIN32)` 的 aurora 分支；`SelectCompatibleModelDonor` 去掉 `windows_compat` 形参；改为 consul 注册表后按 `applied` 判定 `legacy_aurora` |
+| `native/modules/custom_model/compat_records.inc` | 只保留数据表，函数表移到 `compat_handlers.inc` |
+| `native/tests/compat_repair_tests.cpp` | 新增 `HandWrittenRepairChecks()`，覆盖 `also_when_unchecked`、`PickCandidate`、以及 pick 未过 `validate` 时必须回退 |
+
+`aurora_legacy_compat.h` 仍然一行未改；绑定阶段的 `ValidateAuroraLegacyDonor` 与 `RemapBone` 也没动，只是"这次是 aurora"这个事实由修复 id 带出来。
+
+### 13.2 两个必须记下来的细节
+
+**1. `#if defined(_WIN32)` 没有消失，只是从流程变成了注册。** aurora 处理器依赖的 `ValidateAuroraLegacyCandidate` 本身是 Windows-only 的运行时观察，所以 `compat_handlers.inc` 里仍有 `#if defined(_WIN32)`——但它只决定"这个平台上存在哪些修复"，不再把匹配流程切成两半。安卓侧注册为空表。
+
+**2. `also_when_unchecked` 是这条迁移唯一新增的层能力。** 旧分支的触发条件是 `Missing || !check_indices`：包用 `skip_validation` 时，按名字匹配成功并不代表几何对得上，aurora 仍要重选并强制 87 骨骼契约。层默认只在 `Missing` 后咨询，所以这一个字段就是让处理器显式声明"我也要看未校验的匹配"。它按条目声明，不是全局开关。
+
+### 13.3 验证
+
+| 套件 | 结果 |
+| --- | --- |
+| `CustomModelBindingTests --aurora-legacy` | **PASS 674**（UI/world、keep/hide、palette、discovery、Job、refusal） |
+| `CustomModelBindingTests`（默认） | 通过 |
+| `CompatRepairTests` | PASS 52 |
+| `AndroidWorldBindingTests` | PASS 213 |
+| `AndroidModelLodTests` | PASS 68 |
+| `AuroraLegacyCompatibilityTests` | PASS 228 |
+| `BetterEndfieldNext.CustomModel` | 编译通过 |
+
+`--aurora-legacy` 里第 83-87 行就是关键一条：`skip_validation=true` 时仍要求 `bindings[1].aurora_legacy_163` 为真（原注释写着 "CRITICAL BUG ... if bypassed"），迁移后依旧通过——说明 `also_when_unchecked` 承接的是原来那条分支，而不是把它丢了。
+
+### 13.4 顺带修掉的一个隐患
+
+`PickCandidate` 原先直接返回 `Matched`，不跑调用方的 `validate`。那等于给手写修复开了一个绕过契约校验的后门，而 `candidate_valid` 里含 `GenericCandidateContractError`（renderer 种类、材质/骨骼数量）。现在 pick 出来的候选同样要过 `validate`，测试里有一条专门验证"pick 的候选被 validate 拒绝时必须回退到原结果"。
+
+### 13.5 仍然没做的
+
+- 阶段 2：`android_lod_relations.generated.h` 入册、清 `#elif defined(__ANDROID__)`。
+- 安卓 world lod1 的记录（同上，无实测数据）。
+- `DataRepairRecord` 与 `FunctionRepair` 之外的第三种形态目前没有需求，不加。

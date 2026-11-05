@@ -41,11 +41,8 @@ inline constexpr DataRepairRecord kCompatDataRecords[] = {
         "2954fa80-23c1-1579-2b22-4ecfd6d70418"},
 };
 
-// Hand written repairs. Empty: the two cases that exist today are either a pure
-// rename (the data rows above) or still live in their own branch.
-inline constexpr std::span<const FunctionRepair> kCompatFunctionRepairs{};
-
-inline std::span<const DataRepairRecord> CompatDataRepairRecords() { return kCompatDataRecords; }
-inline std::span<const FunctionRepair> CompatFunctionRepairs() { return kCompatFunctionRepairs; }
+// Hand written repairs live in compat_handlers.inc, which needs the runtime
+// validators and is therefore included later in the translation unit.
+std::span<const DataRepairRecord> CompatDataRepairRecords() { return kCompatDataRecords; }
 
 }
