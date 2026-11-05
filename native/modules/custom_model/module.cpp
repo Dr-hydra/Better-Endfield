@@ -4371,9 +4371,8 @@ GenericMatching::Match SelectCompatibleModelDonor(const CharacterAdapter& adapte
     auto match=GenericMatching::SelectUnique(candidates,request,candidate_valid);
     // Registered compatibility repairs get the first word once the ordinary
     // match found nothing, and also after an unchecked match succeeded - the
-    // package asked for a name-only comparison there. Ambiguous is never
-    // repaired. What is still unregistered falls through to the platform
-    // fallback below.
+    // package asked for a name-only comparison there. An ambiguous result is
+    // answered only by a record that claims one slot by path.
     const char* repair=nullptr;
     GenericMatching::RepairContext context{adapter,asset,candidates,component_id,request,match};
     match=GenericMatching::SelectRepairedFrom(context,match,candidate_valid,

@@ -1,6 +1,6 @@
 # 模型兼容修复层方案
 
-状态：阶段 0、1、2 已实施（2026-11-05），阶段 3 明确不做。契约与实施记录见正文、第 12~14 节。
+状态：阶段 0、1、2 与槽位认领已实施（2026-11-05），阶段 3 明确不做。契约与实施记录见正文、第 12~15 节。
 日期：2026-11-05。工作位置：`F:\Better Endfield`。
 
 ## 1. 目标与边界
@@ -202,7 +202,7 @@ RepairResult RepairAuroraLegacy(RepairContext& ctx) {
 
 层要薄，规矩就得少。只有下面三条对**所有**修复成立：
 
-1. **默认在 `MatchStatus::Missing` 之后调用。** `Ambiguous` 默认不修——多候选时挑一个是花屏的老来源。确实需要预处理某个角色的，可以显式声明在匹配前执行，但那是选择，不是默认。
+1. **默认在 `MatchStatus::Missing` 之后调用。** `Ambiguous` 默认不修——多候选时挑一个是花屏的老来源。唯一的例外是记录显式声明"按路径认领单个槽位"，且证明必须恰好命中一个；这不是挑候选，是证明。确实需要预处理某个角色的，也可以显式声明在匹配前执行，同样是选择而非默认。
 2. **一次修复要么完整生效，要么完全不生效。** 不允许"改了一半、校验失败但绑定已经写了"。`SelectRepaired` 只在拿到 `Matched` 之后返回，中间任何一步失败都退回原 `match`。
 3. **生效的修复必须能说出来。** 日志里至少有 `id` 和它改了什么。不求格式统一，求能查。
 
@@ -412,7 +412,7 @@ RepairResult RepairAuroraLegacy(RepairContext& ctx) {
 
 **1. 资源级包（BEM 1.4）天然能区分共享网格。** `mod_registry.cpp:178,186` 在包带 `resources` 时把 `component_paths` 填进 `ComponentIdentity.receiver_path` 并把 `explicit_resource` 置真，请求因此带 `verified_receiver_path`，`SelectUnique` 按路径过滤——去重后两个槽位共用同一网格也不会互相干扰。祀这类新包走这条，修复层只处理"名字变了"。
 
-**2. 无路径的旧包（BEM 1.3）在共享槽位上会 `Ambiguous`。** 这类包不携带 `receiver_path`，`SelectUnique` 只按网格名比较，`cloth_06` 的组件会同时命中 `vfxpart_01` 槽位和 `cloth_06` 槽位。修复层按设计不处理 `Ambiguous`，因此**只修好了被改名的槽位，修不了共用网格的另一侧**。这条已写进测试 `LegacyResourceChecks()` 固定行为。要覆盖它需要"在匹配前按资产自身层级确定唯一槽位"的预处理，属于阶段 2 以后的事，且需要包提供路径，旧包本身给不出。
+**2. 无路径的旧包（BEM 1.3）在共享槽位上会 `Ambiguous`。** 这类包不携带 `receiver_path`，`SelectUnique` 只按网格名比较，`cloth_06` 的组件会同时命中 `vfxpart_01` 槽位和 `cloth_06` 槽位。阶段 0 的层按设计不处理 `Ambiguous`，因此**只修好了被改名的槽位，修不了共用网格的另一侧**。（已于第 15 节解决：槽位认领记录。）
 
 ### 12.4 验证结果
 
@@ -431,7 +431,7 @@ RepairResult RepairAuroraLegacy(RepairContext& ctx) {
 
 - 阶段 1：昼雪迁移。`#if defined(_WIN32)` 分支原样保留。（已于同日完成，见第 13 节）
 - 阶段 2：N 类表入册、清 `#elif defined(__ANDROID__)`。
-- 安卓 world lod1 的记录：没有实测过 `S_actor_jsspsi_vfxpart_01_lod1` 这一侧的网格名，按"不猜"原则不写。入口 3 已挂上，测到之后加一行即可。
+- 安卓 world lod1 的记录：**实测确认不需要**。安卓侧 lod0 层被去重（`cab-85977e36…` 里 `vfxpart_01_lod0` 与 `cloth_06_lod0` 同一 Mesh id），而 lod1/2/3 层没有（`cab-5e4313d2…` 里 `vfxpart_01_lod1` → `cab-12f16721…:8639875051153138785`，独立网格）。所以 world lod1 的名字没变，不加记录。
 - `PickCandidate` 分支目前没有真实用例，测试也未覆盖（函数修复表为空）。（阶段 1 已补齐真实用例与测试，见 13.3）
 
 ## 13. 实施记录（2026-11-05，阶段 1：昼雪入册）
@@ -475,7 +475,7 @@ RepairResult RepairAuroraLegacy(RepairContext& ctx) {
 ### 13.5 仍然没做的
 
 - 阶段 2：`android_lod_relations.generated.h` 入册、清 `#elif defined(__ANDROID__)`。（已于同日完成，见第 14 节）
-- 安卓 world lod1 的记录（同上，无实测数据）。
+- 安卓 world lod1 的记录：实测确认不需要，见 12.5。
 - `DataRepairRecord` 与 `FunctionRepair` 之外的第三种形态目前没有需求，不加。
 
 ## 14. 实施记录（2026-11-05，阶段 2：清掉最后一个平台分支）
@@ -543,3 +543,85 @@ const void* accept_user = nullptr;
 | `HasCompatibleAndroidLegacyWorld` | 两次匹配都走 `SelectRepaired`（入口 2、3） |
 
 新增第 N 个角色时，成本是：能说清"原来是什么、现在是什么"就加一行数据；说不清就写一个函数挂进 `kCompatFunctionRepairs`。不需要动匹配流程，也不需要加平台分支。
+
+## 15. 实施记录（2026-11-05，槽位认领：救 BEM 1.3 包）
+
+### 15.1 为什么需要
+
+祀这次去重是**双向**的：`vfxpart_01` 槽位改指向 `cloth_06` 的 Mesh 之后，两个槽位就共用一个网格、同一个名字。于是同一个资源里有两类失败，成因完全不同：
+
+| 组件 | 1.4 带路径包 | 1.3 无路径包 |
+| --- | --- | --- |
+| `vfxpart_01`（被改名的一侧） | 匹配成功 | `Missing` → 改名记录修好 |
+| `cloth_06`（名字没变的一侧） | 路径消歧，匹配成功 | **`Ambiguous`** → 没有记录能接手 |
+
+1.3 包不携带 `receiver_path`（`module.cpp:4413` 只在 `adapter.explicit_resource` 时填），`SelectUnique` 只按网格名比较，`cloth_06` 的组件同时命中两个槽位。而层对 `Ambiguous` 直接返回，`module.cpp:4417` 任一组件非 `Matched` 就整资源放弃——所以 **1.3 包整体失败，卡在的名字没变的那一侧**。
+
+这一节之前，`vfxpart_01` 那一侧其实一直是能修的（`compat_repair_tests.cpp` 的 `"recorded rename did not repair a path-less package"` 就是在断言这件事）；坏掉的是另一侧。
+
+### 15.2 做法：给记录一个显式的 opt-in
+
+`DataRepairRecord` 末尾加一个字段：
+
+```cpp
+// Opt in to an Ambiguous result. Needed when the client merged two slots onto
+// one Mesh and the package cannot name which slot it meant.
+bool disambiguate_ambiguous = false;
+```
+
+`SelectRepairedFrom` 的改动只有两行语义：
+
+```cpp
+if (match.status==MatchStatus::InvalidIndex) return match;
+const bool ambiguous = match.status==MatchStatus::Ambiguous;
+...
+if (match.status==MatchStatus::Missing || ambiguous) {
+    for (const auto& r : CompatDataRepairRecords()) {
+        if (ambiguous && !r.disambiguate_ambiguous) continue;   // 其余记录仍看不到 Ambiguous
+```
+
+记录本身不改名——`expected_mesh == repaired_mesh`——靠证明里的"路径叶子等于该名字"把槽位钉死，`hits != 1` 就什么都不做。因为同一 region 下 `Mesh_all/lod0/<leaf>` 的叶子唯一，这条证明实际上只可能命中一个槽位；写成 `hits != 1` 是防御未来出现同名叶子的情形。
+
+### 15.3 为什么这不等于"猜"
+
+| | 猜 | 槽位认领 |
+| --- | --- | --- |
+| 依据 | 取第一个 / 取最多匹配 | 路径叶子与网格名同时精确相等 |
+| 命中两个 | 挑一个 | 放弃，返回原 `Ambiguous` |
+| 改写后 | 直接绑定 | 仍走 `SelectUnique` 全等，钉了路径仍在证明范围外就失败 |
+| 谁能用 | 任何修复 | 只有显式声明 `disambiguate_ambiguous` 的数据记录 |
+
+层的那条规矩因此改写成"`Ambiguous` 默认不修，除非记录能证明唯一槽位"，而不是"绝不碰"。
+
+### 15.4 新增的四条记录
+
+```
+jsspsi-cloth06-slot-world   chr_0036_jsspsi_postmodel  cloth_06  4680
+jsspsi-cloth08-slot-world   chr_0036_jsspsi_postmodel  cloth_08  1752
+jsspsi-cloth06-slot-ui      chr_0036_jsspsi_uimodel    cloth_06  4680
+jsspsi-cloth08-slot-ui      chr_0036_jsspsi_uimodel    cloth_08  1752
+```
+
+四条都是 `expected == repaired`、`disambiguate_ambiguous = true`。`component` 仍是 `-1`，靠网格身份定位，不依赖包内组件顺序。
+
+索引数取自 catalog（`cloth_06 = 4680 / cloth_08 = 1752`）并与对象图交叉核对：`vfxpart_01` 与 `cloth_06` 指向同一 Mesh 对象，索引数必然相等。
+
+### 15.5 验证
+
+| 项目 | 结果 |
+| --- | --- |
+| Windows `BetterEndfieldNext.CustomModel` | 编译通过 |
+| Android `module.cpp`（NDK 27.2 / arm64-v8a / android-29） | 编译通过 |
+| `CompatRepairTests` | **PASS 80**（原 55，新增 25 条） |
+| `CustomModelBindingTests` | 通过 |
+| `CustomModelBindingTests --aurora-legacy` | PASS 674 |
+| `AndroidWorldBindingTests` | PASS 213 |
+| `AndroidModelLodTests` | PASS 68 |
+| `AuroraLegacyCompatibilityTests` | PASS 228 |
+
+新增覆盖：1.3 包在 `Ambiguous` 下被槽位记录救回并钉住正确路径、拒绝时请求不被改写、记录无法证明（两个槽位都不是它描述的路径）时保持 `Ambiguous`、索引数不符与跨角色作用域不得接手、记录表自检从"必须改名"放宽为"要么改名、要么声明认领槽位"。
+
+### 15.6 仍然没做的
+
+- 安卓兄弟 LOD 修复仍无真机运行时验证（同 14.4，编译期注册在 Windows 二进制里不存在）。
+- `disambiguate_ambiguous` 目前只有"同类网格去重"这一个用例。若将来出现"三个槽位共用一个网格"，同一机制仍然可用——证明会命中三个而放弃，需要的是更细的证明项，不是放宽。

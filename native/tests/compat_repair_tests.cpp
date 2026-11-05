@@ -126,8 +126,12 @@ void RecordTableChecks() {
         Check(record.character && record.character[0],"data record has no character scope");
         Check(record.expected_mesh && record.expected_mesh[0] && record.repaired_mesh &&
             record.repaired_mesh[0],"data record does not name both sides");
-        Check(std::string_view(record.expected_mesh)!=record.repaired_mesh,
-            "data record claims a rename without changing the name");
+        // A record does one of two things: rename an identity, or claim a slot
+        // that has become indistinguishable from its neighbour. Anything else
+        // is a typo with no way to fire.
+        const bool renames=std::string_view(record.expected_mesh)!=record.repaired_mesh;
+        Check(renames || record.disambiguate_ambiguous,
+            "data record neither renames a Mesh nor claims a slot");
         Check(record.observed_at && record.observed_at[0],"data record does not say when it was observed");
     }
     for (const auto& repair:CompatFunctionRepairs())
@@ -243,10 +247,18 @@ void LegacyResourceChecks() {
     const auto adapter=Adapter("chr_0036_jsspsi",false);
     auto candidates=SharedCandidates(Region::Lod0);
 
+    // The cloth slot itself. Both slots now carry the same mesh name and the
+    // package cannot say which one it meant, so the ordinary match is
+    // ambiguous. The slot record proves the slot by path and is the only thing
+    // allowed to answer an ambiguous result.
     Request owner=Ask("S_actor_jsspsi_cloth_06_lod0",4680,Region::Lod0,"");
     auto owner_run=Repair(adapter,candidates,owner,1u);
-    Check(owner_run.match.status==MatchStatus::Ambiguous,"shared Mesh without a declared path was not ambiguous");
-    Check(owner_run.reported.empty(),"an ambiguous match was repaired");
+    Check(owner_run.match.status==MatchStatus::Matched && owner_run.match.index==1,
+        "recorded slot did not disambiguate a path-less package");
+    Check(owner_run.reported.size()==1 && owner_run.reported[0]=="jsspsi-cloth06-slot-world",
+        "slot disambiguation was not attributed to its record");
+    Check(owner.verified_receiver_path=="Mesh_all/lod0/S_actor_jsspsi_cloth_06_lod0",
+        "slot disambiguation did not pin the slot it proved");
 
     Request slot=Ask("S_actor_jsspsi_vfxpart_01_lod0",4680,Region::Lod0,"");
     auto slot_run=Repair(adapter,candidates,slot,0u);
@@ -254,6 +266,48 @@ void LegacyResourceChecks() {
         "recorded rename did not repair a path-less package");
     Check(slot.verified_receiver_path=="Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",
         "repair did not pin the slot it proved");
+}
+
+// An ambiguous result is only answered when the record can single out one slot.
+// Every way of failing that must leave the ambiguity untouched.
+void AmbiguousRefusalChecks() {
+    const auto adapter=Adapter("chr_0036_jsspsi",false);
+
+    {
+        // Both slots carry the claimed mesh name, but neither sits in the slot
+        // the record describes. The record can prove nothing, so the ambiguity
+        // has to stand.
+        auto candidates=std::vector<Candidate>{
+            Slot("chr_0036_jsspsi","Mesh_all/lod0/S_actor_jsspsi_vfxpart_01_lod0",Region::Lod0,
+                &renderer_slot,&mesh_shared,"S_actor_jsspsi_cloth_06_lod0",4680),
+            Slot("chr_0036_jsspsi","Mesh_all/lod0/S_actor_jsspsi_vfxpart_04_lod0",Region::Lod0,
+                &renderer_owner,&mesh_shared,"S_actor_jsspsi_cloth_06_lod0",4680),
+        };
+        Request request=Ask("S_actor_jsspsi_cloth_06_lod0",4680,Region::Lod0,"");
+        auto run=Repair(adapter,candidates,request,1u);
+        Check(run.match.status==MatchStatus::Ambiguous && run.reported.empty(),
+            "a slot record answered an ambiguity it could not resolve");
+        Check(request.verified_receiver_path.empty(),
+            "a refused slot record left the request rewritten");
+    }
+    {
+        // Wrong geometry count: the slot is not the one the record describes.
+        // The ordinary match already fails on the count, and the record must
+        // not adopt it either.
+        auto candidates=SharedCandidates(Region::Lod0,9999);
+        Request request=Ask("S_actor_jsspsi_cloth_06_lod0",4680,Region::Lod0,"");
+        auto run=Repair(adapter,candidates,request,1u);
+        Check(run.match.status==MatchStatus::Missing && run.reported.empty(),
+            "slot disambiguation accepted a different index count");
+    }
+    {
+        // A different character never reaches the record's scope.
+        auto candidates=SharedCandidates(Region::Lod0);
+        Request request=Ask("S_actor_jsspsi_cloth_06_lod0",4680,Region::Lod0,"",true,"chr_other");
+        auto run=Repair(adapter,candidates,request,1u);
+        Check(run.match.status==MatchStatus::Missing && run.reported.empty(),
+            "slot disambiguation fired for a character it does not cover");
+    }
 }
 
 // A hand written repair is consulted only on its own terms: never on a checked
@@ -335,6 +389,7 @@ int main() {
         DeclaredSlotChecks();
         ProofRefusalChecks();
         LegacyResourceChecks();
+        AmbiguousRefusalChecks();
         HandWrittenRepairChecks();
         std::cout<<"PASS "<<checks<<" compatibility repair scope, proof, refusal, pick and reporting checks\n";
         return 0;

@@ -7,9 +7,11 @@
 //
 // Three rules apply to every repair, because they are about safety and
 // observability rather than about method:
-//   1. Repairs are consulted after an ordinary match came back Missing.
-//      Ambiguous is never repaired: picking one of several candidates is the
-//      historical source of corrupted screens.
+//   1. Repairs are consulted after an ordinary match came back Missing. An
+//      Ambiguous result stays final unless a record explicitly claims a slot by
+//      path: choosing among equally named candidates is the historical source
+//      of corrupted screens, while proving one slot and only one is not a
+//      choice.
 //   2. A repair is applied completely or not at all. SelectRepaired restores the
 //      original request unless a retry came back Matched, so a half-applied
 //      repair can never reach binding.
@@ -91,6 +93,13 @@ struct DataRepairRecord {
     // BundleManifest.Version this was observed under. A mismatch is reported
     // but never changes the outcome; a stale record simply stops proving.
     const char* observed_at;
+
+    // Opt in to an Ambiguous result. Needed when the client merged two slots
+    // onto one Mesh and the package cannot name which slot it meant: every
+    // candidate now carries the same mesh name, so nothing is Missing - the
+    // match is simply not unique. Such a record must prove a single slot by
+    // path, and a record that proves two slots changes nothing.
+    bool disambiguate_ambiguous = false;
 };
 
 // A hand written repair. Kept separate from the data table so neither form has
@@ -178,6 +187,10 @@ inline RepairResult RepairFromDataRecord(RepairContext& ctx,const void* user) {
 // Consult the registry given an already computed ordinary match.
 // Returns the original result unless a repair produced a verified Matched one.
 //
+// A Missing result may be answered by any record. An Ambiguous one only by a
+// record that opted in and can prove which slot it means; InvalidIndex and a
+// checked Matched result are never re-opened.
+//
 // `applied` receives the id of the repair that produced the result, or nullptr.
 // That is the only channel a caller needs to know it did not get an ordinary
 // match, so no repair has to leak its own state into the caller.
@@ -189,15 +202,19 @@ Match SelectRepairedFrom(RepairContext ctx,Match match,Validate&& validate,Repor
         return (*static_cast<const std::remove_reference_t<Validate>*>(user))(candidate);
     };
     ctx.accept_user=&validate;
-    if (match.status==MatchStatus::Ambiguous || match.status==MatchStatus::InvalidIndex) return match;
+    if (match.status==MatchStatus::InvalidIndex) return match;
 
     // Only an unchecked satisfied match is re-opened; a checked one is already
     // the exact answer the package asked for.
     const bool consult_matched=match.status==MatchStatus::Matched && !ctx.request.check_indices;
+    const bool ambiguous=match.status==MatchStatus::Ambiguous;
     const Request original=ctx.request;
 
-    if (match.status==MatchStatus::Missing) {
+    if (match.status==MatchStatus::Missing || ambiguous) {
         for (const auto& r:CompatDataRepairRecords()) {
+            // An Ambiguous result is left final unless this record claims a
+            // slot by path. Records that only rename never see it.
+            if (ambiguous && !r.disambiguate_ambiguous) continue;
             auto result=RepairFromDataRecord(ctx,&r);
             if (result.kind==RepairResult::Kind::NotApplied) { ctx.request=original; continue; }
             auto retry=SelectUnique(ctx.candidates,result.request,validate);

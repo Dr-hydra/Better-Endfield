@@ -39,6 +39,33 @@ inline constexpr DataRepairRecord kCompatDataRecords[] = {
         "S_actor_jsspsi_vfxpart_04_lod0",1752,true,
         "S_actor_jsspsi_cloth_08_lod0",0,false,
         "2954fa80-23c1-1579-2b22-4ecfd6d70418"},
+
+    // The other half of the same dedup. Once the vfxpart slots point at the
+    // cloth meshes, both slots carry the same mesh name, so a package that
+    // cannot declare a receiver path (BEM 1.3) matches two slots at once and
+    // is refused as ambiguous before any rename record is ever consulted.
+    // These four claim one slot each by its path. They rename nothing: the
+    // name is already right, the slot is what has to be proven.
+    {"jsspsi-cloth06-slot-world",
+        "chr_0036_jsspsi","chr_0036_jsspsi_postmodel",-1,
+        "S_actor_jsspsi_cloth_06_lod0",4680,true,
+        "S_actor_jsspsi_cloth_06_lod0",0,false,
+        "2954fa80-23c1-1579-2b22-4ecfd6d70418",true},
+    {"jsspsi-cloth08-slot-world",
+        "chr_0036_jsspsi","chr_0036_jsspsi_postmodel",-1,
+        "S_actor_jsspsi_cloth_08_lod0",1752,true,
+        "S_actor_jsspsi_cloth_08_lod0",0,false,
+        "2954fa80-23c1-1579-2b22-4ecfd6d70418",true},
+    {"jsspsi-cloth06-slot-ui",
+        "chr_0036_jsspsi","chr_0036_jsspsi_uimodel",-1,
+        "S_actor_jsspsi_cloth_06_lod0",4680,true,
+        "S_actor_jsspsi_cloth_06_lod0",0,false,
+        "2954fa80-23c1-1579-2b22-4ecfd6d70418",true},
+    {"jsspsi-cloth08-slot-ui",
+        "chr_0036_jsspsi","chr_0036_jsspsi_uimodel",-1,
+        "S_actor_jsspsi_cloth_08_lod0",1752,true,
+        "S_actor_jsspsi_cloth_08_lod0",0,false,
+        "2954fa80-23c1-1579-2b22-4ecfd6d70418",true},
 };
 
 // Hand written repairs live in compat_handlers.inc, which needs the runtime
