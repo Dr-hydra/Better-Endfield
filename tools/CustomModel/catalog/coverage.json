@@ -41,6 +41,12 @@
       "process_ids": [
         9064
       ]
+    },
+    {
+      "run": "characters-99479e6189954df7a3c4aa5541b48334",
+      "process_ids": [
+        30208
+      ]
     }
   ],
   "characters": [
@@ -717,6 +723,27 @@
           "reason": "not a complete single-submesh index region"
         }
       ]
+    },
+    {
+      "character_id": "chr_0037_minghe",
+      "name": "明河",
+      "components": 18,
+      "mapping_status": "source-resource-identities-pending",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_minghe_cloth_01_lod0",
+        "S_actor_minghe_cloth_02_lod0",
+        "S_actor_minghe_cloth_03_lod0",
+        "S_actor_minghe_cloth_04_lod0",
+        "S_actor_minghe_cloth_08_lod0",
+        "S_actor_minghe_cloth_09_lod0",
+        "S_actor_minghe_eyebrow_01_lod0",
+        "S_actor_minghe_fur_01_lod0_20"
+      ],
+      "observations": {
+        "chr_0037_minghe_postmodel": 18,
+        "chr_0037_minghe_uimodel": 0
+      }
     },
     {
       "character_id": "chr_0038_purrche",

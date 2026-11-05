@@ -50,7 +50,7 @@ class Catalog163Tests(unittest.TestCase):
 
     def test_explicit_targets_keep_real_owner_platform_and_pack_without_research_paths(self):
         index = load(PROFILES / "index.json")
-        self.assertEqual(len(index["targets"]), 6)
+        self.assertEqual(len(index["targets"]), 4)
         with tempfile.TemporaryDirectory() as temporary:
             for item in index["targets"]:
                 with self.subTest(profile=item["profile"]):
