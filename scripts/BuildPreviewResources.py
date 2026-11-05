@@ -30,6 +30,7 @@ def main():
     ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--astcenc',type=Path,required=True)
     ap.add_argument('--character',action='append',help='Limit a diagnostic run; omit for every playable character')
+    ap.add_argument('--exclude-character',action='append',default=[],help='Drop a variant the current game no longer uses (repeatable)')
     ap.add_argument('--scope',choices=['head','character'],default='character')
     args=ap.parse_args()
     from workspace_config import load_workspace
@@ -47,6 +48,9 @@ def main():
     manifest=json.loads(args.manifest.read_text(encoding='utf-8-sig'))
     available={a['path'].lower() for a in manifest['Assets']}
     chars=sorted(p.stem.removeprefix('npc_') for p in args.prefabs.glob('npc_chr_*.json'))
+    excluded=set(args.exclude_character)
+    if not excluded<=set(chars):raise ValueError('Unknown excluded character')
+    chars=[c for c in chars if c not in excluded]
     if args.character:
         if not set(args.character)<=set(chars):raise ValueError('Unknown playable character')
         chars=sorted(set(args.character))
@@ -57,7 +61,7 @@ def main():
     records={r.relative_path.lower():r for r in inputs.select_overlay(unpacker,roots,re.compile(r'Bundles/Windows/.*[.]ab',re.I))}
     report=dict(manifestVersion=manifest.get('Version'),
         sourceGameVersion=ws.get('game.version'),
-        scope=args.scope,requested=chars,completed=[],failures=[],geometrySource='Windows',
+        scope=args.scope,requested=chars,excluded=sorted(excluded),completed=[],failures=[],geometrySource='Windows',
         androidCompatibility='shared Windows geometry; textures transcoded to ASTC; no Android extraction')
     for char in chars:
         folder=root/char;folder.mkdir(exist_ok=True)

@@ -32,6 +32,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--prefab-info", type=Path)
     parser.add_argument("--clip-json", type=Path, action="append", default=[])
+    parser.add_argument(
+        "--exclude-character",
+        action="append",
+        default=[],
+        help="Drop a character or variant that the current game no longer uses (repeatable)",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     args.workspace = ws = load_workspace(args.workspace_config)
@@ -132,6 +138,7 @@ def main() -> int:
 
     if not prefab_info_dir.is_dir():
         raise FileNotFoundError(prefab_info_dir)
+    excluded = set(args.exclude_character)
     manifest = load_json(manifest_path)
     bundles = {int(item["bundleIndex"]): item for item in manifest["Bundles"]}
     assets = manifest["Assets"]
@@ -158,6 +165,8 @@ def main() -> int:
             continue
         data = load_json(path)
         character_id = data.get("correspondingCharId") or match.group(1)
+        if character_id in excluded:
+            continue
         animation_config = data.get("cpuAnimationTempletName", "")
         animation_parts = animation_config.split("/")
         rig_family = animation_parts[-2] if len(animation_parts) >= 2 else ""
@@ -327,6 +336,7 @@ def main() -> int:
             "loopRule": "Unity AnimationClip m_MuscleClip.m_LoopTime == true",
             "usableLoopRule": "loopRule, excluding additive and entry_pose clips",
             "neutralLoopRule": "loopRule and clip name ending in _dialog_state_walk_loop",
+            "excludedCharacters": sorted(excluded),
         },
         "summary": {
             "characterCount": len(character_records),

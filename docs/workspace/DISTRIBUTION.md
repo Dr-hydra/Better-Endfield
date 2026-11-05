@@ -17,14 +17,14 @@
 
 | 类型 | 平台 | 本次版本 | 来源 |
 | --- | --- | --- | --- |
-| core | windows | 1.6.3.2 | G 盘游戏的当前有效 VFS，基础战斗/图标/姿态维护输入 |
-| core | android | 1.6.4.3 | ADB 读取手机当前 VFS、AudioDialog、PrefabInfo 和四语言音频索引 |
-| preview | windows | 1.6.3.2 | 一次提取当前 Windows 全角色几何，保留原 BC7 mip，最高 2048 |
-| preview | android | 1.6.4.2 | 同一套 Windows 几何，开发机离线转码 ASTC 6×6，最高 2048 |
+| core | windows | 1.6.3.3 | 当前 Windows 客户端的有效 VFS，基础战斗/图标/姿态维护输入 |
+| core | android | 1.6.4.4 | ADB 读取手机当前 VFS、AudioDialog、PrefabInfo 和四语言音频索引 |
+| preview | windows | 1.6.3.3 | 一次提取当前 Windows 全角色几何，保留原 BC7 mip，最高 2048 |
+| preview | android | 1.6.4.3 | 同一套 Windows 几何，开发机离线转码 ASTC 6×6，最高 2048 |
 
 预览源只提取一份，不重复提取/比对 Android 角色模型。两份预览包的前三位分别属于各平台目标游戏基线；source 另外记录 Windows 来源版本、manifest 身份、角色数和纹理编码方式。桌面和手机不需要安装 Python、Pillow、astcenc 或新的客户端运行时。
 
-当前覆盖 37 个可玩角色/模型变体，包括没有独立 UI prefab 的明河三个变体；按当前 manifest 中实际存在的 world/UI 资源生成。导出完整最高细节层角色几何和主要色贴，不限于头部。材质、骨骼和 prefab 身份保留；运行时继续按 keep/hide/replace 补齐，缺少/不匹配的原生资源保持降级。
+当前覆盖 35 个可玩角色/模型变体。明河只保留 `chr_0037_minghe` 单一模型，热更新为它补上了独立 UI prefab 和 4 个装饰部件，旧的 `minghe02` / `minghe03` 变体不再随包分发。按当前 manifest 中实际存在的 world/UI 资源生成。导出完整最高细节层角色几何和主要色贴，不限于头部。材质、骨骼和 prefab 身份保留；运行时继续按 keep/hide/replace 补齐，缺少/不匹配的原生资源保持降级。
 
 本次生成和清单检查不等于所有角色均已在设备上验收。特殊游戏 shader、动画、灯光和非底色纹理不属于静态预览包。
 
