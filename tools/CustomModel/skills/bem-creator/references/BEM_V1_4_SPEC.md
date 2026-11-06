@@ -86,6 +86,10 @@ Android 普通角色使用 LOD1 接收是既有设计，旧包仍走 UI LOD0 don
 
 Android 替换或隐藏部件时，在同一提交/恢复事务中处理其 `shadowProxyMesh`。独立 `SP_Mobile` 代理只有在原网格或实际 shadow mesh 引用、骨骼对象顺序和网格空间能够唯一证明归属时才关闭；有关但归属不明的代理会导致替换拒绝。未改动部件及无关代理保持原状态，不依靠名称猜测归属。
 
+Windows 的 `SP_Desktop` 独立投影代理不受上述 Android 条款约束。其归属按资源内 canonical 路径 `Mesh_all/lodN/<stem>_lodN` → `Shadow_Proxy/SP_Desktop/<stem>_shadowProxyDesktop` 一对一建立，该路径在同一资产内唯一，无需竞争 owner 扫描。骨骼证据只用于证明代理与可见 LOD0 接收器共用同一套实时骨架：允许任一侧调色板是另一侧的切片（真实资源中代理既可能是子集也可能是超集，伊冯 `cloth_04` 为 26/24、提弗洛斯 `body_01` 为 39/35）。仅在按 mesh 身份兜底时才要求骨骼长度、顺序与指针完全一致并执行歧义扫描；代理只切换 `enabled`，不传几何、材质或 bindpose。
+
+阴影接管是可选附加项。`PrepareWindowsShadows` 拒绝时，`PrepareResource` / `CommitModelJob` 仍提交几何与材质替换，保留游戏原有投影，并输出 `Windows shadow takeover skipped` 告警；只有构造事务本身失败才否决整包。已知限制：降级事务不写入代理 binding，跨包热切换或关闭时的代理 `enabled` 恢复依赖已有记录，可能保留上一代状态，属纯视觉、可逆。Android `SP_Mobile` 归属失败仍拒绝整包，不放宽。
+
 资源注册、匹配和缓存按资源隔离；文件仍使用全局组件编号，原生运行时仅在读取选定资源时将组件和 donor 引用重映射为局部编号。关闭普通模型校验不能绕过跨资源 donor、目标类型或平台边界。两个旧包仍沿用同角色互斥规则；涉及 1.4 包时按当前平台资源是否重叠判断，重复 package ID 仍冲突。
 
 离线解析与构建回归已覆盖 1.4；庄方宜大招、武器加载和 PC 热切换已有用户实机验收。其他目标、资源池复用及 Android 渲染和阴影仍需对应实机证据；随附真实资源草稿只有 `keep` 规则，不是已完成的替换 Mod。

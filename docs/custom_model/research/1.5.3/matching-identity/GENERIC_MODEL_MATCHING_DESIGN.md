@@ -159,6 +159,8 @@ world/UI 新准备结果继续使用已有 paired 事务发布，保存和恢复
 
 保留当前策略：替换主体使用新可见 Mesh 投影，清空其旧 `shadowProxyMesh`，关闭已确认对应的 mobile proxy；隐藏部件同步处理。无几何变化且未隐藏的组件不额外改 proxy。只处理当前角色和平台的对应代理，不全局禁用，不自动改 desktop 策略。
 
+> 2026-11-06 后续实现补记：Windows `SP_Desktop` 策略已单独写入 `BEM_V1_4_SPEC.md`。实机诊断显示 29 个桌面代理全部由 canonical 路径一对一命中，可见 LOD0 的 `shadowProxyMesh` 恒为 null，本节的 mesh 引用主路径在这批 Windows 资源上不可达。因此桌面端以 canonical 路径作唯一性证明、以骨骼调色板切片作同骨架证明，并把阴影接管失败降级为不接管（不否决整包）。本节针对 Android `SP_Mobile` 的禁止零匹配静默成功规则不变。
+
 proxy 自身的当前 Mesh/material/bones/enabled 与主体 shadow mode、shadow mesh 都进入同一事务。Original 用于关包恢复，当前状态用于提交失败回滚。资源确实未声明 proxy 时允许没有 proxy；已证实应存在的 proxy 缺失、重复或关系冲突必须显式失配，不能把零匹配静默当成功。
 
 ## 现有数据足以自动生成什么

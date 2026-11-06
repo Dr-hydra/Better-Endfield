@@ -1808,10 +1808,33 @@ void WindowsShadowTests() {
         auto hidden=bem;hidden.components[0].info.flags=kComponentFlagNoGeometry|kComponentFlagHidden;
         auto hide=baseline;hide[0].custom_enabled=false;
         Check(PrepareWindowsShadows(adapter,hidden,asset,hide) && hide.size()==2 && !hide[1].custom_enabled,"hidden part retained old proxy");
+        // A projection palette is a slice of the same live skeleton, not a
+        // second skeleton. Most parts use a subset; yvonne cloth_04 and
+        // typhoea body_01 use a superset (26/24 and 39/35 bones). The
+        // canonical SP_Desktop path is already a unique 1:1 owner proof.
+        auto* spine=Make("Bip001_Spine");spine->parent=asset;
+        auto* spine1=Make("Bip001_Spine1");spine1->parent=asset;
+        proxy->bones=Array({bone,spine,spine1});
+        auto superset=baseline;superset[0].custom_mesh=replacement;superset[0].custom_materials=visible->materials;
+        Check(PrepareWindowsShadows(adapter,bem,asset,superset) && superset.size()==2 &&
+            !superset[1].custom_enabled && superset[0].custom_mesh==replacement,
+            "extended same-skeleton proxy palette was rejected by canonical path ownership");
+        // A superset-shaped but disjoint palette is still a foreign skeleton.
+        auto* foreign_a=Make("ForeignBoneA");foreign_a->parent=asset;
+        auto* foreign_b=Make("ForeignBoneB");foreign_b->parent=asset;
+        proxy->bones=Array({foreign_a,foreign_b});
+        auto disjoint=baseline;
+        Check(!PrepareWindowsShadows(adapter,bem,asset,disjoint) && disjoint.size()==1,
+            "disjoint extended proxy palette was accepted as the same skeleton");
+        proxy->bones=Array({bone});
         proxy->matrix.m[5]=1;proxy->matrix.m[6]=0;proxy->matrix.m[9]=0;proxy->matrix.m[10]=1;
-        auto* foreign=Make("ForeignBone");proxy->bones=Array({foreign});auto invalid=baseline;
-        Check(!PrepareWindowsShadows(adapter,bem,asset,invalid) && invalid.size()==1 && proxy->enabled,
-            "same-name proxy with foreign skeleton was accepted or preparation leaked");
+        auto* foreign=Make("ForeignBone");proxy->bones=Array({foreign});
+        // A declined shadow stage must leave the geometry transaction intact:
+        // PrepareResource / CommitModelJob publish it without any shadow writes.
+        auto invalid=baseline;invalid[0].custom_mesh=replacement;invalid[0].custom_materials=visible->materials;
+        Check(!PrepareWindowsShadows(adapter,bem,asset,invalid) && invalid.size()==1 && proxy->enabled &&
+            invalid[0].custom_mesh==replacement && !invalid[0].change_shadow && !invalid[0].custom_shadow_mesh,
+            "same-name proxy with foreign skeleton was accepted, or a declined shadow stage mutated the geometry transaction");
         shadow_test_log.clear();
         // Mesh-identity ownership also only toggles enabled state: different
         // coordinates must neither block it nor hide competing owners.

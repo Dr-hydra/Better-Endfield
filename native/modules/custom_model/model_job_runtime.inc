@@ -530,8 +530,14 @@ bool CommitModelJob(ModelBuildJob& job,uint64_t frame) {
     auto transaction=job.bindings;CompletedResource completed,ui_completed;
     void* paired_ui=nullptr;
 #if defined(_WIN32)
-    if (!PrepareWindowsShadows(*job.mod.adapter,job.plan->data,job.asset,transaction))
-        return JobFail(job,"Windows shadow transaction unavailable (see preceding log)");
+    // Shadow handoff is optional; see PrepareResource for the same policy.
+    // `transaction` is a copy of job.bindings and is only reassigned by
+    // PrepareWindowsShadows on success, so a decline commits the replacement
+    // without any shadow writes. Construction failure remains fatal.
+    if (!PrepareWindowsShadows(*job.mod.adapter,job.plan->data,job.asset,transaction)) {
+        if (g_construction->failed) return JobFail(job,"construction failed during Windows shadow preparation");
+        Log("Windows shadow takeover skipped; model replacement continues with original projection");
+    }
 #endif
 #if defined(__ANDROID__)
     if (job.mod.adapter->explicit_resource && !PrepareExplicitAndroidShadows(*job.mod.adapter,job.plan->data,job.asset,transaction))

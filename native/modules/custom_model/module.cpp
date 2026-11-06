@@ -2858,7 +2858,16 @@ bool PrepareResource(const CharacterAdapter& adapter,const BemPocData& bem,void*
         }
     }
     #if defined(_WIN32)
-    if (!PrepareWindowsShadows(adapter,bem,asset,bindings)) return false;
+    // Desktop shadow handoff is an optional add-on: it only clears the
+    // visible renderer's shadowProxyMesh and disables the game's independent
+    // SP_Desktop proxies. It must never veto the geometry/material transaction.
+    // PrepareWindowsShadows assigns `bindings` only on success, so a declined
+    // handoff leaves the replacement fully prepared and the game's original
+    // projection in place. Android SP_Mobile ownership stays strict.
+    if (!PrepareWindowsShadows(adapter,bem,asset,bindings)) {
+        if (g_construction->failed) return false;
+        Log("Windows shadow takeover skipped; model replacement continues with original projection");
+    }
     #endif
     #if defined(__ANDROID__)
     if (!PrepareExplicitAndroidShadows(adapter,bem,asset,bindings)) return false;
