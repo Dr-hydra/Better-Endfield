@@ -274,6 +274,10 @@ def verify(archive, version, with_cli=True):
 
 
 def main():
+    # A GBK console cannot encode every line of the smoke summary; degrade the
+    # characters rather than letting one of them swallow the whole block.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(errors='replace')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, help='Directory for the tarball; defaults to the release directory.')
     parser.add_argument('--workspace-config', type=Path, help='Workspace configuration used to resolve the release directory.')
