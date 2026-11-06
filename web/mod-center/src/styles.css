@@ -261,6 +261,17 @@
 .account-email { margin-bottom: 20px; padding: 18px; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
 .account-email strong { font-size: 13px; }
 .account-email p { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.7; overflow-wrap: anywhere; }
+.profile-editor { margin-bottom: 20px; padding: 22px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 1.2fr); gap: 24px; align-items: center; }
+.profile-editor-heading { display: flex; align-items: center; gap: 16px; }
+.profile-editor-heading h3 { margin: 8px 0 5px; font-size: 20px; }
+.profile-editor-heading p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.profile-editor-heading img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
+.profile-editor-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+.profile-editor-form label { display: grid; gap: 7px; }
+.profile-editor-form label > span { font-size: 11px; font-weight: 700; }
+.profile-editor-form input { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line); background: var(--panel-2); color: var(--ink); font-family: inherit; font-size: 12px; }
+.profile-editor-form small { color: var(--muted); font-size: 10px; }
+@media (max-width: 800px) { .profile-editor { grid-template-columns: 1fr; } .profile-editor-form { grid-template-columns: 1fr; } }
 .button.danger { background: var(--red); color: white; border-color: var(--red); }
 .mobile-theme, .mobile-login, .mobile-language { background: transparent; border: 0; color: inherit; cursor: pointer; }
 .mobile-login { font-size: 10px; max-width: 125px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import type { JSX } from "preact";
 import categories from "../shared/types.json";
-import { ApiError, authRequest, base, blankDraft, request, write, type Catalog, type Draft, type Resource, type Session } from "./api";
+import { ApiError, authRequest, base, blankDraft, request, updateProfile, write, type Catalog, type Draft, type Resource, type Session } from "./api";
 import { Community } from './Community';
 import { UploadEditor } from './UploadEditor';
 import { VisibilityControls, visibilityLabel } from './VisibilityControls';
@@ -148,6 +148,7 @@ export default function App() {
         {manage && session.isAdmin && <label class="manage-visibility-filter"><span>{t('展示状态', 'Visibility')}</span><select value={visibilityFilter} onChange={event => setVisibilityFilter(event.currentTarget.value)}><option value="">{t('全部状态', 'All states')}</option><option value="public">{t('公开展示', 'Public')}</option><option value="author-hidden">{t('作者隐藏', 'Hidden by author')}</option><option value="admin-hidden">{t('管理员隐藏', 'Hidden by admin')}</option></select></label>}
         {!mine && !manage && <section class="portal-hero panel"><div class="hero-copy"><span class="eyebrow">BETTER ENDFIELD · {t("下载站", "DOWNLOADS")}</span><h1>{t("发现终末地", "Explore Endfield")}<br /><span>{t("社区创作。", "Community creations.")}</span></h1><p>{t("功能、外观、模型与更多可能。", "Mods, skins, models, and more.")}<br />{t("找到喜欢的作品，也让你的创作被看见。", "Find something you like, or share your own work.")}</p><button class="button primary large" onClick={() => go("publish")}>{t("发布你的作品", "Publish your work")} <Icon name="arrow" /></button><div class="hero-foot"><span><b>{total.toString().padStart(2, "0")}</b> {t("份社区作品", "community works")}</span><i /><span><b>07</b> {t("个资源分类", "categories")}</span></div></div><div class="hero-index"><div class="hero-index-heading"><span>COMMUNITY / {t("创作目录", "CATALOG")}</span><Icon name="layers" size={23} /></div>{categories.map((item, index) => <button key={item.id} onClick={() => filter(item.id)}><span class="index-number">0{index + 1}</span><span><strong>{categoryName(item, lang)}</strong><small>{categoryHint(item, lang)}</small></span><Icon name="chevron" size={16} /></button>)}<div class="hero-index-foot"><span>{t("由作者分享 · 前往原地址下载", "Shared by authors · Download from the original link")}</span><i class="status-dot" /></div></div></section>}
         <section class="catalog-heading"><div><span class="eyebrow">{manage ? t("MANAGE / 作品管理", "MANAGE") : mine ? t("YOUR COLLECTION / 创作管理", "YOUR COLLECTION") : t("EXPLORE / 作品目录", "EXPLORE")}</span><h2>{manage ? t("管理作品", "Manage works") : mine ? t("我的发布", "My works") : t("浏览作品", "Browse works")}<span>{catalog.total}</span></h2></div>{mine ? <button class="button primary" onClick={() => go("publish")}><Icon name="plus" size={17} />{t("发布作品", "Publish")}</button> : <span class="catalog-caption">{t("每一个想法，都可以从这里开始。", "Every idea can start here.")}</span>}</section>
+        {mine && session.user && <ProfileEditor session={session} lang={lang} onSaved={setSession} onError={setError} onNotice={setNotice} />}
         {mine && session.user && session.emailEnabled && <section class="account-email panel"><div><strong>{t("邮箱登录", "Email sign-in")}</strong><p>{session.email ? t(`已绑定 ${session.email}`, `Linked: ${session.email}`) : t("绑定邮箱后，也可以用验证码登录并管理这些作品。", "Link an email to sign in with a code and manage these works.")}</p></div>{!session.email && <button class="button secondary" onClick={() => { setAuthPurpose("bind"); setAuthOpen(true); }}><Icon name="mail" size={16} />{t("绑定邮箱", "Link email")}</button>}</section>}
         {((mine && !session.user) || (manage && !session.isAdmin)) ? <section class="portal-empty panel"><Icon name="user" size={44} /><h3>{manage ? t("需要管理员账号", "Administrator account required") : t("在这里管理你的创作", "Manage your creations here")}</h3><p>{manage ? t("只有管理员可以查看所有作品及其隐藏状态。", "Only administrators can view all works and their visibility.") : t("使用 GitHub 或邮箱登录后，发布作品、修改介绍或添加新版本。", "Sign in with GitHub or email to publish, edit, or add releases.")}</p><button class="button primary" onClick={login}><Icon name="user" size={18} />{t("登录", "Sign in")}</button></section> : <>
           <section class="catalog-toolbar panel"><label class="search-field"><Icon name="search" size={19} /><input aria-label={t("搜索作品", "Search works")} placeholder={t("搜索作品、介绍或作者…", "Search works, descriptions, or authors…")} value={search} maxLength={120} onInput={event => setSearch(event.currentTarget.value)} />{search && <button aria-label={t("清空搜索", "Clear search")} onClick={() => setSearch("")}>×</button>}</label><label class="sort-field"><span>{t("排序", "Sort")}</span><select aria-label={t("排序方式", "Sort order")} value={sort} onChange={event => setSort(event.currentTarget.value)}><option value="updated">{t("最近更新", "Recently updated")}</option><option value="newest">{t("最新发布", "Newest")}</option></select></label></section>
@@ -243,6 +244,21 @@ function EmailDialog({ session, purpose, lang, onClose, onVerified }: { session:
       {sent && <button class="auth-restart" type="button" disabled={busy} onClick={() => { setSent(false); setCode(""); setError(""); }}>{t("修改邮箱或重新发送", "Change email or send again")}</button>}
     </form>
   </section></div>;
+}
+
+function ProfileEditor({ session, lang, onSaved, onError, onNotice }: { session: Session; lang: Language; onSaved: (value: Session) => void; onError: (value: string) => void; onNotice: (value: string) => void }) {
+  const t = (zh: string, en: string) => text(lang, zh, en);
+  const [login, setLogin] = useState(session.user?.login || "");
+  const [avatar, setAvatar] = useState(session.user?.avatar || "");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setLogin(session.user?.login || ""); setAvatar(session.user?.avatar || ""); }, [session.user?.id, session.user?.login, session.user?.avatar]);
+  async function submit(event: SubmitEvent) {
+    event.preventDefault(); setBusy(true); onError("");
+    try { onSaved(await updateProfile({ login, avatar }, session.csrf)); onNotice(t("个人资料已更新。", "Profile updated.")); }
+    catch (reason) { onError(reason instanceof Error ? reason.message : t("个人资料更新失败。", "Could not update profile.")); }
+    finally { setBusy(false); }
+  }
+  return <section class="profile-editor panel"><div class="profile-editor-heading"><div><span class="eyebrow">ACCOUNT / PROFILE</span><h3>{t("个人资料", "Profile")}</h3><p>{t("修改创意工坊中显示的名字和头像。", "Change the name and avatar shown in the Workshop.")}</p></div>{avatar ? <img src={avatar} alt="" onError={event => { event.currentTarget.style.visibility = "hidden"; }} /> : <Icon name="user" size={28} />}</div><form onSubmit={submit} class="profile-editor-form"><label><span>{t("显示名字", "Display name")}</span><input required maxLength={100} value={login} onInput={event => setLogin(event.currentTarget.value)} /></label><label><span>{t("头像地址", "Avatar URL")}</span><input type="url" maxLength={2048} placeholder="https://…" value={avatar} onInput={event => setAvatar(event.currentTarget.value)} /><small>{t("请输入 HTTPS 图片地址。", "Use an HTTPS image URL.")}</small></label><button class="button primary" disabled={busy}>{busy ? t("保存中…", "Saving…") : t("保存资料", "Save profile")}</button></form></section>;
 }
 
 function PublishForm({ resource, editing, releasing, session, lang, onLogin, onNotice, onPublished }: { resource: Resource | null; editing: boolean; releasing: boolean; session: Session; lang: Language; onLogin: () => void; onNotice: (value: string) => void; onPublished: (value: Resource) => void }) {

@@ -45,6 +45,10 @@ export function write<T>(path: string, method: string, body: unknown, csrf: stri
   return request<T>(path, { method, headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body) });
 }
 
+export function updateProfile(body: { login: string; avatar: string }, csrf: string) {
+  return write<Session>("profile", "PUT", body, csrf);
+}
+
 export function upload(file: File, kind: "image" | "file", csrf: string, onProgress: (value: number) => void): Promise<Upload> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();

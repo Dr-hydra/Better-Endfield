@@ -63,6 +63,7 @@ export function createApp(options = {}) {
   const publicUrl = new URL(options.publicUrl || process.env.PUBLIC_URL || 'http://127.0.0.1:9017/endfield/');
   if (publicUrl.username || publicUrl.password || publicUrl.search || publicUrl.hash || !['http:', 'https:'].includes(publicUrl.protocol)) throw new Error('PUBLIC_URL must be a plain HTTP(S) site URL');
   const prefix = `${publicUrl.pathname.replace(/\/$/, '')}/`;
+  const allowedOrigins = new Set([publicUrl.origin, ...String(options.allowedOrigins ?? process.env.ALLOWED_ORIGINS ?? '').split(',').map(value => value.trim()).filter(Boolean)]);
   const fileUploadGithubIds = new Set(String(options.fileUploadGithubIds ?? process.env.FILE_UPLOAD_GITHUB_IDS ?? '').split(',').map(value => value.trim()).filter(Boolean));
   const canUploadFiles = user => Boolean(user?.github_id && fileUploadGithubIds.has(user.github_id));
   const adminGithubIds = new Set(String(options.adminGithubIds ?? process.env.ADMIN_GITHUB_IDS ?? [...fileUploadGithubIds].join(',')).split(',').map(value => value.trim()).filter(Boolean));
@@ -120,7 +121,7 @@ export function createApp(options = {}) {
   const authorize = req => {
     const user = session(req);
     if (!user) fail(401, '请先登录。');
-    if (req.headers.origin !== publicUrl.origin) fail(403, '请求来源不正确，请刷新页面后重试。');
+    if (!allowedOrigins.has(req.headers.origin)) fail(403, '请求来源不正确，请刷新页面后重试。');
     const supplied = String(req.headers['x-csrf-token'] || '');
     const suppliedBytes = Buffer.from(supplied), expectedBytes = Buffer.from(user.csrf);
     if (suppliedBytes.length !== expectedBytes.length || !timingSafeEqual(suppliedBytes, expectedBytes)) fail(403, '登录状态已变化，请刷新页面后重试。');
@@ -196,6 +197,16 @@ export function createApp(options = {}) {
       if (route === 'api/session' && req.method === 'GET') {
         return json(res, 200, sessionView(session(req)));
       }
+      if (route === 'api/profile' && req.method === 'PUT') {
+        const user = authorize(req);
+        rate(`profile:${user.id}`, 20, 3600000);
+        const body = await bodyOf(req);
+        const login = text(body.login, 100, '显示名字', true);
+        const avatar = link(body.avatar, '头像地址');
+        if (avatar && !avatar.startsWith('https://')) fail(400, '头像地址必须使用 HTTPS。');
+        db.prepare('UPDATE users SET login=?, avatar=? WHERE id=?').run(login, avatar, user.id);
+        return json(res, 200, sessionView(db.prepare('SELECT * FROM users WHERE id=?').get(user.id)));
+      }
       if (route === 'api/uploads' && req.method === 'POST') {
         const user = authorize(req);
         const kind = url.searchParams.get('kind');
@@ -249,7 +260,7 @@ export function createApp(options = {}) {
       }
       if (route === 'auth/email/request' && req.method === 'POST') {
         if (!emailEnabled) fail(503, '邮箱登录暂未配置。');
-        if (req.headers.origin !== publicUrl.origin) fail(403, '请求来源不正确，请刷新页面后重试。');
+        if (!allowedOrigins.has(req.headers.origin)) fail(403, '请求来源不正确，请刷新页面后重试。');
         const body = await bodyOf(req);
         const email = emailAddress(body.email);
         const binding = body.purpose === 'bind';
@@ -278,7 +289,7 @@ export function createApp(options = {}) {
       }
       if (route === 'auth/email/verify' && req.method === 'POST') {
         if (!emailEnabled) fail(503, '邮箱登录暂未配置。');
-        if (req.headers.origin !== publicUrl.origin) fail(403, '请求来源不正确，请刷新页面后重试。');
+        if (!allowedOrigins.has(req.headers.origin)) fail(403, '请求来源不正确，请刷新页面后重试。');
         const body = await bodyOf(req);
         const code = text(body.code, 6, '验证码', true);
         if (!/^\d{6}$/.test(code)) fail(400, '请填写六位数字验证码。');
