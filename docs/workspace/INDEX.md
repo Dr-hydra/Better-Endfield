@@ -26,6 +26,7 @@
 
 | 文档 | 用途 | 状态 | 游戏版本 |
 | --- | --- | --- | --- |
+| [Better Endfield Next 4.1.8](releases/4.1.8/RELEASE_4_1_8.md) | 模型包可读文件名、阴影接管降级与代理归属放宽、Tools/DSH 1.6.7 与发布脚本改进 | 发布记录 | 未变（同 4.1.7） |
 | [Better Endfield Next 4.1.7](releases/4.1.7/RELEASE_4_1_7.md) | Windows 世界模型阴影恢复、跨包还原、祀与明河模型资源更新与 Tools 1.6.6 | 发布记录 | Windows 1.6.3 / Android 1.6.4 |
 | [Better Endfield Next 4.1.6](releases/4.1.6/RELEASE_4_1_6.md) | 预览资源缺失提示、寻访导出崩溃（#36）与导出异常处理 | 发布记录 | 未变（同 4.1.5） |
 | [Better Endfield Next 4.1.5](releases/4.1.5/RELEASE_4_1_5.md) | 单文件资源定位、Android 内置基础包、包可见性与语言切换 | 发布记录 | Windows 1.6.3 / Android 1.6.4 |
