@@ -236,7 +236,7 @@ BetterEndfieldNext.BemConverter.exe inspect source-mod.zip --report inspection.j
 | --- | --- | --- |
 | 导入 | 模型管理页“导入 BEM / ZIP”，或把文件拖进页面；ZIP 合集可勾选要导入的包。**需要关闭游戏** | App 模型页导入单个 `.bem`，也可以从文件管理器“打开方式”或“分享”导入 |
 | 新包状态 | 默认停用 | 默认启用，并停用与其资源冲突的其他包 |
-| 存放位置 | 程序目录 `models/`（不可写时为 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model\packages`） | App 私有目录，并发布给游戏 |
+| 存放位置 | 程序目录 `models/`，文件名为 `<包名> v<版本> [<package_id 末 8 位>].bem`，可直接拿来分享；不可写时为 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model\packages` | App 私有目录，并发布给游戏 |
 | 更新 | 相同 `package_id` 即覆盖更新，保留启用状态和仍有效的选择 | 每次导入生成新版本，保留选择 |
 | 生效 | 下次启动游戏；已开启热切换时，选择变化由游戏帧调度处理已加载实例 | 同左；1.4 按 Android 显式资源发现，仍需手机实机验收 |
 

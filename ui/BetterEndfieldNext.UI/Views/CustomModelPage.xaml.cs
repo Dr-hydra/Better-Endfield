@@ -141,6 +141,7 @@ public sealed partial class CustomModelPage : UserControl
             _service.Load(); Render();
             if (_service.Notices.Count != 0) Message(() => BemText.Get("包管理提示"), () => string.Join("\n", _service.Notices), InfoBarSeverity.Warning);
             if (_service.HasLegacyPackages && !_migrating) _ = MigrateLegacyPackagesAsync();
+            else _ = NormalizePackageFileNamesAsync();
         }
         catch (Exception ex) { Message(() => BemText.Get("读取失败"), () => ex.Message, InfoBarSeverity.Error); }
     }
@@ -154,10 +155,25 @@ public sealed partial class CustomModelPage : UserControl
             int moved = await _service.MigrateLegacyPackagesAsync();
             Render();
             if (moved > 0) Message(() => BemText.Get("模型包已移到程序目录"), () => _service.PackageDirectory);
+            // Migrated packages keep their old bare-id name, so the readable-name
+            // pass has to follow immediately or the folder looks unmigrated.
+            await NormalizePackageFileNamesAsync();
         }
         catch (InvalidOperationException) { /* The game is running; the next refresh retries. */ }
         catch (Exception ex) { Message(() => BemText.Get("模型包迁移未完成"), () => ex.Message, InfoBarSeverity.Warning); }
         finally { _migrating = false; }
+    }
+
+    private bool _normalizing;
+    private async Task NormalizePackageFileNamesAsync()
+    {
+        if (_normalizing) return;
+        _normalizing = true;
+        try { if (await _service.NormalizePackageFileNamesAsync() > 0) Render(); }
+        catch (InvalidOperationException) { /* The game is running; the next refresh retries. */ }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { Message(() => BemText.Get("模型文件名整理未完成"), () => ex.Message, InfoBarSeverity.Warning); }
+        finally { _normalizing = false; }
     }
 
     private static string TargetLabel(BemPackage package) => package.TargetKind == "weapon"

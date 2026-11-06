@@ -70,7 +70,9 @@ internal sealed class BemPackage
     public bool ConflictsWith(BemPackage other) => Id.Length > 0 && Id == other.Id ||
         (FormatMinor < 4 && other.FormatMinor < 4 && TargetKey == other.TargetKey) ||
         (ResourceKeys.Count > 0 && other.ResourceKeys.Count > 0 ? ResourceKeys.Any(key => key.StartsWith("windows-x64:", StringComparison.Ordinal) && other.ResourceKeys.Contains(key)) : TargetKey == other.TargetKey);
-    public string File { get; init; } = "";
+    // Mutable: normalization renames a package on disk and the service has to
+    // carry the new path forward without rebuilding the whole library.
+    public string File { get; set; } = "";
     public long Size { get; init; }
     public string DefaultAppearance { get; init; } = "";
     public List<BemAppearance> Appearances { get; init; } = [];
@@ -396,6 +398,102 @@ internal sealed class BemPackageService
         return package;
     }
 
+    // Device names are rejected by Windows even when an extension is attached.
+    private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+
+    // Strips what Windows refuses in a filename and bounds the length so a long
+    // CJK package name cannot push the full path past MAX_PATH.
+    private static string SafeStemPart(string text, int maxChars)
+    {
+        var builder = new StringBuilder(text.Length);
+        foreach (char c in text)
+            if (!char.IsControl(c) && c is not ('<' or '>' or ':' or '"' or '/' or '\\' or '|' or '?' or '*'))
+                builder.Append(c);
+        string cleaned = builder.ToString().Trim();
+        if (cleaned.Length > maxChars)
+        {
+            int cut = maxChars;
+            if (char.IsHighSurrogate(cleaned[cut - 1])) cut--;
+            cleaned = cleaned[..cut];
+        }
+        // Windows also rejects a name that ends in a space or a dot, including one
+        // the truncation above just exposed.
+        return cleaned.TrimEnd('.', ' ');
+    }
+
+    /// <summary>
+    /// The on-disk name a package is stored under: "name v1.0 [id fragment]".
+    /// The trailing id fragment keeps two packages with the same name apart and
+    /// stays greppable from runtime.ini, where only the id is recorded.
+    /// </summary>
+    public static string PackageFileStem(BemPackage package)
+    {
+        string name = SafeStemPart(package.Name, 40);
+        if (name.Length == 0) name = SafeStemPart(package.Id, 40);
+        if (name.Length == 0) name = "model";
+        if (ReservedNames.Contains(name)) name = "_" + name;
+        var stem = new StringBuilder(name);
+        string version = SafeStemPart(package.Version, 16);
+        if (version.Length > 0) stem.Append(" v").Append(version);
+        string tail = SafeStemPart(package.Id.Length <= 8 ? package.Id : package.Id[^8..], 8);
+        if (tail.Length > 0) stem.Append(" [").Append(tail).Append(']');
+        return stem.ToString();
+    }
+
+    /// <summary>
+    /// Renames packages still stored under their bare id to the readable name
+    /// above, so a user browsing the folder can tell which file to share. Only a
+    /// file whose stem is exactly the package id is touched: a name the user
+    /// edited by hand survives, which is also what makes the pass idempotent
+    /// without keeping a marker file. Refused while the game runs because it may
+    /// hold the package open.
+    /// </summary>
+    public async Task<int> NormalizePackageFileNamesAsync(CancellationToken token = default)
+    {
+        var moves = new List<(string Source, string Target, BemPackage Package)>();
+        foreach (var package in Packages)
+        {
+            if (!Path.GetFileNameWithoutExtension(package.File).Equals(package.Id, StringComparison.OrdinalIgnoreCase)) continue;
+            string directory = Path.GetDirectoryName(package.File)!;
+            string target = Path.Combine(directory, PackageFileStem(package) + ".bem");
+            if (target.Equals(package.File, StringComparison.OrdinalIgnoreCase) || System.IO.File.Exists(target)) continue;
+            moves.Add((package.File, target, package));
+        }
+        if (moves.Count == 0) return 0;
+        RequireGameClosed();
+        try
+        {
+            foreach (var move in moves)
+            {
+                token.ThrowIfCancellationRequested();
+                System.IO.File.Move(move.Source, move.Target);
+                move.Package.File = move.Target;
+            }
+            // The registry stores absolute paths: a rename that is not written back
+            // would point the next game launch at a file that no longer exists.
+            await SaveAsync();
+        }
+        catch
+        {
+            foreach (var move in moves.AsEnumerable().Reverse())
+            {
+                try
+                {
+                    if (System.IO.File.Exists(move.Target) && !System.IO.File.Exists(move.Source))
+                    { System.IO.File.Move(move.Target, move.Source); move.Package.File = move.Source; }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            }
+            throw;
+        }
+        return moves.Count;
+    }
+
     public void UseInstallRoot(string? installRoot)
     {
         string? candidate = string.IsNullOrEmpty(installRoot) ? null : Path.Combine(installRoot, "models");
@@ -633,11 +731,15 @@ internal sealed class BemPackageService
         }
     }
 
+    // Overridable so the persistence tests can exercise rename and migration
+    // logic on a machine where the game happens to be running.
+    internal static Func<bool> GameRunningProbe { get; set; } =
+        () => Process.GetProcessesByName("Endfield").Length > 0;
+
     private static void RequireGameClosed()
     {
-        var processes = Process.GetProcessesByName("Endfield");
-        try { if (processes.Length > 0) throw new InvalidOperationException(BemText.Get("请关闭游戏后导入、更新或删除包，避免资源延迟加载时读到变更文件。启停与外观选择可先保存，下次启动生效。")); }
-        finally { foreach (var p in processes) p.Dispose(); }
+        if (GameRunningProbe())
+            throw new InvalidOperationException(BemText.Get("请关闭游戏后导入、更新或删除包，避免资源延迟加载时读到变更文件。启停与外观选择可先保存，下次启动生效。"));
     }
 
     public async Task<BemBundleImport> PrepareBundleAsync(string source, string installRoot, CancellationToken token = default)
@@ -701,8 +803,16 @@ internal sealed class BemPackageService
             if (caseCollision != null) throw new InvalidDataException(BemText.Get("包 ID 与现有包仅大小写不同，不能安全存储。"));
             if (old != null && old.TargetKey != p.TargetKey) throw new InvalidDataException(BemText.Get("同一个包 ID 不能更新为另一目标。"));
             RequireGameClosed();
-            System.IO.File.Move(temp, Path.Combine(dir, p.Id + ".bem"), true);
-            if (old != null && !SameDirectory(Path.GetDirectoryName(old.File)!, dir)) System.IO.File.Delete(old.File);
+            string target = Path.Combine(dir, PackageFileStem(p) + ".bem");
+            // Two different packages may share a display name; never overwrite the
+            // other one just because the readable stem collided.
+            if (System.IO.File.Exists(target) && (old is null || !old.File.Equals(target, StringComparison.OrdinalIgnoreCase)))
+                target = Path.Combine(dir, Path.GetFileNameWithoutExtension(target) + "-" + Guid.NewGuid().ToString("N")[..8] + ".bem");
+            System.IO.File.Move(temp, target, true);
+            // An update can land under a different readable name (renamed or
+            // re-versioned package), so the previous file is removed by identity
+            // instead of relying on an in-place overwrite.
+            if (old != null && !old.File.Equals(target, StringComparison.OrdinalIgnoreCase)) System.IO.File.Delete(old.File);
             Load(); await SaveAsync();
         }
         finally { if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp); }

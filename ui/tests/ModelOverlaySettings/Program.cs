@@ -87,6 +87,9 @@ static class Program
         Expect(!HotkeyService.TryNormalize("CTRL", out _), "Modifier-only key was accepted.");
 
         ConfigurationService.SettingsDirectory = Path.Combine(root, "profile");
+        // The game may well be running while these checks execute; the guarded
+        // operations themselves are what this fixture is about.
+        BemPackageService.GameRunningProbe = () => false;
         var service = new BemPackageService();
         Directory.CreateDirectory(service.PackageDirectory);
         MetadataFixture(Path.Combine(service.PackageDirectory, "a.bem"), "a", "character.one");
@@ -158,6 +161,43 @@ static class Program
         try { await service.SavePreviewAsync(previewPackage, "a", ""); throw new InvalidOperationException("Expected removed-package failure."); }
         catch (InvalidOperationException error) when (!error.Message.StartsWith("Expected")) { checks++; }
         service.Load();
+        // Readable filenames: a package stored under its bare id is renamed to
+        // "name v1.0 [id tail]", the registry follows, the pass is idempotent, and
+        // a name the user chose by hand is never rewritten.
+        {
+            int renamed = await service.NormalizePackageFileNamesAsync();
+            Expect(renamed == 3, $"Readable-name pass renamed {renamed} of 3 raw-id packages.");
+            var renamedA = service.Packages.Single(p => p.Id == "a");
+            Expect(Path.GetFileName(renamedA.File) == "Test a v1.0 [a].bem",
+                $"Unexpected readable filename: {Path.GetFileName(renamedA.File)}");
+            Expect(File.Exists(renamedA.File) && !File.Exists(Path.Combine(service.PackageDirectory, "a.bem")),
+                "The raw-id file survived the rename.");
+            // The registry stores an absolute path beside the program and a
+            // relative "packages/..." one in the profile fallback; either way it
+            // has to resolve to the renamed file.
+            string storedPackage = BemRuntimeSettings.Read(runtime)["Mod.a"]["package"];
+            string resolvedPackage = Path.GetFullPath(Path.IsPathRooted(storedPackage)
+                ? storedPackage : Path.Combine(service.Root, storedPackage));
+            Expect(resolvedPackage == Path.GetFullPath(renamedA.File),
+                $"The registry still points at the pre-rename path: {resolvedPackage}");
+            Expect(await service.NormalizePackageFileNamesAsync() == 0, "A second readable-name pass must be a no-op.");
+            string custom = Path.Combine(service.PackageDirectory, "我的手改包名.bem");
+            MetadataFixture(custom, "custom", "character.three");
+            service.Load();
+            await service.NormalizePackageFileNamesAsync();
+            Expect(File.Exists(custom), "A hand-chosen package filename must survive normalization.");
+            // Hostile display names must still yield a legal, bounded filename.
+            var hostile = new BemPackage
+            {
+                Id = "bem.0123456789abcdef0123456789abcdef",
+                Name = new string('模', 60) + ":a/b?c", Version = "1.0.0"
+            };
+            Expect(BemPackageService.PackageFileStem(hostile) == new string('模', 40) + " v1.0.0 [89abcdef]",
+                $"Unexpected stem for a hostile name: {BemPackageService.PackageFileStem(hostile)}");
+            var device = new BemPackage { Id = "con", Name = "con" };
+            Expect(BemPackageService.PackageFileStem(device) == "_con [con]",
+                $"A reserved device name must be escaped: {BemPackageService.PackageFileStem(device)}");
+        }
         // Section 13 driver hotkeys: the table round-trips through the same
         // `id:key&id:key` shape as parameters, an empty value means unbound, and
         // a duplicate key is dropped instead of silently driving two controllers.

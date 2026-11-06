@@ -165,6 +165,7 @@ internal static class BemText
         ["模型包迁移校验失败。"] = "Model package migration verification failed.",
         ["模型包已移到程序目录"] = "Model packages moved to the program folder",
         ["模型包迁移未完成"] = "Model package move incomplete",
+        ["模型文件名整理未完成"] = "Model filenames could not be renamed",
         ["读取失败"] = "Could not load packages",
         ["已启用 Mod，强制锁定 LOD。全部停用后恢复独立开关：{0}。"] = "LOD is locked while a mod is enabled. After disabling all mods, the standalone setting resumes: {0}.",
         ["开启"] = "On",

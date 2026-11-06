@@ -233,7 +233,7 @@ BetterEndfieldNext.BemConverter.exe inspect source-mod.zip --report inspection.j
 | --- | --- | --- |
 | Import | Model manager → “Import BEM / ZIP”, or drag files into the page. A ZIP collection can be filtered during import. **Close the game first.** | Import one `.bem` on the app model page, or use “Open with” / “Share” from a file manager |
 | New package | Disabled by default | Enabled by default; packages with conflicting resources are disabled |
-| Storage | `models/` beside the application; if unwritable, `%LOCALAPPDATA%\\BetterEndfieldNext\\catalog\\custom-model\\packages` | App-private storage, then published to the game |
+| Storage | `models/` beside the application, named `<name> v<version> [last 8 of package_id].bem` so it can be shared as-is; if unwritable, `%LOCALAPPDATA%\\BetterEndfieldNext\\catalog\\custom-model\\packages` | App-private storage, then published to the game |
 | Update | Same `package_id` updates in place and keeps enabled state and valid selections | Each import creates a new version and keeps the selection |
 | Activation | Next game start; when hot switching is enabled, selection changes are applied to loaded instances by the game-frame scheduler | Same; 1.4 discovers explicit Android resources and still requires device validation |
 
