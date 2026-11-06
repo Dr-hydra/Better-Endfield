@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate resource archives and build/publish the unified distribution index."""
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -28,22 +29,37 @@ class GitHub:
         request=urllib.request.Request(url,headers={'User-Agent':'Better-Endfield-resource-release'})
         with urllib.request.urlopen(request,timeout=180) as response:return response.read()
     def upload(self,release,path):
-        import http.client,urllib.parse
+        import urllib.parse
+        from PublishRelease import upload_connection
         url=urllib.parse.urlsplit(release['upload_url'].split('{')[0]+'?name='+urllib.parse.quote(path.name))
-        connection=http.client.HTTPSConnection(url.hostname,timeout=300)
+        connection=upload_connection(url.hostname)
         print('Uploading: '+path.name+' ('+str(path.stat().st_size)+' bytes)',flush=True)
         try:
             connection.putrequest('POST',url.path+'?'+url.query)
             for key,value in {'Authorization':'Bearer '+self.token,'User-Agent':'Better-Endfield-resource-release','Content-Type':'application/octet-stream','Content-Length':str(path.stat().st_size)}.items():connection.putheader(key,value)
             connection.endheaders()
+            sent, total = 0, path.stat().st_size
+            import time
+            t_start = time.time()
             with path.open('rb') as stream:
-                while data:=stream.read(1024*1024):connection.send(data)
+                while data:=stream.read(1024*1024):
+                    connection.send(data)
+                    sent += len(data)
+                    elapsed = max(0.001, time.time() - t_start)
+                    speed = (sent / (1024*1024)) / elapsed
+                    print(f'\r  {path.name}: {sent // (1024*1024)}MB / {total // (1024*1024)}MB ({sent * 100 / total:.1f}%) @ {speed:.2f} MB/s', end='', flush=True)
+            print('', flush=True)
             response=connection.getresponse();body=response.read()
             if response.status!=201:raise RuntimeError('GitHub upload HTTP '+str(response.status))
             result=json.loads(body)
             if result['size']!=path.stat().st_size or result.get('state')!='uploaded':raise ValueError('Uploaded resource verification failed')
             return result
         finally:connection.close()
+
+def asset_digest(path):
+    with path.open('rb') as stream:
+        return 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
+
 
 def build_index(archives, software):
     entries = []
@@ -135,7 +151,11 @@ def main():
             old={(e['packageType'],e['platform'],e['version']):e for e in previous['resources']}
             for entry in index['resources']:
                 key=(entry['packageType'],entry['platform'],entry['version'])
-                if key in old and old[key]!=entry:raise ValueError('Published metadata differs; increment revision')
+                # Compare only the fields this script produces: entries written by
+                # an older revision may carry a different set, and an extra key is
+                # not a reason to demand a new resource version.
+                if key in old and {name:old[key].get(name) for name in entry}!=entry:
+                    raise ValueError('Published metadata differs; increment revision: '+str(key))
                 old[key]=entry
             index['resources']=list(old.values())
         elif args.refresh_software:raise ValueError('Published distribution index is unavailable')
@@ -143,8 +163,19 @@ def main():
         if not required<={(e['packageType'],e['platform']) for e in index['resources']}:raise ValueError('Initial distribution requires all four resource classes')
         for archive in archives:
             if archive.name in existing:
-                if existing[archive.name]['size']!=archive.stat().st_size or api.download(existing[archive.name]['browser_download_url'])!=archive.read_bytes():raise ValueError('Published archive differs; increment revision: '+archive.name)
-            else:api.upload(release,archive)
+                published=existing[archive.name]
+                # GitHub stores a SHA-256 for every asset it accepted, so the
+                # reuse check costs nothing: compare that digest instead of
+                # downloading the archive back only to diff it locally.
+                if published.get('digest'):
+                    if published['digest']!=asset_digest(archive):raise ValueError('Published archive differs; increment revision: '+archive.name)
+                elif published['size']!=archive.stat().st_size:
+                    raise ValueError('Published archive differs; increment revision: '+archive.name)
+                else:
+                    print('Published archive carries no digest; only its size was compared: '+archive.name,flush=True)
+                print('Reusing published archive: '+archive.name,flush=True)
+            else:
+                api.upload(release, archive)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(index,ensure_ascii=False,indent=2)+chr(10),encoding='utf-8')
     if args.publish:

@@ -26,6 +26,23 @@ def credentials():
     return values["password"]
 
 
+def upload_connection(hostname, timeout=300):
+    """Connect to the upload endpoint, tunnelling through HTTPS_PROXY when set.
+
+    The proxy used to be hardcoded, which made publishing fail on any machine
+    whose proxy listened on another port and silently ignored the environment.
+    """
+    proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    if not proxy:
+        return http.client.HTTPSConnection(hostname, timeout=timeout)
+    parsed = urllib.parse.urlsplit(proxy if "//" in proxy else "http://" + proxy)
+    if not parsed.hostname:
+        raise RuntimeError("HTTPS_PROXY is not a usable proxy URL: " + proxy)
+    connection = http.client.HTTPSConnection(parsed.hostname, parsed.port or 8080, timeout=timeout)
+    connection.set_tunnel(hostname, 443)
+    return connection
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", required=True)
@@ -99,7 +116,7 @@ def main():
         # verification, upload this invocation's file again even for a draft.
         if existing:
             api(existing["url"], "DELETE")
-        connection = http.client.HTTPSConnection(upload.hostname, timeout=120)
+        connection = upload_connection(upload.hostname)
         try:
             connection.putrequest("POST", upload.path + "?" + urllib.parse.urlencode({"name": name}))
             for key, value in {**headers, "Content-Type": mimetypes.guess_type(name)[0] or "application/octet-stream",
@@ -107,8 +124,17 @@ def main():
                 connection.putheader(key, value)
             connection.endheaders()
             with path.open("rb") as stream:
-                while chunk := stream.read(1024 * 1024):
+                sent = 0
+                import time
+                t0 = time.time()
+                while chunk := stream.read(2 * 1024 * 1024):
                     connection.send(chunk)
+                    sent += len(chunk)
+                    pct = (sent / size) * 100
+                    elapsed = max(0.01, time.time() - t0)
+                    speed = (sent / (1024 * 1024)) / elapsed
+                    print(f"\r[{name}] {sent // (1024*1024)}MB / {size // (1024*1024)}MB ({pct:.1f}%) @ {speed:.2f} MB/s", end="", flush=True)
+            print("", flush=True)
             response = connection.getresponse()
             result = json.loads(response.read())
             if response.status != 201 or result.get("state") != "uploaded":
