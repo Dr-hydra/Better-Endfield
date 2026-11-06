@@ -9,6 +9,7 @@ any software release; a non-zero exit means the index is stale or inconsistent.
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 import urllib.request
 
@@ -49,7 +50,10 @@ def main():
     if release["tag_name"] == RESOURCE_TAG or release["draft"] or release["prerelease"]:
         raise SystemExit("Expected a stable software release, got " + release["tag_name"])
 
-    index = json.loads(fetch_bytes(INDEX_URL))
+    # The asset is fetched by name, and the CDN keeps serving the previous file
+    # for a while after the name is re-uploaded. Without a unique query a check
+    # run right after publishing compares against the index it just replaced.
+    index = json.loads(fetch_bytes(INDEX_URL + "?t=" + str(int(time.time()))))
     if index.get("schemaVersion") != 1 or index.get("kind") != "betterendfield-distribution-index":
         raise SystemExit("Published index has an unsupported schema")
     problems = []

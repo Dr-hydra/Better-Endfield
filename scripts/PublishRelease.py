@@ -69,6 +69,21 @@ def main():
         with urllib.request.urlopen(request, timeout=60) as response:
             return json.load(response) if response.status != 204 else None
 
+    def release_request(url, method, body):
+        """Create or update a release, retrying without target_commitish.
+
+        Pushing the tag before publishing is the normal order, and once the tag
+        exists GitHub answers 422 for a commit SHA in target_commitish even
+        though it accepts a branch name. The tag already fixes the commit, so
+        the field carries no information and dropping it is the correct retry.
+        """
+        try:
+            return api(url, method, body)
+        except urllib.error.HTTPError as error:
+            if error.code != 422 or "target_commitish" not in body:
+                raise
+            return api(url, method, {key: value for key, value in body.items() if key != "target_commitish"})
+
     assets = [(name, Path(path).resolve()) for name, path in args.asset]
     if len({name for name, _ in assets}) != len(assets) or any(not path.is_file() for _, path in assets):
         raise ValueError("Release asset names must be unique and all files must exist")
@@ -93,11 +108,11 @@ def main():
         except urllib.error.HTTPError as error:
             if error.code != 404:
                 raise
-            release = api(base + "/releases", "POST", {"tag_name": args.tag, "target_commitish": args.target,
+            release = release_request(base + "/releases", "POST", {"tag_name": args.tag, "target_commitish": args.target,
                           "name": args.name, "body": body, "draft": True, "prerelease": False})
     if not release["draft"]:
         raise RuntimeError("Refusing to replace assets of an already published release")
-    release = api(release["url"], "PATCH", {"tag_name": args.tag, "name": args.name, "body": body, "target_commitish": args.target})
+    release = release_request(release["url"], "PATCH", {"tag_name": args.tag, "name": args.name, "body": body, "target_commitish": args.target})
     upload = urllib.parse.urlsplit(release["upload_url"].split("{", 1)[0])
     if upload.scheme != "https" or upload.hostname != "uploads.github.com":
         raise RuntimeError("Unexpected GitHub upload endpoint")
@@ -151,7 +166,7 @@ def main():
                 (args.verify_digest and asset.get("digest") != signature[1])):
             raise RuntimeError("Uploaded asset verification failed: " + name)
     if args.publish:
-        release = api(release["url"], "PATCH", {"tag_name": args.tag, "target_commitish": args.target,
+        release = release_request(release["url"], "PATCH", {"tag_name": args.tag, "target_commitish": args.target,
                       "draft": False, "prerelease": False, "make_latest": "true"})
         if release["tag_name"] != args.tag or release["draft"]:
             raise RuntimeError("GitHub did not publish the requested release tag")
