@@ -55,6 +55,8 @@ def main():
     parser.add_argument("--publish", action="store_true")
     parser.add_argument("--verify-digest", action="store_true",
                         help="Compute local SHA-256 and compare GitHub asset digests; permits reusing an identical uploaded draft asset")
+    parser.add_argument("--prune-resources", action="store_true",
+                        help="After publishing, delete resource archives superseded by a newer version of the same class; irreversible")
     args = parser.parse_args()
     token = credentials()
     base = "https://api.github.com/repos/" + args.repo
@@ -166,8 +168,11 @@ def main():
                 software_path=Path(temporary)/'software.json'
                 software_path.write_text(json.dumps(dict(version=args.tag.removeprefix('v'),releaseUrl=release['html_url'],
                     assets=[dict(name=a['name'],url=a['browser_download_url'],bytes=a['size']) for a in release['assets']])),encoding='utf-8')
-                subprocess.run([sys.executable, str(Path(__file__).with_name('PublishResourceRelease.py')),
-                    '--refresh-software', '--software-index',str(software_path), '--output', str(Path(temporary)/'distribution-index.json'), '--publish'], check=True)
+                command = [sys.executable, str(Path(__file__).with_name('PublishResourceRelease.py')),
+                    '--refresh-software', '--software-index', str(software_path), '--output', str(Path(temporary)/'distribution-index.json'), '--publish']
+                if args.prune_resources:
+                    command.append('--prune-assets')
+                subprocess.run(command, check=True)
     print(json.dumps({"url": release["html_url"], "tag": release["tag_name"], "draft": release["draft"],
                       "assets": [{"name": a["name"], "bytes": a["size"],
                                   **({"digest": a.get("digest")} if args.verify_digest else {})}

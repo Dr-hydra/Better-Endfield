@@ -61,6 +61,37 @@ def asset_digest(path):
         return 'sha256:' + hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def version_key(text):
+    try:
+        return tuple(int(part) for part in text.split('.'))
+    except ValueError:
+        raise ValueError('Unparsable resource version: ' + text) from None
+
+
+def prune_superseded(index, present):
+    """Keep one archive per (packageType, platform): the highest version.
+
+    Runtime selects a resource by game version and then takes the highest
+    version in that class, so every older archive is unreachable and only costs
+    release space. Entries whose archive is already gone are dropped for the
+    same reason: a published index must not point at a file that is not there.
+    """
+    best = {}
+    for entry in index['resources']:
+        if entry['asset'] not in present:
+            continue
+        key = (entry['packageType'], entry['platform'])
+        version = version_key(entry['version'])
+        if key not in best or version > best[key][0]:
+            best[key] = (version, entry)
+    kept = [entry for _, entry in best.values()]
+    kept_keys = {(e['packageType'], e['platform'], e['version']) for e in kept}
+    dropped = [e for e in index['resources']
+               if (e['packageType'], e['platform'], e['version']) not in kept_keys]
+    index['resources'] = kept
+    return dropped
+
+
 def build_index(archives, software):
     entries = []
     seen = set()
@@ -117,6 +148,7 @@ def main():
     ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--software-index',type=Path)
     ap.add_argument('--publish',action='store_true')
+    ap.add_argument('--prune-assets',action='store_true',help='Delete published archives superseded by a newer version of the same class, keeping one per class; irreversible')
     args=ap.parse_args()
     api=None
     if args.software_index:
@@ -128,6 +160,7 @@ def main():
     archives=list(args.archives.glob('BE-*.zip')) if args.archives else []
     if not archives and not args.refresh_software:raise ValueError('No resource archives found')
     if args.refresh_software and not args.publish:raise ValueError('--refresh-software requires --publish')
+    if args.prune_assets and not args.publish:raise ValueError('--prune-assets requires --publish')
     index=build_index(archives,software)
     if args.publish:
         if args.output.name!='distribution-index.json':raise ValueError('Published index must be named distribution-index.json')
@@ -176,6 +209,28 @@ def main():
                 print('Reusing published archive: '+archive.name,flush=True)
             else:
                 api.upload(release, archive)
+        if args.prune_assets:
+            # New archives are already uploaded, so pruning can never leave a
+            # class without a downloadable archive it just served.
+            present=set(existing)|{archive.name for archive in archives}
+            dropped=prune_superseded(index,present)
+            if not required<={(e['packageType'],e['platform']) for e in index['resources']}:
+                raise ValueError('Pruning would leave a resource class without an archive; upload it first')
+            # An archive this run just uploaded must survive its own pruning;
+            # otherwise the release keeps bytes nobody can reach through the index.
+            overshot=sorted({archive.name for archive in archives}-{e['asset'] for e in index['resources']})
+            if overshot:
+                raise ValueError('Pruning would discard an archive this run uploaded; check its version: '+', '.join(overshot))
+            freed=0
+            for entry in dropped:
+                asset=existing.get(entry['asset'])
+                if not asset:
+                    print('Dropped index entry for a missing archive: '+entry['asset'],flush=True)
+                    continue
+                api.request('releases/assets/'+str(asset['id']),method='DELETE')
+                freed+=asset['size']
+                print('Pruned superseded archive: '+entry['asset'],flush=True)
+            print(f'Pruned {len(dropped)} entries, freed {freed // (1024*1024)} MiB',flush=True)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(index,ensure_ascii=False,indent=2)+chr(10),encoding='utf-8')
     if args.publish:

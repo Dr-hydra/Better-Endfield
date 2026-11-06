@@ -52,7 +52,9 @@ ZIP 根包含 manifest.json 和 payload。Windows 也可解压到 resources/<类
 5. 用 BuildResourcePacks.py --type preview --platform windows/android --preview-report <report.json> 封装。存在任何失败或角色遗漏则拒绝打包；基础包继续使用 --type core。
 6. PublishResourceRelease.py --archives <四类ZIP目录> --output <目录>/distribution-index.json 默认只校验并生成索引，显式 --publish 才上传。
 
-发布先完成不可变 ZIP 上传及字节数验证，再替换索引，最后公开初始草稿。已有版本按逐字节比较确认，不用同名覆盖不同内容。后续软件 PublishRelease.py 发布成功后自动刷新索引中的软件/工具版本，保留资源历史。
+发布先完成不可变 ZIP 上传及字节数验证，再替换索引，最后公开初始草稿。同名资产用 GitHub 已存的 SHA-256（asset `digest`）与本地归档比对：相同则复用、不同则要求升 revision，不再把归档下载回来逐字节比较；只有早于 digest 的旧资产退化为大小比对并打印提示。后续软件 PublishRelease.py 发布成功后自动刷新索引中的软件/工具版本，保留资源历史。
+
+**清理旧归档是可选的**：加 `--prune-assets`（必须与 `--publish` 同用）后，本次上传完成后按 `(packageType, platform)` 只保留版本号最高的一个归档，删除其余已发布资产并从索引剔除对应条目，同时清掉指向已不存在资产的悬空条目。客户端选包是按当前 gameVersion 过滤后取最高版本，被删的旧归档没有运行时消费者，留下的那一份即留档；删除不可逆。裁剪后若某一类没有可用归档、或会丢掉本次刚上传的归档，脚本直接报错且不写索引。软件发布时可用 `PublishRelease.py --publish --prune-resources` 把同一步并入软件发布。
 
 软件发布必须走 PublishRelease.py：只有它的 --publish 分支会在公开 release 之后刷新索引（--refresh-software，旧索引保留为 distribution-index.previous.json）。用 gh release create 或网页直接发布会跳过这一步，索引仍停在上一版，已装客户端读 software.version 后判定为最新，收不到更新提示。发完用 CheckDistributionIndex.py 自检，它比对最新稳定 release 与已发布索引的 software.version、releaseUrl、资产名与字节数、tools 下载地址，不一致时退出码为 1。索引过期时单独补跑：PublishResourceRelease.py --refresh-software --publish --output <目录>/distribution-index.json。
 
