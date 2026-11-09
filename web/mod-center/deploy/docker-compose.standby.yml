@@ -1,0 +1,48 @@
+# Standby stack for the ARM host (vps-arm). Runs only during a failover.
+#
+#   docker compose -f /opt/endfield/docker-compose.yml up -d
+#   docker compose -f /opt/endfield/docker-compose.yml down
+#
+# The tunnel shares the app's network namespace, so cloudflared reaches the
+# backend at 127.0.0.1:9017 — the same address the Cloudflare ingress points to.
+#
+# /etc/endfield-cloudflared/token must hold the hydra-secondary-singapore tunnel
+# token (same as the connector running on the primary host).
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: endfield-resource-center:local
+    container_name: endfield-app
+    restart: unless-stopped
+    env_file: [.env]
+    # environment 的优先级高于 env_file，这里把路径钉成容器内路径，
+    # 否则 env 文件里的宿主路径（/var/lib/...）会原样带进容器。
+    environment:
+      HOST: 0.0.0.0
+      PORT: "9017"
+      DATABASE_PATH: /data/catalog.sqlite
+      UPLOAD_DIRECTORY: /data/uploads
+    volumes:
+      # 备份目录直接作为运行数据：同步目标即容器数据源，
+      # 切换时无需再拷贝一次。主备不并存，因此不存在互相覆盖。
+      - /srv/backup/endfield:/data
+    ports:
+      - "127.0.0.1:9017:9017"
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9017/endfield/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: endfield-tunnel
+    restart: unless-stopped
+    network_mode: "service:app"
+    command: tunnel --no-autoupdate run --token-file /run/token
+    volumes:
+      - /etc/endfield-cloudflared/token:/run/token:ro
+    depends_on: [app]

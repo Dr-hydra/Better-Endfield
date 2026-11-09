@@ -1,0 +1,19 @@
+# Standby image for the ARM host. The build context is /opt/endfield, which holds
+# an app/ directory with server/, dist/, shared/ and node_modules/nodemailer.
+FROM node:24-alpine
+
+WORKDIR /app
+
+COPY app/server/ /app/server/
+COPY app/dist/ /app/dist/
+COPY app/shared/ /app/shared/
+COPY app/node_modules/ /app/node_modules/
+
+ENV NODE_ENV=production \
+    HOST=0.0.0.0 \
+    PORT=9017 \
+    DATABASE_PATH=/data/catalog.sqlite \
+    UPLOAD_DIRECTORY=/data/uploads
+
+EXPOSE 9017
+CMD ["node", "server/server.mjs"]

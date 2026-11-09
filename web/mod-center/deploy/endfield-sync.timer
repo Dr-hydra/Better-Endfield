@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the resource center mirror every five minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=endfield-sync.service
+
+[Install]
+WantedBy=timers.target

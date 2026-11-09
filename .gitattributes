@@ -12,3 +12,11 @@ legacy/retired-before-next/** -text
 
 # 钩子脚本走 sh 执行，CRLF 会让 shebang 失效。
 .githooks/** text eol=lf
+
+# 备机部署脚本与 systemd unit 在 Linux 上直接执行；CRLF 会破坏 shebang，
+# 也会让 unit 里 `Key=Value` 行尾带 \r 使按行匹配的脚本改写失效。
+web/mod-center/deploy/*.sh text eol=lf
+web/mod-center/deploy/*.service text eol=lf
+web/mod-center/deploy/*.timer text eol=lf
+web/mod-center/deploy/*.yml text eol=lf
+web/mod-center/deploy/Dockerfile* text eol=lf
