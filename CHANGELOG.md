@@ -1,5 +1,21 @@
 # 更新日志
 
+## 4.1.9 Better Endfield Next
+
+Better Endfield Next **4.1.9** / BEM Tools & DSH **1.6.7**（资源包不重发）
+
+### 创意工坊
+
+- Windows 与 Android 的「创意工坊」入口不再直接跳浏览器，改为软件内页面，页面上并列「直连」和「域名」两个地址，各自可以打开或复制。直连入口不走 Cloudflare，连通性更好；域名作为备用。断网时也能看到并复制两个地址。
+
+### 第三方模型
+
+- 「第三方模型」页顶部新增「前往下载」，打开 Discord 社区。
+
+### 其他
+
+- 关于页的 Discord 邀请链接换成新地址。
+
 ## 4.1.8 Better Endfield Next
 
 Better Endfield Next **4.1.8** / BEM Tools & DSH **1.6.7**（资源包不重发）
