@@ -52,7 +52,7 @@ export function updateProfile(body: { login: string; avatar: string }, csrf: str
 export function upload(file: File, kind: "image" | "file", csrf: string, onProgress: (value: number) => void): Promise<Upload> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${base}api/uploads?kind=${kind}`); xhr.timeout = 300000;
+    xhr.open("POST", `${base}api/uploads?kind=${kind}`); xhr.timeout = 900000;
     xhr.setRequestHeader("Content-Type", "application/octet-stream"); xhr.setRequestHeader("X-CSRF-Token", csrf); xhr.setRequestHeader("X-Upload-Name", encodeURIComponent(file.name));
     xhr.upload.onprogress = event => { if (event.lengthComputable) onProgress(Math.round(event.loaded / event.total * 100)); };
     xhr.onerror = xhr.ontimeout = () => reject(new Error("上传失败，请检查网络后重试。"));

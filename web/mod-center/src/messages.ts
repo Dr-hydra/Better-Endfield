@@ -10,9 +10,6 @@ const messages: Record<string, string> = {
   "当前账号没有作品文件上传权限。": "Your account cannot upload work files.",
   "上传文件不存在或不属于当前账号。": "This upload does not exist or belongs to another account.",
   "上传类型不正确。": "Invalid upload type.",
-  "图片不能超过 5 MB。": "Images must be at most 5 MB each.",
-  "作品文件不能超过 200 MB。": "Work files must be at most 200 MB each.",
-  "每个作品最多上传 6 张图片。": "Each work can have up to 6 uploaded images.",
   "仅支持 JPG、PNG 和 WebP 图片。": "Only JPG, PNG, and WebP images are supported.",
   "请选择上传的作品文件。": "Select the uploaded work file.",
   "文件名格式不正确。": "Invalid file name.",
@@ -20,6 +17,7 @@ const messages: Record<string, string> = {
   "上传文件为空或传输未完成。": "The file is empty or the transfer is incomplete.",
   "存储空间不足，请稍后重试。": "Storage is full. Please try again later.",
   "账号图片存储额度已用完。": "Your image storage quota has been reached.",
+  "账号作品文件存储额度已用完。": "Your work file storage quota has been reached.",
   "未发布的上传文件过多，请先发布作品或删除文件。": "Too many unpublished uploads. Publish a work or remove unused uploads first.",
   "文件仍被作品或历史版本使用。": "A work or release still uses this file.",
   "文件不存在或已被删除。": "The file does not exist or has been removed.",
@@ -76,6 +74,12 @@ const fields: Record<string, string> = {
 export function localizeMessage(message: string, lang: Language): string {
   if (lang === "zh") return message;
   if (messages[message]) return messages[message];
+  // Upload messages embed numbers that come from the server limits, so match the
+  // shape instead of the literal text.
+  const sizeLimit = /^(图片|作品文件)不能超过 (\d+) MB。$/.exec(message);
+  if (sizeLimit) return `${sizeLimit[1] === "图片" ? "Images" : "Work files"} must be at most ${sizeLimit[2]} MB each.`;
+  const countLimit = /^每个作品最多上传 (\d+) 张图片。$/.exec(message);
+  if (countLimit) return `Each work can have up to ${countLimit[1]} uploaded images.`;
   for (const [label, english] of Object.entries(fields)) {
     if (message === `${label}格式不正确。`) return `${english} is invalid.`;
     if (message === `${label}不能为空。`) return `${english} is required.`;

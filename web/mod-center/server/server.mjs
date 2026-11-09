@@ -112,6 +112,16 @@ export function createApp(options = {}) {
   const secure = publicUrl.protocol === 'https:';
   const cookie = (name, value, age) => `${name}=${value}; Path=${prefix}; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? '; Secure' : ''}`;
   const cookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(part => part.trim().split('=')).filter(part => part.length === 2));
+  // The site is reachable through more than one origin (the Cloudflare domain and
+  // the direct IP:port entry). GitHub accepts a list of redirect URIs, so build
+  // the callback from the origin the user is actually on, but only when that
+  // origin is one we already trust for CSRF checks.
+  const githubCallbackUrl = req => {
+    const host = String(req.headers.host || '');
+    const forwarded = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+    const origin = host ? `${forwarded || (secure ? 'https' : 'http')}://${host}` : '';
+    return `${allowedOrigins.has(origin) ? origin : publicUrl.origin}${prefix}auth/github/callback`;
+  };
   const session = req => {
     const value = cookies(req).be_session;
     if (!value || value.length > 128) return null;
@@ -149,7 +159,7 @@ export function createApp(options = {}) {
     db.exec('BEGIN IMMEDIATE');
     try { const result = action(); db.exec('COMMIT'); return result; } catch (error) { db.exec('ROLLBACK'); throw error; }
   };
-  const uploads = createUploads({ db, directory: options.uploadDirectory || process.env.UPLOAD_DIRECTORY || path.join(path.dirname(databasePath === ':memory:' ? path.join(root, 'data/catalog.sqlite') : databasePath), 'uploads'), publicUrl, prefix, canUploadFiles, visibility, limits: options.uploadLimits || uploadLimits });
+  const uploads = createUploads({ db, directory: options.uploadDirectory || process.env.UPLOAD_DIRECTORY || path.join(path.dirname(databasePath === ':memory:' ? path.join(root, 'data/catalog.sqlite') : databasePath), 'uploads'), prefix, canUploadFiles, visibility, limits: options.uploadLimits || uploadLimits });
   const social = createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility });
   const sessionView = user => ({ user: user ? userView(user) : null, csrf: user?.csrf || '', githubEnabled, emailEnabled, email: user?.email || '', isAdmin: canAdmin(user), canUploadFiles: canUploadFiles(user), uploadLimits: uploads.limits });
   const releaseView = row => ({ id: row.id, number: row.number, url: row.url, version: row.version, notes: row.notes, created_at: row.created_at, file: uploads.file(row.file_id) });
@@ -166,7 +176,7 @@ export function createApp(options = {}) {
       if (!canUploadFiles(user)) fail(403, '当前账号没有作品文件上传权限。');
       const file = uploads.getOwned(draft.file_id, user, 'file');
       draft.url = uploads.view(file).url;
-    } else if (draft.url.startsWith(new URL('media/', publicUrl).href)) fail(400, '请选择上传的作品文件。');
+    } else if (new URL(draft.url).pathname.startsWith(`${prefix}media/`)) fail(400, '请选择上传的作品文件。');
     return draft;
   };
   const owned = (id, user) => {
@@ -230,7 +240,7 @@ export function createApp(options = {}) {
         const state = token(), verifier = token();
         db.prepare('INSERT INTO oauth_states VALUES (?,?,?)').run(digest(state), verifier, Date.now() + 600000);
         const target = new URL('https://github.com/login/oauth/authorize');
-        target.search = new URLSearchParams({ client_id: githubId, redirect_uri: new URL('auth/github/callback', publicUrl.href.endsWith('/') ? publicUrl : `${publicUrl}/`).href, state, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' }).toString();
+        target.search = new URLSearchParams({ client_id: githubId, redirect_uri: githubCallbackUrl(req), state, code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' }).toString();
         return redirect(res, target.href, { 'Set-Cookie': cookie('be_oauth', state, 600) });
       }
       if (route === 'auth/github/callback' && req.method === 'GET') {
@@ -242,7 +252,7 @@ export function createApp(options = {}) {
         const code = url.searchParams.get('code');
         if (!code || code.length > 256 || url.searchParams.has('error')) return redirect(res, `${prefix}#/publish?login=failed`, { 'Set-Cookie': cookie('be_oauth', '', 0) });
         try {
-          const exchanged = await oauthFetch('https://github.com/login/oauth/access_token', { method: 'POST', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: githubId, client_secret: githubSecret, code, code_verifier: record.verifier, redirect_uri: new URL('auth/github/callback', publicUrl.href.endsWith('/') ? publicUrl : `${publicUrl}/`).href }) });
+          const exchanged = await oauthFetch('https://github.com/login/oauth/access_token', { method: 'POST', signal: AbortSignal.timeout(15000), headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: githubId, client_secret: githubSecret, code, code_verifier: record.verifier, redirect_uri: githubCallbackUrl(req) }) });
           const access = await exchanged.json();
           if (!exchanged.ok || typeof access.access_token !== 'string') throw new Error('exchange');
           const response = await oauthFetch('https://api.github.com/user', { signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${access.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'BetterEndfieldNext-ModCenter' } });
@@ -421,7 +431,7 @@ export function createApp(options = {}) {
       json(res, status, { error: status === 500 ? '服务暂时不可用，请稍后重试。' : error.message, ...(error.visibility ? { visibility: error.visibility, reason: error.reason } : {}) });
     }
   });
-  server.requestTimeout = 300000; server.headersTimeout = 10000; server.maxHeadersCount = 48; server.maxConnections = 128;
+  server.requestTimeout = 900000; server.headersTimeout = 30000; server.maxHeadersCount = 48; server.maxConnections = 128;
   let uploadCleanup = Promise.resolve();
   const cleanup = setInterval(() => { db.prepare('DELETE FROM sessions WHERE expires_at<?').run(Date.now()); db.prepare('DELETE FROM oauth_states WHERE expires_at<?').run(Date.now()); db.prepare('DELETE FROM email_codes WHERE expires_at<?').run(Date.now()); uploadCleanup = uploads.cleanup().catch(() => console.error('Upload cleanup failed')); }, 600000).unref();
   return { server, db, close: () => new Promise(resolve => { clearInterval(cleanup); server.close(async () => { await uploadCleanup; mailer?.close(); db.close(); resolve(); }); server.closeIdleConnections(); }) };
@@ -430,6 +440,8 @@ export function createApp(options = {}) {
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const app = createApp();
   const port = Number(process.env.PORT || 9017);
-  app.server.listen(port, '127.0.0.1', () => console.info(`Endfield resource center listening on 127.0.0.1:${port}`));
+  // Defaults to loopback; a container needs 0.0.0.0 so the port mapping works.
+  const host = process.env.HOST || '127.0.0.1';
+  app.server.listen(port, host, () => console.info(`Endfield resource center listening on ${host}:${port}`));
   process.on('SIGTERM', () => app.close().then(() => process.exit(0)));
 }

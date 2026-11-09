@@ -3,7 +3,25 @@ import { createReadStream } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
-export const uploadLimits = { imageBytes: 5 * 1024 ** 2, fileBytes: 200 * 1024 ** 2, imagesPerWork: 6 };
+export const uploadLimits = { imageBytes: 10 * 1024 ** 2, fileBytes: 500 * 1024 ** 2, imagesPerWork: 6 };
+// Storage quotas for the whole site and for one account's images. Kept next to
+// the per-file limits so raising a limit cannot silently outgrow the ceilings.
+export const storageQuotas = {
+  siteBytes: 25 * 1024 ** 3,
+  accountImageBytes: 1 * 1024 ** 3,
+  // Per-account cap for work files. null = not enforced. Each full work is
+  // 6 images + 1 file, so 30 leaves room for about four unpublished drafts.
+  accountFileBytes: null,
+};
+// Unpublished uploads one account may hold before it must publish or delete.
+export const pendingUploadLimit = 30;
+// Concurrent transfers. Uploads are streamed straight to disk, so a larger
+// allowance costs disk bandwidth rather than heap; keep the per-account cap low
+// enough that one client cannot occupy every slot.
+export const uploadConcurrency = { global: 4, perAccount: 2 };
+const megabytes = bytes => Math.round(bytes / 1024 ** 2);
+const sizeMessage = (kind, limits) =>
+  `${kind === 'image' ? '图片' : '作品文件'}不能超过 ${megabytes(kind === 'image' ? limits.imageBytes : limits.fileBytes)} MB。`;
 const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
 function imageMime(bytes) {
   if (bytes.length >= 24 && bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10])) && bytes.toString('ascii', 12, 16) === 'IHDR') return 'image/png';
@@ -12,12 +30,14 @@ function imageMime(bytes) {
   fail(415, '仅支持 JPG、PNG 和 WebP 图片。');
 }
 
-export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles, visibility, limits = uploadLimits }) {
+export function createUploads({ db, directory, prefix, canUploadFiles, visibility, limits = uploadLimits }) {
   db.exec(`CREATE TABLE IF NOT EXISTS uploads (id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id), kind TEXT NOT NULL, filename TEXT NOT NULL, mime TEXT NOT NULL, size INTEGER NOT NULL, created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS resource_images (resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE, upload_id TEXT NOT NULL REFERENCES uploads(id), position INTEGER NOT NULL, PRIMARY KEY(resource_id,upload_id));
     CREATE INDEX IF NOT EXISTS upload_owner ON uploads(owner_id,created_at);`);
   const filenameOf = id => path.join(directory, id);
-  const view = row => ({ id: row.id, filename: row.filename, size: row.size, url: new URL(`media/${row.id}`, publicUrl).href });
+  // Site-root-relative so the same payload works behind every entry point
+  // (IP:port and the Cloudflare domain); the browser resolves it per origin.
+  const view = row => ({ id: row.id, filename: row.filename, size: row.size, url: `${prefix}media/${row.id}` });
   const referenced = id => Boolean(db.prepare('SELECT 1 FROM resource_images WHERE upload_id=? UNION ALL SELECT 1 FROM releases WHERE file_id=? LIMIT 1').get(id, id));
   const getOwned = (id, user, kind) => {
     const row = db.prepare('SELECT * FROM uploads WHERE id=?').get(id);
@@ -25,25 +45,30 @@ export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles
     return row;
   };
   let active = 0, reserved = 0;
-  const activeOwners = new Set();
+  const activeOwners = new Map();
   async function receive(req, user, kind) {
     if (!['image', 'file'].includes(kind)) fail(400, '上传类型不正确。');
     if (kind === 'file' && !canUploadFiles(user)) fail(403, '当前账号没有作品文件上传权限。');
-    if (active >= 2 || activeOwners.has(user.id)) fail(429, '操作太频繁，请稍后再试。');
+    const ownerActive = activeOwners.get(user.id) || 0;
+    if (active >= uploadConcurrency.global || ownerActive >= uploadConcurrency.perAccount) fail(429, '操作太频繁，请稍后再试。');
     const maximum = kind === 'image' ? limits.imageBytes : limits.fileBytes;
     const declared = Number(req.headers['content-length']);
-    if (declared > maximum) fail(413, kind === 'image' ? '图片不能超过 5 MB。' : '作品文件不能超过 200 MB。');
+    if (declared > maximum) fail(413, sizeMessage(kind, limits));
     let filename;
     try { filename = decodeURIComponent(String(req.headers['x-upload-name'] || '')); } catch { fail(400, '文件名格式不正确。'); }
     filename = Array.from(filename.replace(/[\\/\u0000-\u001f\u007f]/g, '_').trim()).slice(0, 180).join('');
     if (!filename) fail(400, '文件名不能为空。');
     const used = db.prepare('SELECT COALESCE(SUM(size),0) AS total FROM uploads').get().total;
-    if (used + reserved + maximum > 12 * 1024 ** 3) fail(507, '存储空间不足，请稍后重试。');
+    if (used + reserved + maximum > storageQuotas.siteBytes) fail(507, '存储空间不足，请稍后重试。');
     const account = db.prepare("SELECT COALESCE(SUM(size),0) AS total,COUNT(*) AS n FROM uploads WHERE owner_id=? AND kind='image'").get(user.id);
-    if (kind === 'image' && account.total + maximum > 100 * 1024 ** 2) fail(413, '账号图片存储额度已用完。');
+    if (kind === 'image' && account.total + maximum > storageQuotas.accountImageBytes) fail(413, '账号图片存储额度已用完。');
+    if (kind === 'file' && storageQuotas.accountFileBytes !== null) {
+      const files = db.prepare("SELECT COALESCE(SUM(size),0) AS total FROM uploads WHERE owner_id=? AND kind='file'").get(user.id);
+      if (files.total + maximum > storageQuotas.accountFileBytes) fail(413, '账号作品文件存储额度已用完。');
+    }
     const pending = db.prepare('SELECT COUNT(*) AS n FROM uploads u WHERE owner_id=? AND NOT EXISTS(SELECT 1 FROM resource_images WHERE upload_id=u.id) AND NOT EXISTS(SELECT 1 FROM releases WHERE file_id=u.id)').get(user.id).n;
-    if (pending >= 12) fail(429, '未发布的上传文件过多，请先发布作品或删除文件。');
-    active++; reserved += maximum; activeOwners.add(user.id);
+    if (pending >= pendingUploadLimit) fail(429, '未发布的上传文件过多，请先发布作品或删除文件。');
+    active++; reserved += maximum; activeOwners.set(user.id, ownerActive + 1);
     const id = randomUUID(), destination = filenameOf(id);
     let handle, size = 0, first = Buffer.alloc(0), mime = 'application/octet-stream';
     try {
@@ -51,7 +76,7 @@ export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles
       handle = await open(destination, 'wx', 0o600);
       for await (const chunk of req.iterator({ destroyOnReturn: false })) {
         size += chunk.length;
-        if (size > maximum) fail(413, kind === 'image' ? '图片不能超过 5 MB。' : '作品文件不能超过 200 MB。');
+        if (size > maximum) fail(413, sizeMessage(kind, limits));
         if (first.length < 32) first = Buffer.concat([first, chunk.subarray(0, 32 - first.length)]);
         let offset = 0;
         while (offset < chunk.length) offset += (await handle.write(chunk, offset)).bytesWritten;
@@ -65,7 +90,10 @@ export function createUploads({ db, directory, publicUrl, prefix, canUploadFiles
       await handle?.close().catch(() => {});
       await unlink(destination).catch(() => {});
       throw error;
-    } finally { active--; reserved -= maximum; activeOwners.delete(user.id); }
+    } finally {
+      active--; reserved -= maximum;
+      if (ownerActive > 1) activeOwners.set(user.id, ownerActive - 1); else activeOwners.delete(user.id);
+    }
   }
   async function serve(req, res, id, user) {
     const row = db.prepare('SELECT * FROM uploads WHERE id=?').get(id);
