@@ -129,6 +129,7 @@ final class BemInstallPage {
         root.findViewById(R.id.bem_models_quark).setOnClickListener(v -> openModelSource("https://pan.quark.cn/s/97a9ca8f9bf2"));
         root.findViewById(R.id.bem_models_baidu).setOnClickListener(v -> openModelSource("https://pan.baidu.com/s/5ekaAiiLmZKXHZ7pHH0W-Vw"));
         root.findViewById(R.id.bem_models_katfile).setOnClickListener(v -> openModelSource("https://katfile.biz/users/hydra405/"));
+        root.findViewById(R.id.bem_download_models).setOnClickListener(v -> openModelSource("https://discord.gg/F49akXaxy8"));
         cancel.setOnClickListener(v -> BemInstaller.cancel());
         if(state!=null) {
             selectedCharacter=state.getString(STATE_CHARACTER,"");

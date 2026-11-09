@@ -206,6 +206,7 @@
     <string name="camera_keyframe_loop_hint">Replays the keyframe path after it reaches the end.</string>
     <string name="camera_keyframe_file_hint">Keyframes are stored in the game\'s internal storage at betterendfieldnext/camera-path.becam. Saving and loading run from the in-game overlay, and the overlay status is authoritative.</string>
     <string name="bem_import">Import BEM / ZIP</string>
+    <string name="bem_download_models">Download models</string>
     <string name="bem_hot_switch">Experimental: model hot switch</string>
     <string name="bem_skip_validation">Experimental: skip model validation</string>
     <string name="bem_models_title">Get models</string>

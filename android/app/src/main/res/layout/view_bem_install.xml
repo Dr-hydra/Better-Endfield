@@ -4,6 +4,7 @@
             <TextView style="@style/SectionTitle" android:text="@string/custom_model_title" android:textSize="20sp" />
         </LinearLayout>
         <Button android:id="@+id/bem_import" style="@style/PrimaryButton" android:layout_marginTop="18dp" android:text="@string/bem_import" />
+        <Button android:id="@+id/bem_download_models" style="@style/GhostButton" android:layout_marginTop="10dp" android:text="@string/bem_download_models" />
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <Switch android:id="@+id/bem_hot_switch" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/bem_hot_switch" />
             <Switch android:id="@+id/bem_clone_support" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="12dp" android:text="@string/bem_clone_support" />

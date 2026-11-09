@@ -69,5 +69,6 @@
         <LinearLayout android:id="@+id/about_section" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="vertical" android:visibility="gone">
 
             </LinearLayout>
+        <LinearLayout android:id="@+id/workshop_section" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="vertical" android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

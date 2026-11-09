@@ -155,8 +155,7 @@
                 <NavigationViewItem x:Name="WeaponAppearanceNavigationItem" Content="管理员外观" Tag="weapon-appearance">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE790;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Name="WorkshopNavigationItem" Content="创意工坊"
-                                    SelectsOnInvoked="False" Tag="workshop">
+                <NavigationViewItem x:Name="WorkshopNavigationItem" Content="创意工坊" Tag="workshop">
                     <NavigationViewItem.Icon><FontIcon Glyph="&#xE719;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
@@ -252,6 +251,7 @@
                         <views:MediaScreenPage x:Name="MediaScreenPage" Visibility="Collapsed" />
                         <views:CustomModelPage x:Name="CustomModelPage" Visibility="Collapsed" />
                         <views:WeaponAppearancePage x:Name="WeaponAppearancePage" Visibility="Collapsed" />
+                        <views:WorkshopPage x:Name="WorkshopPage" Visibility="Collapsed" />
                         <ScrollViewer
                             x:Name="ModelPageScrollViewer"
                             HorizontalScrollBarVisibility="Disabled"

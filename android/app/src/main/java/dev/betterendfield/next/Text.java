@@ -686,6 +686,11 @@ final class Text {
         put("资源长度异常：", "Asset length mismatch: ");
         put("持续冲刺", "Sustained Dash");
         put("创意工坊", "Workshop");
+        put("直连", "Direct");
+        put("域名", "Domain");
+        put("打开", "Open");
+        put("已复制", "Copied");
+        put("返回", "Back");
         put("会客室媒体屏", "Guest Room Media Screen");
         put("水墨武器", "Ink weapon");
         put("水墨服装", "Ink outfit");

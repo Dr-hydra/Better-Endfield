@@ -30,7 +30,7 @@ final class AboutPage extends LinearLayout {
     private static final String REPOSITORY = "https://github.com/Dr-hydra/Better-Endfield";
     private static final String RELEASES = REPOSITORY + "/releases";
     private static final String QQ_GROUP = "851586605";
-    private static final String DISCORD_COMMUNITY = "https://discord.gg/Hadjs5XvS";
+    private static final String DISCORD_COMMUNITY = "https://discord.gg/F49akXaxy8";
     private static String disclaimer() { return
             Text.of("本软件会将本机代码注入游戏进程，并在运行时修改模型、动画和语音资源选择。\n\n")
             + Text.of("可能的风险包括游戏崩溃、存档或配置异常、更新后失效，以及被游戏安全或反作弊系统识别。使用在线账号可能产生账号限制风险。\n\n")

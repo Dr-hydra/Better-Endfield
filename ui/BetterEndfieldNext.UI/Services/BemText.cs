@@ -151,6 +151,7 @@ internal static class BemText
         ["已启用实验热切换的游戏将在下次切换配队或重新打开详情时更新；首次开启需重启游戏。"] = "With experimental hot-switching enabled, changes apply on the next team change or character-detail reload. Restart the game when first enabling it.",
         ["下次启动游戏生效。"] = "Applies the next time you start the game.",
         ["获取模型"] = "Get models",
+        ["前往下载"] = "Download models",
         ["按角色筛选"] = "Filter by character",
         ["全部角色"] = "All characters",
         ["关闭全部模型"] = "Disable all models",

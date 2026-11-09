@@ -1,0 +1,68 @@
+<UserControl
+    x:Class="BetterEndfieldNext.UI.Views.WorkshopPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <StackPanel Padding="32,26,32,36" Spacing="20">
+            <TextBlock
+                x:Name="PageTitleText"
+                FontSize="28"
+                FontWeight="SemiBold"
+                Text="创意工坊" />
+
+            <Border
+                Padding="20"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        x:Name="DirectTitleText"
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Text="直连" />
+                    <TextBox
+                        x:Name="DirectUrlBox"
+                        IsReadOnly="True"
+                        TextWrapping="NoWrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button
+                            x:Name="DirectOpenButton"
+                            Click="DirectOpenButton_Click"
+                            Content="打开" />
+                        <Button
+                            x:Name="DirectCopyButton"
+                            Click="DirectCopyButton_Click"
+                            Content="复制" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border
+                Padding="20"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        x:Name="DomainTitleText"
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Text="域名" />
+                    <TextBox
+                        x:Name="DomainUrlBox"
+                        IsReadOnly="True"
+                        TextWrapping="NoWrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button
+                            x:Name="DomainOpenButton"
+                            Click="DomainOpenButton_Click"
+                            Content="打开" />
+                        <Button
+                            x:Name="DomainCopyButton"
+                            Click="DomainCopyButton_Click"
+                            Content="复制" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

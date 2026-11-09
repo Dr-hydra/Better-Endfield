@@ -64,7 +64,7 @@ public sealed partial class MainWindow : Window
     private const string XiaoheiheProfileUrl =
         "https://www.xiaoheihe.cn/app/user/profile/38080236";
     private const string QqGroupNumber = "851586605";
-    private const string DiscordCommunityUrl = "https://discord.gg/Hadjs5XvS";
+    private const string DiscordCommunityUrl = "https://discord.gg/F49akXaxy8";
 
     private static readonly Dictionary<string, string> VoiceLanguageNames = new(
         StringComparer.OrdinalIgnoreCase)
@@ -1353,7 +1353,7 @@ public sealed partial class MainWindow : Window
         NavigationView sender,
         NavigationViewSelectionChangedEventArgs args)
     {
-        if (args.SelectedItemContainer?.Tag as string is "sponsor" or "workshop") return;
+        if (args.SelectedItemContainer?.Tag as string is "sponsor") return;
         string page = args.IsSettingsSelected
             ? "settings"
             : args.SelectedItemContainer?.Tag as string ?? "model";
@@ -1390,6 +1390,9 @@ public sealed partial class MainWindow : Window
         GachaPage.Visibility = page == "gacha"
             ? Visibility.Visible
             : Visibility.Collapsed;
+        WorkshopPage.Visibility = page == "workshop"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         if (page == "display")
         {
             _ = RefreshDisplayStatusAsync();
@@ -1400,7 +1403,7 @@ public sealed partial class MainWindow : Window
         AboutPageScrollViewer.Visibility = page == "about"
             ? Visibility.Visible
             : Visibility.Collapsed;
-        ActionBar.Visibility = page is "about" or "gacha" or "custom-model"
+        ActionBar.Visibility = page is "about" or "gacha" or "custom-model" or "workshop"
             ? Visibility.Collapsed
             : Visibility.Visible;
         UpdatePageSelectionHint(page);
@@ -1420,6 +1423,7 @@ public sealed partial class MainWindow : Window
             "display" => isZh ? "显示增强直接写入游戏目录，改动在下一次启动客户端时生效。" : "Display enhancements are written to the game directory and apply on the next launch.",
             "gacha" => isZh ? "寻访记录同步后仅在本机保存，登录会话不会写入磁盘。" : "Synced gacha records are saved locally; login sessions are never written to disk.",
             "custom-model" => isZh ? "角色外观工具会读取当前安装根目录，转换与部署结果需要按报告核对。" : "Model tools use the current installation directory. Check conversion and deployment reports.",
+            "workshop" => string.Empty,
             _ => isZh ? "角色与动画参数保存后在下一次注入时生效。" : "Saved character and animation settings apply on the next injection."
         };
     }

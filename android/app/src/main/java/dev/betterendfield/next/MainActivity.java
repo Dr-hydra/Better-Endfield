@@ -3,6 +3,8 @@ package dev.betterendfield.next;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.widget.Toast;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.net.Uri;
 import android.graphics.Color;
@@ -41,6 +43,11 @@ public final class MainActivity extends ModuleActivity {
     private static final int CUSTOM_MODEL_PAGE = 3;
     private static final int VOICE_PAGE = 4;
     private static final int ABOUT_PAGE = 5;
+    private static final int WORKSHOP_PAGE = 6;
+    // The workshop has two entries to the same site; the client ships both so the
+    // direct address keeps working when the Cloudflare domain is unreachable.
+    private static final String WORKSHOP_DIRECT_URL = "https://146.235.16.65:8443/endfield/";
+    private static final String WORKSHOP_DOMAIN_URL = "https://endfield.03250799.xyz/endfield/";
     private static final int[] SUB_PAGE_SECTIONS = {
             R.id.model_section, R.id.custom_model_section, R.id.voice_section
     };
@@ -108,7 +115,7 @@ public final class MainActivity extends ModuleActivity {
                                                 : ("about".equals(requestedPage) ? ABOUT_PAGE : HOME_PAGE)))))
                 : savedInstanceState.getInt("page", HOME_PAGE);
         // Bound restored navigation to the pages exposed by this product.
-        if (currentPage < HOME_PAGE || currentPage > ABOUT_PAGE) currentPage = HOME_PAGE;
+        if (currentPage < HOME_PAGE || currentPage > WORKSHOP_PAGE) currentPage = HOME_PAGE;
 
         View bemContent = findViewById(R.id.bem_content);
         bemContent.setPadding(0, 0, 0, 0);
@@ -119,6 +126,7 @@ public final class MainActivity extends ModuleActivity {
         setupVoicePage();
         setupEnhancementPage();
         setupAboutPage();
+        setupWorkshopPage();
         findViewById(R.id.sponsor_button).setOnClickListener(view -> SponsorDialog.show(this));
         applyResponsiveShell();
         applyPage();
@@ -300,7 +308,8 @@ public final class MainActivity extends ModuleActivity {
                 findViewById(R.id.model_section),
                 findViewById(R.id.custom_model_section),
                 findViewById(R.id.voice_section),
-                findViewById(R.id.about_section)
+                findViewById(R.id.about_section),
+                findViewById(R.id.workshop_section)
         };
     }
 
@@ -313,7 +322,7 @@ public final class MainActivity extends ModuleActivity {
         // user can always tell which branch of the app they are in.
         findViewById(R.id.show_home_button).setSelected(currentPage == HOME_PAGE);
         findViewById(R.id.show_enhancement_button).setSelected(currentPage != HOME_PAGE
-                && currentPage != ABOUT_PAGE);
+                && currentPage != ABOUT_PAGE && currentPage != WORKSHOP_PAGE);
         findViewById(R.id.show_about_button).setSelected(currentPage == ABOUT_PAGE);
     }
 
@@ -580,13 +589,73 @@ public final class MainActivity extends ModuleActivity {
     }
 
     private void openWorkshop() {
+        goTo(WORKSHOP_PAGE);
+    }
+
+    private void openWorkshopUrl(String url) {
         try {
-            startActivity(new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://146.235.16.65:8443/endfield/"))
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))
                     .addCategory(Intent.CATEGORY_BROWSABLE));
         } catch (RuntimeException ignored) {
             Toast.makeText(this, Text.of("无法打开创意工坊"), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void setupWorkshopPage() {
+        LinearLayout page = findViewById(R.id.workshop_section);
+        if (page == null) return;
+        page.removeAllViews();
+
+        Button back = enhancementButton(Text.of("返回"));
+        back.setOnClickListener(view -> goTo(HOME_PAGE));
+        page.addView(back, SectionCard.stacked(this, 0));
+
+        page.addView(workshopCard(Text.of("直连"), WORKSHOP_DIRECT_URL), SectionCard.stacked(this, 12));
+        page.addView(workshopCard(Text.of("域名"), WORKSHOP_DOMAIN_URL), SectionCard.stacked(this, 12));
+    }
+
+    private SectionCard workshopCard(String title, String url) {
+        SectionCard card = new SectionCard(this, "", title, "");
+
+        TextView address = new TextView(this);
+        address.setText(url);
+        address.setTextSize(13);
+        address.setTextColor(getColor(R.color.text_secondary));
+        address.setTextIsSelectable(true);
+        card.add(address);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        Button open = workshopActionButton(Text.of("打开"));
+        open.setOnClickListener(view -> openWorkshopUrl(url));
+        Button copy = workshopActionButton(Text.of("复制"));
+        copy.setOnClickListener(view -> copyWorkshopUrl(url));
+        LinearLayout.LayoutParams copyParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        copyParams.leftMargin = dp(8);
+        actions.addView(open);
+        actions.addView(copy, copyParams);
+        card.add(actions);
+
+        return card;
+    }
+
+    private Button workshopActionButton(String text) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setTextSize(14);
+        button.setAllCaps(false);
+        button.setMinHeight(0);
+        button.setMinimumHeight(dp(40));
+        button.setPadding(dp(18), 0, dp(18), 0);
+        return button;
+    }
+
+    private void copyWorkshopUrl(String url) {
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard == null) return;
+        clipboard.setPrimaryClip(ClipData.newPlainText("workshop", url));
+        Toast.makeText(this, Text.of("已复制"), Toast.LENGTH_SHORT).show();
     }
 
     private void setupModelPage() {

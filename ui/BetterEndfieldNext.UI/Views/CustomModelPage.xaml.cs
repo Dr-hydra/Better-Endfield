@@ -73,6 +73,7 @@ public sealed partial class CustomModelPage : UserControl
         ComposeButton.Content = BemText.Get("组合已安装包");
         RefreshButton.Content = BemText.Get("刷新");
         PackageFolderButton.Content = BemText.Get("打开模型文件夹");
+        DownloadModelsButton.Content = BemText.Get("前往下载");
         CharacterFilter.Header = BemText.Get("按角色或武器筛选");
         DisableAllButton.Content = BemText.Get("关闭全部模型");
         bool chinese = LocalizationService.Instance.IsChinese;
