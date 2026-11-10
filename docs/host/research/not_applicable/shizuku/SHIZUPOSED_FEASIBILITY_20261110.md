@@ -188,3 +188,25 @@ Shizuku 在这两类里都只做辅助（启动、停止、拉日志、外部文
 `hooked/` 目录自 2026-11-10 23:04 建目录起**一个文件都没有**——这台机器上从未成功 hook 过任何进程，包括用户手动启动的那次。
 
 根因在它自己的命令行：`ShizuPosedService.java:2439` 的 `unset CLASSPATH; unset BOOTCLASSPATH`。新版 ART 在 boot classpath 为空时直接 abort（`Runtime::Create` 的 `!location.empty()` 检查），而 `app_process` 是靠 `BOOTCLASSPATH` 环境变量拼 `-Xbootclasspath` 的。补上该变量后崩溃点后移（见上一节第 2 步），说明后面还有第二层问题。
+
+### 游戏进程的实测形态
+
+00:29:10 起的 `com.hypergryph.endfield`（用户手动启动，界面正常）：
+
+```
+pid 27171   ppid 16792 (zygote64)   uid u0_a400(10400)
+cmdline: com.hypergryph.endfield
+SELinux: u:r:untrusted_app_34:s0:c144,c257,c512,c768
+子进程:  31379  com.hypergryph.endfield:pushcore（同样 ppid=zygote64）
+```
+
+对照注入成功时**应该有**的形态：`ppid` 是 1（`setsid -d` 脱离后由 init 收养）或 shell 系进程，`cmdline` 里带 `-Djava.class.path=.../XposedHook.dex` 等一串 `-Dshizuposed.*`。实测四项全部落空：
+
+| 判据 | 注入成功 | 实测 |
+| --- | --- | --- |
+| `cmdline` | 带 `XposedHook.dex` | 只有包名 |
+| `ppid` | 1 或 spawn 上游 | 16792 `zygote64` |
+| SELinux 域 | 随 spawn 来源，偏离 `untrusted_app` | `u:r:untrusted_app_34:s0`（标准应用域） |
+| `hooked/<包名>` | 存在 | `hooked/` 自 23:04 建目录起为空 |
+
+`logcat` 里也检索不到任何 `BetterEndfieldNext` 标签——运行时没有加载。结论：这次游戏是**标准 zygote 进程的普通启动**，与注入无关；bootstrap 在它启动前 8 秒就已 abort。
