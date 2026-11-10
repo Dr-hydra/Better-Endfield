@@ -164,3 +164,27 @@ Shizuku 在这两类里都只做辅助（启动、停止、拉日志、外部文
 **边界**：这是复刻而非它自己的 spawn 路径——少了 `setsid -d` 前缀，环境变量也与它经 Shizuku 拿到的 shell 不完全一致。所以严格表述是"我没能让它在这台机器上跑起来"，不是"它在任何机器上都跑不起来"。但结合 `launch.log` 为 0 与 `hooked/` 为空，它与"宣称能力已兑现"的距离不是一点半点。
 
 清理：设备端 `/data/local/tmp` 下的探针与脚本已删除，`temp/` 下的复刻脚本未入库。
+
+### 它自己的 spawn 路径同样崩，而且被它自己判为成功
+
+复刻之外，再抓一次**它自己发起**的 launch（用户在管理器里打开 `dev.betterendfield.next`），时间线对齐后没有任何解释空间：
+
+| 时刻 | 来源 | 事件 |
+| --- | --- | --- |
+| 00:29:01.926 | 管理器日志 | `Force-stopping dev.betterendfield.next before routed launch` |
+| 00:29:02.350 | 管理器日志 | `Launching ... binary=/system/bin/app_process64, uid=10222, spawn=/system/bin/setsid -d` |
+| 00:29:02.485 | logcat `F/libc` | **`Fatal signal 6 (SIGABRT)` in `app_process64`**，`ppid: 1`，cmdline 里带 `-Djava.class.path=.../XposedHook.dex` |
+| 00:29:02.589 | logcat `F/DEBUG` | `Abort message: 'Check failed: !location.empty() BOOTCLASSPATH and DEX2OATBOOTCLASSPATH must not be empty'` |
+| 00:29:05.202 | 管理器日志 | `Bootstrap process up ... no marker after 2836ms — proceeding; app may have no applicable modules` |
+| 00:29:05.300 | 管理器日志 | `UI opened for dev.betterendfield.next via component:dev.betterendfield.next/.MainActivity` |
+| 00:29:05.406 | 管理器日志 | `Launch succeeded for dev.betterendfield.next` |
+
+三件事同时成立：
+
+1. 崩的是**它自己的** spawn（`ppid: 1`、`app_process64`、带 `-Dshizuposed.*` 参数），不是我的复刻——复刻之所以同样崩，是因为照抄了同样的命令。
+2. 崩溃发生在其 spawn 后 135 ms；两秒半之后管理器因为"进程存在 + UI 打开了"就报 `Launch succeeded`。**它的成功判据里没有"hook 装上了"这一项**，只有一个 `hooked/<包名>` marker，而那次 `no marker after 2836ms`。
+3. 界面上看到"应用/游戏正常起来了"，是随后 `am start` 的功劳：bootstrap 已死，AMS 照常 fork 一个 zygote 子进程，应用当然能正常启动。**"能起来"不能证明任何注入效果**，它本来就该能起来。
+
+`hooked/` 目录自 2026-11-10 23:04 建目录起**一个文件都没有**——这台机器上从未成功 hook 过任何进程，包括用户手动启动的那次。
+
+根因在它自己的命令行：`ShizuPosedService.java:2439` 的 `unset CLASSPATH; unset BOOTCLASSPATH`。新版 ART 在 boot classpath 为空时直接 abort（`Runtime::Create` 的 `!location.empty()` 检查），而 `app_process` 是靠 `BOOTCLASSPATH` 环境变量拼 `-Xbootclasspath` 的。补上该变量后崩溃点后移（见上一节第 2 步），说明后面还有第二层问题。
