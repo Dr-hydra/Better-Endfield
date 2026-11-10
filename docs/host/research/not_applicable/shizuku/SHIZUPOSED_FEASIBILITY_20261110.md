@@ -6,7 +6,7 @@
 
 分三层，不要混读。
 
-1. **注入原语成立，且比 Shizuku 强一个量级。** ShizuPosed 走 `app_process` + `setuid(目标 UID)` + 手动 `handleBindApplication`，进程真实跑在游戏 UID 下，能读游戏私有目录、能装 ART hook。这推翻了 [Shizuku 篇](SHIZUKU_FEASIBILITY_20261007.md) 里「从官方机制推导不出免 root 进程内入口」的范围限定——该路径真实存在，只是不在 Shizuku 本体，而在 `app_process` 引导框架这一层。
+1. **注入原语成立，且比 Shizuku 强一个量级——但前提是 `setuid` 能成功。** ShizuPosed 走 `app_process` + `setuid(目标 UID)` + 手动 `handleBindApplication`：setuid 成功时进程真实跑在游戏 UID 下，能读游戏私有目录、能装 ART hook；失败时它以 shell 域继续跑（见文末补正，这一步是整篇的分水岭）。这条路本身推翻了 [Shizuku 篇](SHIZUKU_FEASIBILITY_20261007.md) 里「从官方机制推导不出免 root 进程内入口」的范围限定——路径真实存在，只是不在 Shizuku 本体，而在 `app_process` 引导框架这一层。
 2. **BE 现行代码在 ShizuPosed 上零功能，且是入口第一行就死。** [`XposedEntry.java:31`](../../../../../android/app/src/main/java/dev/betterendfield/next/XposedEntry.java#L31) 在 `onPackageReady` 里先取 `getRemotePreferences("module_settings")`；ShizuPosed 对它的实现是直接抛 `UnsupportedOperationException`（上游 `ShizuPosedXposedInterface.java:198`）。异常落进 `:89` 的外层 catch，`report("entry failed: ...")` 后返回，一个 hook 都不装。
 3. **"兼容"需要的不是适配层，是一套移植分支。** 三个硬缺口（远程 IPC、管理端服务、入口时序）都在 BE 架构主干上，改完还要接受 ShizuPosed 的 hook 后端质量与"进程不是 zygote 子进程"这两个上限。
 
@@ -40,7 +40,7 @@ hook 后端是固定链 `Pine AUTO → Pine REPLACEMENT → Amiru → CallSite �
 | 入口时序 | 在 `onPackageReady` 里 hook `Application.attach`，在该 hook 回调中装 GameOverlay / RuntimeBootstrap（`XposedEntry.java:27-86`） | `onPackageReady` 在 `handleBindApplication` 返回后才派发（`:543` → `:566`），此时 `attach` 与 `onCreate` 都已跑完 | **致命**。该 hook 永不触发，需改挂 `attachBaseContext`/`onCreate`，或要求框架在 bind 前派发 |
 | 帧泵 | hook `com.unity3d.player.UnityPlayer.nativeRender`（native 方法），在其回调里跑 `NativeCommandBridge.frame()`（`XposedEntry.java:104-117`） | 只有 Pine 后端可能挂住 JNI native 方法；`chain.getThisObject()`/`getArg(0)` 需要对象语义 | **未验证的高风险点**，这是唯一的帧驱动入口 |
 | 原生运行时 | 从模块 APK 的 `nativeLibraryDir` 取 `libbetterendfieldnext_android.so`，`Runtime.nativeLoad(path, loader, caller)` 载入游戏命名空间（`RuntimeBootstrap.java:87-133`） | `PackageReadyParam.getClassLoader()` 传的是游戏真实 `PathClassLoader`（`LibXposedDriver.firePackageReady` 以 `appLoader` 调用） | 路径可行；`Runtime.nativeLoad` 在非 zygote 进程里能否落到 Unity 命名空间需实测 |
-| 游戏私有目录 | `context.getFilesDir()` 写 BEM、第三方 SO、诊断、catalog（`BemInstalledResources.java:27`、`ThirdPartyRuntimeMaterializer.java:26`） | setuid 成功后即为游戏 UID，可读写 | **满足**，这是相对 Shizuku 的最大改进 |
+| 游戏私有目录 | `context.getFilesDir()` 写 BEM、第三方 SO、诊断、catalog（`BemInstalledResources.java:27`、`ThirdPartyRuntimeMaterializer.java:26`） | setuid 成功后即为游戏 UID，可读写；setuid 失败则仍是 shell 域，写不了（见文末补正） | **条件满足**，是相对 Shizuku 的最大改进，但成立与否取决于 `CAP_SETUID` |
 | 启动模型 | 玩家从桌面图标启动 | 必须先经框架启动；`ProcessMonitor` 只能"再 spawn 一个同包进程"，**不能附加到已有 pid** | 门槛性缺陷：多进程（反外挂/推送/子进程）里只有被 bootstrap 的那个进程有 hook |
 | 平台 | arm64-v8a，minSdk 29 | arm64，Android 10+ | 匹配 |
 
@@ -84,3 +84,30 @@ hook 后端是固定链 `Pine AUTO → Pine REPLACEMENT → Amiru → CallSite �
 本轮**没有**做：安装/运行 ShizuPosed、在任何设备上跑通引导、安装或启动目标游戏、验证 `nativeRender` 可 hook、验证 `setuid` 后 SELinux 行为、验证 `am start` 是否真把 UI 落进被 hook 的进程、验证导出 ContentProvider 的跨 UID 可达性、研究游戏完整性校验策略。上文所有"成立/可行/风险"判断都来自源码阅读，不含实机证据。
 
 补充一个待确认点：代码里没有 `attachApplication` 调用，`ActivityThread` 取自 `systemMain()`（其 `attach(true)` 不向 AMS 注册应用进程），按 AOSP 语义 `am start` 会另起一个 zygote 子进程。上游 README 声称路由启动可用，但"UI 是否真的落在被 hook 的那个进程里"必须由 A 轮实测回答。
+
+## 2026-11-11 补正：`setuid` 这一关决定全篇
+
+上游 `switchToUser`（`XposedHook.java:946-964`）做的事只有 `android.os.Process.setUid/setGid`，即裸的 `setuid(2)`；调用方是 Shizuku 起的 shell 进程（UID 2000）。**它能不能成功，取决于 shell 的 capability bounding set 里还有没有 `CAP_SETUID`**，而这一位在不同系统上不一致：
+
+- 现代 AOSP `adbd` 的 `drop_capabilities_bounding_set_if_needed` 在非 debuggable 构建上调用 `minijail_capbset_drop(j, CAP_TO_MASK(CAP_SETUID) | CAP_TO_MASK(CAP_SETGID))`，把这两位从 bounding set 摘掉。摘掉后**不可再获得**（bounding set 连 execve 的 file capability 都挡），shell 因此永远无法 setuid 到别的应用 UID。`/system/bin/run-as` 之所以要编译成 setuid-root 二进制，正是因为退出了这条通道。
+- 老版本 AOSP 的同一函数则是**显式跳过**这两位（注释原文 `CAP_SETUID CAP_SETGID needed by /system/bin/run-as`），那时 shell 能 setuid。
+- 上游失败时只打一行 `Continuing as uid 2000` 就继续跑（`XposedHook.java:464-472`），不中止、不报错。此时进程是 **shell 域**，不是游戏：写不了 `/data/user/0/<pkg>`，而且系统经 zygote 起的真游戏进程它 attach 不上（无 `CAP_SYS_PTRACE`、uid 不匹配）。
+
+**一条命令可判定**：`adb shell cat /proc/self/status | grep Cap`，`CapBnd` 的 `0x80`（CAP_SETUID）不存在即已被摘除。同一台机器上再跑一次 ShizuPosed，日志里出现 `Switched to target uid` 还是 `Continuing as uid 2000` 可交叉印证。
+
+因此本文第一节第 1 条的"进程真实跑在游戏 UID 下"**应是条件式**：在拿得到 CAP_SETUID 的机器上成立，在零售量产机上大概率不成立。相应地，"能读游戏私有目录"这一优势也随之作废。这个分叉同时决定"自研同类框架"是否值得——见下一节。
+
+## 自研同类框架的定位
+
+结论：**代码量不是瓶颈，权限模型才是。** 需要自研的只有四块：`app_process` 引导（起进程、`handleBindApplication`、进 Looper）、classloader 链、hook 引擎（可直接用 Pine）、以及我们自己定义的控制通道（因为两端都归我们，不必实现 libxposed 的 remote prefs ABI，BE 侧反而更简单）。这四块合起来是可控的工程量。
+
+但它整条链都压在 `CAP_SETUID` 上：拿不到就只能得到一个 shell 域进程，拿得到（userdebug/自编译 ROM）又没有免 root 的意义。所以**自研 app_process 框架不值得立项**。
+
+真正能在量产机上免 root 跑起来的只有两类，都不依赖 Shizuku 的注入能力：
+
+| 路线 | 机制 | 代价 |
+| --- | --- | --- |
+| **自修包（LSPatch 式）** | 把 loader 注入游戏 APK 的 `Application` 之前，重签安装；游戏由系统正常拉起，UID/进程形态零破绽 | 重签 → 不能覆盖升级、每次游戏更新重打、拆分包重签、登录与完整性校验风险 |
+| **虚拟容器**（VirtualApp 家族，VirtualXposed 是这类方案跑 Xposed 模块的先例） | 游戏跑在容器进程内，容器伪造 UID/包信息，hook 由 Pine 类引擎完成 | Unity/IL2CPP 路径、图形、登录、反作弊全部高风险；容器自身要长期维护 |
+
+Shizuku 在这两类里都只做辅助（启动、停止、拉日志、外部文件），与注入无关——这一点与 [Shizuku 篇](SHIZUKU_FEASIBILITY_20261007.md) 的结论一致。
