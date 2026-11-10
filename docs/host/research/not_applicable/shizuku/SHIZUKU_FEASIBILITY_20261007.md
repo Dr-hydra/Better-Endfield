@@ -70,3 +70,9 @@ AOSP [`shell.te`](https://android.googlesource.com/platform/system/sepolicy/+/re
 4. 完整路线必须验证 BE UI 与游戏内模块同启停、BEM 导入/启用/热切换、模型与语音、第三方 SO、相机/PCUI，以及重签安装/更新/登录。未完成前维持“研究中”，不进入正式 APK 的承诺功能。
 
 若只以“不 root、不修改正式游戏包、不使用可控制游戏加载的容器”为条件，目前没有从 Shizuku 官方机制和 BE 现有架构推导出的全功能路径。
+
+## 2026-11-10 追加：app_process 引导框架
+
+上面的结论限定在 **Shizuku 本体**。另有一类免 root 框架不做 Binder 权限代理，而是用 Shizuku 以 shell 身份起 `app_process`、再 `setuid` 到目标 UID 手动 `handleBindApplication`，进程真实跑在游戏 UID 下并能装 ART hook。这条路径成立，属于本文第 2 条建议里「先证明加载器可用」的那一类，不是本文明说的「添加 Shizuku 依赖即可完成的小改动」。
+
+代表实现 ShizuPosed 的结论：注入原语可用，但 BE 现行代码在其上零功能（远程偏好/远程文件未实现、`io.github.libxposed.service` 缺失、`onPackageReady` 派发晚于 `Application.attach`），且"进程不是 zygote 子进程"的上限对在线游戏构成账号级风险。改造清单与验收条件见 [ShizuPosed 免 root 可行性](SHIZUPOSED_FEASIBILITY_20261110.md)。
