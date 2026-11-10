@@ -141,3 +141,26 @@ opendir /data/user/0/com.hypergryph.endfield -> fail errno=13(Permission denied)
 | **虚拟容器**（VirtualApp 家族，VirtualXposed 是这类方案跑 Xposed 模块的先例） | 游戏跑在容器进程内，容器伪造 UID/包信息，hook 由 Pine 类引擎完成 | Unity/IL2CPP 路径、图形、登录、反作弊全部高风险；容器自身要长期维护 |
 
 Shizuku 在这两类里都只做辅助（启动、停止、拉日志、外部文件），与注入无关——这一点与 [Shizuku 篇](SHIZUKU_FEASIBILITY_20261007.md) 的结论一致。
+
+## 2026-11-11 实机复刻：它自己就没跑起来
+
+前提：同一台 Redmi `25102RKBEC`，**已 Root（KernelSU，`su` 返回 `u:r:ksu:s0`）**，`shizuku_server` 以 **root** 运行（`ps` 里 user=root），ShizuPosed 与 Shizuku 均已安装、管理器进程在跑。按本机条件，`setuid` 那关反而是通的——这是它能跑起来的最好环境。
+
+**先看它自己的日志**（`/data/data/com.shizuposed.manager/files/.syscall_cache/logs/shizuposed.log`，root 读取）：
+
+- `Shell base: /data/user/0/com.android.shell/files/.syscall_cache`，`XposedHook.dex` 已投放（410 KB）；
+- `[MarkerCache] refresh: 0 marker(s)`，`hooked/` 目录为空；
+- `launch.log` **0 字节**（最后一次写入时间 23:08）。
+
+即：安装两天、服务一直在扫描进程，**从未有任何 app 被它成功 hook 过**。
+
+**再按它的命令原样复刻**（`ShizuPosedService.java:2438-2458` 逐参数照抄，目标取 `dev.betterendfield.next` / uid 10222，以 root 执行）：
+
+1. 原样执行 → 立即 abort：`Check failed: !location.empty() BOOTCLASSPATH and DEXOATBOOTCLASSPATH must not empty`。原因是它自己那句 `unset CLASSPATH; unset BOOTCLASSPATH`——本机 `adb shell` 的环境里 `BOOTCLASSPATH` 是有值的，`app_process` 靠它拼 `-Xbootclasspath`，unset 之后 ART 直接拒绝创建 VM。
+2. 保留 `BOOTCLASSPATH` 再跑 → 换个位置 abort：`No pending exception expected: java.lang.ClassNotFoundException: dev.betterendfield.next`，崩在 `AndroidRuntime::startReg` 的 JNI 注册阶段。
+
+两步都是在 `handleBindApplication` **之前**就死了，`setuid` 与 hook 安装根本没走到。
+
+**边界**：这是复刻而非它自己的 spawn 路径——少了 `setsid -d` 前缀，环境变量也与它经 Shizuku 拿到的 shell 不完全一致。所以严格表述是"我没能让它在这台机器上跑起来"，不是"它在任何机器上都跑不起来"。但结合 `launch.log` 为 0 与 `hooked/` 为空，它与"宣称能力已兑现"的距离不是一点半点。
+
+清理：设备端 `/data/local/tmp` 下的探针与脚本已删除，`temp/` 下的复刻脚本未入库。
