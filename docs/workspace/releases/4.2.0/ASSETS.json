@@ -1,0 +1,51 @@
+{
+  "version": "4.2.0",
+  "date": "2026-11-14",
+  "status": "ready",
+  "android_version_code": 40200,
+  "bem_tools_version": "1.6.8",
+  "dsh_version": "1.6.8",
+  "hashes_calculated": false,
+  "assets": [
+    {
+      "name": "BetterEndfieldNext-4.2.0-Setup.exe",
+      "bytes": 77069360
+    },
+    {
+      "name": "BetterEndfieldNext-4.2.0-Android-arm64.apk",
+      "bytes": 6430187
+    },
+    {
+      "name": "BEM-Tools-1.6.8-win-x64.zip",
+      "bytes": 74281498
+    },
+    {
+      "name": "BEM-Tools-1.6.8-android-arm64.tar.gz",
+      "bytes": 2091141
+    },
+    {
+      "name": "dsh-bem-creator-1.6.8.tgz",
+      "bytes": 2063176
+    }
+  ],
+  "checks": {
+    "windows_release": "passed: cmake reconfigure + native rebuild, 26 modules plus loaders/payloads/runtime/tools",
+    "windows_installer": "passed: ISCC compile, file version 4.2.0.0, self-signed-internal",
+    "android_release": "passed: gradle assembleRelease, versionName 4.2.0 versionCode 40200, signed with release keystore",
+    "tools": "passed: BEM Tools 1.6.8 and DSH 1.6.8 rebuilt; DSH smoke/host/client/resource suites ok",
+    "client_ui": "obfuscated assembly reports 4.2.0.0",
+    "catalog": "35 character catalogs carry game baseline; batch table matches config/game-baseline-map.json"
+  },
+  "integrated_commits": [
+    "bc48aa28",
+    "9b484d98",
+    "7a31c961",
+    "73359e6a",
+    "5fd6c158"
+  ],
+  "release": {
+    "repository": "Dr-hydra/Better-Endfield",
+    "tag": "v4.2.0",
+    "url": "https://github.com/Dr-hydra/Better-Endfield/releases/tag/v4.2.0"
+  }
+}
