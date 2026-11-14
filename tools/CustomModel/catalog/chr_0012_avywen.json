@@ -6,6 +6,11 @@
   "platform": "windows-x64",
   "profile_id": "chr_0012_avywen-pc",
   "revision": "20260920-identities1",
+  "game": {
+    "windows-x64": "1.5.3",
+    "android-arm64": "1.5.3",
+    "hotfix": 0
+  },
   "verified": true,
   "world_resource": "chr_0012_avywen_postmodel",
   "ui_resource": "chr_0012_avywen_uimodel",

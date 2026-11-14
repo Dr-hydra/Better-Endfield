@@ -6,6 +6,11 @@
   "platform": "windows-x64",
   "profile_id": "chr_0037_minghe-pc",
   "revision": "20261105-1.6.3-sweep1",
+  "game": {
+    "windows-x64": "1.6.3",
+    "android-arm64": "1.6.4",
+    "hotfix": 1
+  },
   "verified": true,
   "world_resource": "chr_0037_minghe_postmodel",
   "ui_resource": "chr_0037_minghe_uimodel",
