@@ -1,4 +1,5 @@
 #include "texture_install.h"
+#include "bem_baseline_table.generated.h"
 #include <jni.h>
 #include <atomic>
 #include <stdexcept>
@@ -24,6 +25,10 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_i
         BemJson report={{"package_id",info.package_id},{"character_id",info.character_id},{"name",info.name},
             {"target_kind",info.target_kind},{"target_id",info.target_id},{"resource_keys",info.resource_keys},
             {"bytes",std::filesystem::file_size(input.data)},{"bem_minor",info.minor}};
+        // Section 15. Absent for packages built before the field existed.
+        if(!info.baseline_windows.empty())
+            report["game_baseline"]={{"windows-x64",info.baseline_windows},
+                {"android-arm64",info.baseline_android},{"hotfix",info.baseline_hotfix}};
         if(info.minor) {report["default_options"]=info.default_options;
             report["option_groups"]=BemJson::parse(info.option_groups_json);
             report["selection_constraints"]=BemJson::parse(info.selection_constraints_json);}
@@ -43,8 +48,58 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_i
         return env->NewStringUTF(encoded.c_str());
     } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
 }
-extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_convertNative(JNIEnv* env,jclass owner,jstring src,jstring dst,jstring rules,jboolean astc) {
-    if(busy.exchange(true)) {env->ThrowNew(env->FindClass("java/io/IOException"),"Another conversion is running");return nullptr;}
+// Metadata only: the header and manifest, never a payload block. The management
+// UI uses this to decide whether a package needs a baseline before opening it.
+extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_metadataNative(
+    JNIEnv* env,jclass,jstring src) {
+    try {
+        Utf input(env,src);
+        using namespace BetterEndfieldNext::CustomModel;
+        BemPackageInfo info; std::string error;
+        if(!ReadBemManagementInfo(input.data,info,error)) throw std::runtime_error(error);
+        BemJson report={{"package_id",info.package_id},{"name",info.name},{"revision",info.revision},
+            {"bem_minor",info.minor},{"bytes",std::filesystem::file_size(input.data)}};
+        if(!info.baseline_windows.empty())
+            report["game_baseline"]={{"windows-x64",info.baseline_windows},
+                {"android-arm64",info.baseline_android},{"hotfix",info.baseline_hotfix}};
+        return env->NewStringUTF(report.dump().c_str());
+    } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
+}
+// Returns null when the batch table does not know this revision, which is the
+// signal to leave the package unknown instead of guessing a version.
+extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_baselineForRevisionNative(
+    JNIEnv* env,jclass,jstring revision) {
+    try {
+        Utf value(env,revision);
+        using namespace BetterEndfieldNext::CustomModel;
+        for(size_t i=0;i<kBaselineBatchCount;++i) {
+            const auto& batch=kBaselineBatches[i];
+            if(std::string_view(batch.revision)==value.data)
+                return env->NewStringUTF(BemJson{{"windows-x64",batch.windows},
+                    {"android-arm64",batch.android},{"hotfix",batch.hotfix}}.dump().c_str());
+        }
+        return nullptr;
+    } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
+}
+// Backfills the section 15 baseline into an older package. Payload blocks are
+// copied verbatim, so this stays cheap even for large packages, and a package
+// that already declares the field is reported as skipped rather than rewritten.
+extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_insertBaselineNative(
+    JNIEnv* env,jclass,jstring src,jstring dst,jstring windows,jstring android,jint hotfix) {
+    try {
+        if(hotfix<0) throw std::runtime_error("Invalid hotfix counter");
+        Utf input(env,src),output(env,dst),w(env,windows),a(env,android);
+        using namespace BetterEndfieldNext::CustomModel;
+        auto value=BemJson{{"windows-x64",w.data},{"android-arm64",a.data},{"hotfix",static_cast<int>(hotfix)}}.dump();
+        std::string error;
+        if(!InsertBemManifestField(input.data,output.data,"game_baseline",value,error)) {
+            if(error=="Field already present") return env->NewStringUTF("skipped");
+            throw std::runtime_error(error);
+        }
+        return env->NewStringUTF("written");
+    } catch(const std::exception& error) {env->ThrowNew(env->FindClass("java/io/IOException"),error.what());return nullptr;}
+}
+extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_convertNative(JNIEnv* env,jclass owner,jstring src,jstring dst,jstring rules,jboolean astc) {    if(busy.exchange(true)) {env->ThrowNew(env->FindClass("java/io/IOException"),"Another conversion is running");return nullptr;}
     struct Guard {~Guard(){busy=false;}} guard; cancelled=false;
     try {
         Utf input(env,src),output(env,dst),mapping(env,rules);

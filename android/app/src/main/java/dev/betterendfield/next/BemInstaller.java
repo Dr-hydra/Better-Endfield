@@ -50,6 +50,9 @@ final class BemInstaller {
     static native String inspectNativeWithOptions(String input, boolean skipValidation) throws IOException;
     static String inspectNative(String input) throws IOException { return inspectNativeWithOptions(input, false); }
     static native void cancelNative();
+    static native String metadataNative(String input) throws IOException;
+    static native String baselineForRevisionNative(String revision) throws IOException;
+    static native String insertBaselineNative(String input, String output, String windows, String android, int hotfix) throws IOException;
     // Called on the native conversion worker, consumed by the management UI.
     static void conversionProgress(String texture,int current,int total,int mip,int mips,float percent) {
         if(!cancelled) {
@@ -681,6 +684,67 @@ final class BemInstaller {
                 status = Text.of("ASTC 转换未完成：") + importError(error);
             } finally {
                 busy = false; progressPercent = -1;
+            }
+        });
+        return true;
+    }
+
+    // Section 15 backfill. Only a package whose own revision names a declared
+    // batch is touched; an unknown revision stays unknown instead of being
+    // guessed, because the value selects a version-based repair later.
+    static synchronized boolean backfillAllBaselines(Context context) {
+        if(busy) return false;
+        Context app=context.getApplicationContext();
+        progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
+        busy=true;cancelled=false;status=Text.of("正在扫描已安装模型包…");
+        worker.execute(()->{
+            int total=0,written=0,skipped=0,unmatched=0,failed=0;
+            try {
+                File root=new File(app.getFilesDir(),"bem-installed");
+                JSONArray list=index(app);total=list.length();
+                loadCodec();
+                for(int i=0;i<list.length();++i) {
+                    checkpoint();
+                    JSONObject entry=list.getJSONObject(i);
+                    String generation=entry.getString("generation");
+                    String name=entry.optString("name",generation);
+                    File folder=new File(root,generation);
+                    File bemFile=new File(folder,"installed.bem");
+                    if(!bemFile.isFile()) continue;
+                    status=Text.of("正在检查版本信息 (")+(i+1)+" / "+total+Text.of(")：")+name;
+                    progressPercent=(i*100)/Math.max(1,total);
+                    JSONObject meta;
+                    try { meta=new JSONObject(metadataNative(bemFile.getAbsolutePath())); }
+                    catch(Exception error) { failed++; continue; }
+                    if(meta.has("game_baseline")) { skipped++; continue; }
+                    String baseline=baselineForRevisionNative(meta.optString("revision",""));
+                    if(baseline==null) { unmatched++; continue; }
+                    JSONObject values=new JSONObject(baseline);
+                    File temp=new File(folder,"installed.bem.tmp");
+                    if(temp.exists()) temp.delete();
+                    try {
+                        String outcome=insertBaselineNative(bemFile.getAbsolutePath(),temp.getAbsolutePath(),
+                            values.getString("windows-x64"),values.getString("android-arm64"),values.getInt("hotfix"));
+                        if("written".equals(outcome) && temp.isFile() && temp.length()>0 &&
+                            bemFile.delete() && temp.renameTo(bemFile)) {
+                            written++;
+                            entry.put("bytes",bemFile.length());
+                            FrameworkSettings.publishBem(bemFile,entry.getString("remote"));
+                        } else skipped++;
+                    } catch(Exception error) {
+                        failed++;
+                        if(temp.exists()) temp.delete();
+                    }
+                }
+                if(written>0) commitIndex(app,list.toString(),list,Text.of("保存版本信息索引失败"));
+                status=Text.of("版本信息补全完成：已补全 ")+written+Text.of(" 个包，已记录 ")+skipped
+                    +Text.of(" 个，无法识别 ")+unmatched+Text.of(" 个")
+                    +(failed>0?Text.of("，失败 ")+failed+Text.of(" 个"):"")
+                    +(written>0?Text.of("。重启游戏后生效。"):Text.of("。"));
+            } catch(Throwable error) {
+                status=Text.of("补全版本信息未完成：")+importError(error);
+            } finally {
+                busy=false;progressPercent=-1;
             }
         });
         return true;

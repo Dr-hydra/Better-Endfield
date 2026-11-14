@@ -35,6 +35,7 @@ final class BemInstallPage {
     private JSONObject characterNames=new JSONObject();
     private Switch skipValidation,hotSwitch,cloneSupport,releaseRetiredResources,fastLoading,keepLocalCopies;
     private Button cleanUnused;
+    private Button backfillBaseline;
     private final java.util.Set<String> expanded=new java.util.HashSet<>();
     private final java.util.Map<String,java.util.LinkedHashMap<String,Integer>> parameterDrafts=new java.util.HashMap<>();
     private int renderVersion;
@@ -50,6 +51,7 @@ final class BemInstallPage {
         refreshExperiment(releaseRetiredResources,BemInstaller.RELEASE_RETIRED_RESOURCES);
         refreshExperiment(fastLoading,BemInstaller.FAST_LOADING);
         keepLocalCopies.setEnabled(!BemInstaller.busy);cleanUnused.setEnabled(!BemInstaller.busy);
+        backfillBaseline.setEnabled(!BemInstaller.busy);
         status.setText(BemInstaller.status);
         root.findViewById(R.id.bem_operation_state).setVisibility(BemInstaller.busy || !BemInstaller.IDLE_STATUS.equals(BemInstaller.status) ? View.VISIBLE : View.GONE);importButton.setEnabled(!BemInstaller.busy);cancel.setEnabled(BemInstaller.busy && !BemInstaller.removing);
         incomingRetry.setEnabled(pendingImport!=null && !BemInstaller.busy);
@@ -90,6 +92,7 @@ final class BemInstallPage {
         bindExperiment(fastLoading,BemInstaller.FAST_LOADING);
         keepLocalCopies=root.findViewById(R.id.bem_keep_local_copies);
         cleanUnused=root.findViewById(R.id.bem_clean_unused);
+        backfillBaseline=root.findViewById(R.id.bem_backfill_baseline);
         keepLocalCopies.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.KEEP_LOCAL_COPIES,true));
         keepLocalCopies.setOnCheckedChangeListener((button,checked)->{
             android.content.SharedPreferences settings=FrameworkSettings.open(activity);
@@ -105,6 +108,15 @@ final class BemInstallPage {
         cleanUnused.setOnClickListener(v->{
             if(BemInstaller.cleanUnused(activity)) {handler.removeCallbacks(refresh);handler.post(refresh);}
         });
+        // A file rewrite, so it asks first; the preview is the only place the user
+        // sees what will be written before it lands in the package.
+        backfillBaseline.setOnClickListener(v->new android.app.AlertDialog.Builder(activity)
+            .setTitle(R.string.bem_backfill_baseline)
+            .setMessage(Text.of("将为缺少版本信息的模型包补记创建时的游戏版本，不会修改模型内容。来源版本无法识别的包会跳过。"))
+            .setNegativeButton(Text.of("取消"),null)
+            .setPositiveButton(Text.of("补全"),(dialog,which)->{
+                if(BemInstaller.backfillAllBaselines(activity)) {handler.removeCallbacks(refresh);handler.post(refresh);}
+            }).show());
         skipValidation.setChecked(FrameworkSettings.open(activity).getBoolean(BemInstaller.SKIP_VALIDATION,false));
         skipValidation.setOnCheckedChangeListener((button,checked)->{
             android.content.SharedPreferences settings=FrameworkSettings.open(activity);

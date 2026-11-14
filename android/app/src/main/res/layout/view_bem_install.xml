@@ -15,7 +15,10 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
             <TextView style="@style/CardTitle" android:text="@string/bem_storage" />
             <Switch android:id="@+id/bem_keep_local_copies" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:layout_marginTop="8dp" android:text="@string/bem_keep_local_copies" />
-            <Button android:id="@+id/bem_clean_unused" style="@style/GhostButton" android:layout_marginTop="8dp" android:text="@string/bem_clean_unused" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="horizontal">
+                <Button android:id="@+id/bem_clean_unused" style="@style/GhostButton" android:layout_width="0dp" android:layout_weight="1" android:text="@string/bem_clean_unused" />
+                <Button android:id="@+id/bem_backfill_baseline" style="@style/GhostButton" android:layout_width="0dp" android:layout_weight="1" android:layout_marginStart="8dp" android:text="@string/bem_backfill_baseline" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp" android:visibility="gone">
             <TextView style="@style/CardTitle" android:text="@string/bem_models_title" />
