@@ -54,12 +54,25 @@ internal sealed class BemDriverInfo
     public bool Once { get; init; }
 }
 
+/// <summary>Section 15: the game version a package was built against, per platform.</summary>
+internal sealed class BemGameBaseline
+{
+    public string Windows { get; init; } = "";
+    public string Android { get; init; } = "";
+    public int Hotfix { get; init; }
+    public override string ToString() => $"{Windows} / {Android} / hf{Hotfix}";
+}
+
 internal sealed class BemPackage
 {
     public string Id { get; init; } = "";
     public string Name { get; init; } = "";
     public string Author { get; init; } = "";
     public string Version { get; init; } = "";
+    // Provenance copied from the catalog batch this package was built from.
+    public string Revision { get; init; } = "";
+    // Null when the package predates section 15 or declares nothing at all.
+    public BemGameBaseline? GameBaseline { get; init; }
     public string Character { get; init; } = "";
     public string TargetKind { get; init; } = "character";
     public string TargetId => Character;
@@ -302,6 +315,28 @@ internal sealed class BemPackageService
         return (kind, owner, keys);
     }
 
+    /// <summary>
+    /// Section 15 baseline. A malformed or partial field reads as absent: the
+    /// runtime ignores the field, so the GUI must never refuse a package over it.
+    /// </summary>
+    private static BemGameBaseline? ReadGameBaseline(JsonElement manifest)
+    {
+        if (!manifest.TryGetProperty("game_baseline", out var baseline) || baseline.ValueKind != JsonValueKind.Object)
+            return null;
+        string windows = baseline.TryGetProperty("windows-x64", out var w) && w.ValueKind == JsonValueKind.String ? w.GetString() ?? "" : "";
+        string android = baseline.TryGetProperty("android-arm64", out var a) && a.ValueKind == JsonValueKind.String ? a.GetString() ?? "" : "";
+        int hotfix = -1;
+        if (baseline.TryGetProperty("hotfix", out var h))
+            hotfix = h.ValueKind switch
+            {
+                JsonValueKind.Number when h.TryGetInt32(out int value) => value,
+                JsonValueKind.String when int.TryParse(h.GetString(), out int value) => value,
+                _ => -1
+            };
+        if (windows.Length == 0 || android.Length == 0 || hotfix < 0) return null;
+        return new BemGameBaseline { Windows = windows, Android = android, Hotfix = hotfix };
+    }
+
     public static BemPackage ReadMetadata(string path, bool skipValidation = false)
     {
         using var stream = System.IO.File.OpenRead(path);
@@ -321,7 +356,10 @@ internal sealed class BemPackageService
         var m = document.RootElement;
         if (m.GetProperty("schema").GetInt32() != 1 || (!skipValidation && m.GetProperty("target").GetProperty("platform").GetString() != "windows-x64"))
             throw new InvalidDataException(BemText.Get("不支持的 BEM schema 或目标平台。"));
-        var target = ReadTarget(m.GetProperty("target"));
+        var targetNode = m.GetProperty("target");
+        var target = ReadTarget(targetNode);
+        string revision = targetNode.TryGetProperty("revision", out var revisionNode) &&
+            revisionNode.ValueKind == JsonValueKind.String ? revisionNode.GetString() ?? "" : "";
         var appearances = minor == 0 ? m.GetProperty("appearances").EnumerateArray().Select(a => new BemAppearance
         {
             Id = StableId(a, "id"), Name = a.GetProperty("name").GetString() ?? "",
@@ -387,6 +425,7 @@ internal sealed class BemPackageService
         {
             Id = StableId(m, "package_id"), Name = m.GetProperty("name").GetString() ?? "",
             Author = m.GetProperty("author").GetString() ?? "", Version = m.GetProperty("version").GetString() ?? "",
+            Revision = revision, GameBaseline = ReadGameBaseline(m),
             Character = target.Id, TargetKind = target.Kind, FormatMinor = minor, ResourceKeys = target.Resources, File = path, Size = stream.Length,
             Appearances = appearances, DefaultAppearance = def, SelectedAppearance = def,
             IsComposable = minor >= 1, OptionGroups = groups, Components = BemOptionBindings.Components(m), Parameters = parameters, Drivers = drivers,
@@ -492,6 +531,73 @@ internal sealed class BemPackageService
             throw;
         }
         return moves.Count;
+    }
+
+    /// <summary>One package that can be backfilled, with the batch its revision matched.</summary>
+    public sealed record BemBaselinePlanItem(BemPackage Package, BemBaselineBatch Batch);
+
+    /// <summary>What a backfill pass would do, computed without touching any file.</summary>
+    public sealed record BemBaselinePlan(IReadOnlyList<BemBaselinePlanItem> Pending,
+        IReadOnlyList<BemPackage> Recorded, IReadOnlyList<BemPackage> Unknown);
+
+    public sealed record BemBaselineBackfillResult(int Written, int Skipped, int Unmatched, int Failed);
+
+    /// <summary>
+    /// Section 15 backfill: only a package whose own `target.revision` names a
+    /// declared batch is offered. A revision the table does not know stays
+    /// unknown on purpose — the value is a lookup key, so a guess would silently
+    /// select the wrong repair later.
+    /// </summary>
+    public BemBaselinePlan PlanBaselineBackfill()
+    {
+        var pending = new List<BemBaselinePlanItem>();
+        var recorded = new List<BemPackage>();
+        var unknown = new List<BemPackage>();
+        foreach (var package in Packages)
+        {
+            if (package.GameBaseline is not null) { recorded.Add(package); continue; }
+            var batch = BemBaselineTable.Match(package.Revision);
+            if (batch is null) unknown.Add(package);
+            else pending.Add(new BemBaselinePlanItem(package, batch));
+        }
+        return new BemBaselinePlan(pending, recorded, unknown);
+    }
+
+    public async Task<BemBaselineBackfillResult> BackfillGameBaselinesAsync(string installRoot, CancellationToken token = default)
+    {
+        var plan = PlanBaselineBackfill();
+        if (plan.Pending.Count == 0) return new BemBaselineBackfillResult(0, plan.Recorded.Count, plan.Unknown.Count, 0);
+        RequireGameClosed();
+        string map = Path.Combine(Path.GetTempPath(), "bem-baseline-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            var batches = BemBaselineTable.All.Select(batch => new Dictionary<string, object?>
+            {
+                ["revision"] = batch.Revision,
+                ["windows-x64"] = batch.Windows,
+                ["android-arm64"] = batch.Android,
+                ["hotfix"] = batch.Hotfix
+            }).ToList();
+            File.WriteAllText(map, JsonSerializer.Serialize(new Dictionary<string, object?>
+            {
+                ["schema"] = 1, ["kind"] = "bem-game-baseline-map", ["batches"] = batches
+            }));
+            // One converter call covers the whole folder, and the batch table travels
+            // with it so the outcome never depends on a map shipped beside the tool.
+            string report = await BemToolService.RunAsync(installRoot, ["set-baseline", PackageDirectory, "--map", map], token);
+            using var document = JsonDocument.Parse(report);
+            var backfill = document.RootElement.TryGetProperty("backfill", out var node) ? node : default;
+            int Count(string name) => backfill.ValueKind == JsonValueKind.Object &&
+                backfill.TryGetProperty(name, out var value) && value.TryGetInt32(out int number) ? number : 0;
+            var result = new BemBaselineBackfillResult(Count("written"), Count("skipped"), Count("unmatched"), Count("failed"));
+            Load();
+            await SaveAsync();
+            return result;
+        }
+        finally
+        {
+            if (File.Exists(map)) File.Delete(map);
+        }
     }
 
     public void UseInstallRoot(string? installRoot)

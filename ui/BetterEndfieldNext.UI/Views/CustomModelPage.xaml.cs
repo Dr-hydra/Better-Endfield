@@ -76,6 +76,7 @@ public sealed partial class CustomModelPage : UserControl
         DownloadModelsButton.Content = BemText.Get("前往下载");
         CharacterFilter.Header = BemText.Get("按角色或武器筛选");
         DisableAllButton.Content = BemText.Get("关闭全部模型");
+        BackfillBaselineButton.Content = BemText.Get("补全版本信息");
         bool chinese = LocalizationService.Instance.IsChinese;
         ModelOverlayToggle.Header = chinese ? "模型悬浮窗" : "Model overlay";
         ModelOverlayVisibleToggle.Header = chinese ? "进入游戏时显示" : "Show at game start";
@@ -211,7 +212,11 @@ public sealed partial class CustomModelPage : UserControl
             card.Visibility = _selectedCharacter.Length == 0 || Equals(card.Tag, _selectedCharacter) ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private void UpdateDisableAllButton() => DisableAllButton.IsEnabled = !_importing && !_disablingAll && _service.Packages.Any(p => p.Enabled);
+    private void UpdateDisableAllButton()
+    {
+        DisableAllButton.IsEnabled = !_importing && !_disablingAll && _service.Packages.Any(p => p.Enabled);
+        UpdateBackfillButton();
+    }
 
     private async void DisableAll_Click(object sender, RoutedEventArgs e)
     {
@@ -227,6 +232,87 @@ public sealed partial class CustomModelPage : UserControl
         catch (Exception ex) { Reload(); Message(() => BemText.Get("保存失败"), () => ex.Message, InfoBarSeverity.Error); }
         finally { _disablingAll = false; UpdateDisableAllButton(); }
     }
+
+    private bool _backfilling;
+    private async void BackfillBaseline_Click(object sender, RoutedEventArgs e)
+    {
+        if (_backfilling || _importing) return;
+        var plan = _service.PlanBaselineBackfill();
+        if (plan.Pending.Count == 0)
+        {
+            Message(() => BemText.Get("补全版本信息"),
+                () => plan.Unknown.Count == 0 ? BemText.Get("所有模型包都已记录版本信息。")
+                    : BemText.Format("没有可补全的包；{0} 个包的来源版本无法识别。", plan.Unknown.Count),
+                InfoBarSeverity.Informational);
+            return;
+        }
+        // The value is only a label, and the preview is the only place it shows
+        // before it is written, so the user can see exactly what goes into each file.
+        var body = new StackPanel { Spacing = 8 };
+        body.Children.Add(new TextBlock
+        {
+            Text = BemText.Format("将为 {0} 个模型包补记创建时的游戏版本。不会修改模型内容。", plan.Pending.Count),
+            TextWrapping = TextWrapping.Wrap
+        });
+        foreach (var item in plan.Pending.Take(20))
+            body.Children.Add(new TextBlock
+            {
+                Text = $"{item.Package.Name} · {item.Batch.Windows} / {item.Batch.Android} / hf{item.Batch.Hotfix}",
+                Opacity = 0.7, TextWrapping = TextWrapping.Wrap
+            });
+        if (plan.Pending.Count > 20)
+            body.Children.Add(new TextBlock
+            {
+                Text = BemText.Format("…以及其余 {0} 个包。", plan.Pending.Count - 20),
+                Opacity = 0.7, TextWrapping = TextWrapping.Wrap
+            });
+        if (plan.Unknown.Count > 0)
+            body.Children.Add(new TextBlock
+            {
+                Text = BemText.Format("{0} 个包的来源版本无法识别，将跳过。", plan.Unknown.Count),
+                TextWrapping = TextWrapping.Wrap, Opacity = 0.7
+            });
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot, Title = BemText.Get("补全版本信息"),
+            PrimaryButtonText = BemText.Get("补全"), CloseButtonText = BemText.Get("取消"),
+            Content = new ScrollViewer { Content = body, MaxHeight = 400, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+        _backfilling = true;
+        UpdateBackfillButton();
+        try
+        {
+            var result = await _service.BackfillGameBaselinesAsync(InstallRoot);
+            Render();
+            string detail = BemText.Format("已补全 {0} 个包。", result.Written);
+            if (result.Unmatched > 0) detail += BemText.Format(" {0} 个包的来源版本无法识别，已跳过。", result.Unmatched);
+            if (result.Failed > 0) detail += BemText.Format(" {0} 个包写入失败。", result.Failed);
+            Message(() => BemText.Get("补全版本信息"), () => detail,
+                result.Failed > 0 ? InfoBarSeverity.Warning : InfoBarSeverity.Success);
+        }
+        catch (FileNotFoundException)
+        {
+            Message(() => BemText.Get("补全版本信息"), () => BemText.Get("缺少 BEM 转换工具，无法补全版本信息。"),
+                InfoBarSeverity.Warning);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Message(() => BemText.Get("补全版本信息"), () => ex.Message, InfoBarSeverity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Message(() => BemText.Get("补全版本信息"), () => ex.Message, InfoBarSeverity.Error);
+        }
+        finally
+        {
+            _backfilling = false;
+            UpdateBackfillButton();
+        }
+    }
+
+    private void UpdateBackfillButton() =>
+        BackfillBaselineButton.IsEnabled = !_importing && !_backfilling && _service.Packages.Count > 0;
 
     private void Render()
     {
@@ -260,7 +346,12 @@ public sealed partial class CustomModelPage : UserControl
                 BemLocalizedUI.Set(packageTitle, TextBlock.TextProperty,
                     () => TargetLabel(p) + " · " + p.Name);
                 labels.Children.Add(packageTitle);
-                labels.Children.Add(new TextBlock { Text = $"{p.Author}  /  {p.Version}  /  {p.Size / 1_000_000.0:F1} MB", Opacity = 0.7 });
+                // The baseline shown here is what the file actually carries; an inferred
+                // value is only ever offered in the backfill preview.
+                string baselineLabel = p.GameBaseline is null
+                    ? BemText.Get("基线未记录")
+                    : BemText.Format("基线 {0} · hf{1}", p.GameBaseline.Windows, p.GameBaseline.Hotfix);
+                labels.Children.Add(new TextBlock { Text = $"{p.Author}  /  {p.Version}  /  {p.Size / 1_000_000.0:F1} MB  /  {baselineLabel}", Opacity = 0.7 });
                 header.Children.Add(labels); stack.Children.Add(header);
                 var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
                 var enabled = new ToggleSwitch { Header = BemText.Get("启用此包"), IsOn = p.Enabled };
@@ -514,6 +605,7 @@ public sealed partial class CustomModelPage : UserControl
                 PackageCards.Children.Add(new Border { Tag = p.TargetKey, Child = stack, Padding = new Thickness(16), CornerRadius = new CornerRadius(8), Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"] });
             }
             ApplyCharacterFilter();
+            UpdateBackfillButton();
         }
         finally { _rendering = false; }
     }

@@ -51,6 +51,7 @@ scripts/*
 !scripts/ScanCharacterAssets.py
 !scripts/UpdateResourceManifests.ps1
 !scripts/UpdateCombatAvatars.py
+!scripts/GenerateBemBaselineTable.py
 
 # Native build outputs.
 native/build/
