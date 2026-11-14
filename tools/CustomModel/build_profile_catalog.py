@@ -8,8 +8,11 @@ import json
 from pathlib import Path
 from prepare_native_profile import paired_resource
 
+import bem_v1 as bem
 
-def build(database, profile, name, profile_id, revision):
+
+def build(database, profile, name, profile_id, revision, game):
+    bem.validate_game_baseline({'game_baseline': game})
     character=profile['character_id']; world=character+'_postmodel'; ui=character+'_uimodel'
     components={}
     for cid, source in profile['components'].items():
@@ -38,7 +41,7 @@ def build(database, profile, name, profile_id, revision):
                 validation='Historical raw-stream replacement confirmed; native full names from current offline graph',
                 world_ui='same-mesh-bones-materials'))
     return dict(schema=1,kind='bem-character-catalog',character_id=character,name=name,platform='windows-x64',
-        profile_id=profile_id,revision=revision,verified=True,world_resource=world,ui_resource=ui,
+        profile_id=profile_id,revision=revision,game=dict(game),verified=True,world_resource=world,ui_resource=ui,
         source_snapshot={'manifest_version':database['source']['snapshot']['manifest_version']},
         components=components,entries={},textures={},preserved_globals={},
         mapping_status='source-resource-identities-pending',
@@ -46,11 +49,38 @@ def build(database, profile, name, profile_id, revision):
         note='Native role data only. No per-Mod material approximation or draw correction is imported.')
 
 
+def _saved_baseline(output):
+    """Reuse the baseline already stored in the catalog being updated.
+
+    The catalog baseline records the version fact at collection time, so updating a
+    catalog without supplying a new value must keep the stored one instead of
+    re-deriving it from the current environment.
+    """
+    if not output.exists():
+        return None
+    try:
+        saved = json.loads(output.read_text(encoding='utf-8-sig')).get('game')
+    except (OSError, ValueError):
+        return None
+    if saved is None:
+        return None
+    bem.validate_game_baseline({'game_baseline': saved})
+    return saved
+
+
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for flag in ('database','profile','output'): p.add_argument('--'+flag,type=Path,required=True)
     for flag in ('name','profile-id','revision'): p.add_argument('--'+flag,required=True)
+    p.add_argument('--game-baseline',
+        help='Game versions this catalog was collected from, plus the hotfix counter: '
+             'windows-x64=1.5.3,android-arm64=1.5.3,hotfix=0. '
+             'Required for a new catalog; an update without it keeps the stored value.')
     a=p.parse_args()
-    result=build(json.loads(a.database.read_text(encoding='utf-8-sig')),json.loads(a.profile.read_text(encoding='utf-8-sig')),a.name,a.profile_id,a.revision)
+    game=bem.parse_game_baseline(a.game_baseline) if a.game_baseline else _saved_baseline(a.output)
+    if game is None:
+        raise SystemExit('catalog game baseline is required; pass '
+                         '--game-baseline windows-x64=1.5.3,android-arm64=1.5.3,hotfix=0')
+    result=build(json.loads(a.database.read_text(encoding='utf-8-sig')),json.loads(a.profile.read_text(encoding='utf-8-sig')),a.name,a.profile_id,a.revision,game)
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     print(f'Native catalog: {len(result["components"])} components; source resource identities pending')

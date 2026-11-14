@@ -140,6 +140,35 @@ Usually the tool chooses the version automatically. Decide which appearance stru
 | Static weapon MeshRenderer + MeshFilter | 1.4 `renderer_kind: static`, without dummy bones |
 | Platform-specific LODs and donors in one package | 1.4 resource `platforms` and `lod` |
 
+## Game version baseline
+
+Every package records the game version it was created against: one version for Windows, one for Android, plus a `hotfix` counter shared by both platforms (it starts at 0, where 0 means the version shipped without a hotfix). It is not the BEM format version (that is chosen automatically by `pack` from the content) and it does not affect loading or rendering.
+
+You normally do not need to touch it: `pack` reads all three values from the character data (the `game` object in the matching `catalog/` entry) and writes them into the package.
+
+The only case you will hit is a packing error:
+
+```text
+game_baseline is required for new packages;
+pass --game-baseline windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0
+```
+
+That means the character data you used has no registered version. Supply it yourself as shown:
+
+```text
+--game-baseline windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0
+```
+
+Three rules:
+
+- **All three values are required.** Missing any of them is rejected. The marker is unrelated to which platform the package targets; it anchors the game version itself.
+- **`hotfix` starts at 0**: write `0` if the data came from the release as shipped, `1` after the first hotfix, and so on. It is not optional detail — without it "shipped" and "patched" cannot be told apart.
+- **Write the version you actually exported the data from.** A wrong value will not fail packing, but later adaptation for older versions matches on this value, so a wrong baseline means no adaptation.
+
+Do not hand-edit a packed `.bem` to add this field; change the project and `pack` again.
+
+The two version values have no specified format; `major.minor.patch` (for example `1.6.3`) is recommended. They are lookup labels and are never compared by magnitude. `hotfix` is a numeric counter and must be able to increment; `hf2` and similar text is rejected.
+
 ## Weapon and ultimate projects (1.4)
 
 | Entry point | 1.4 coverage |
@@ -271,8 +300,8 @@ BetterEndfieldNext.BemConverter.exe bundle first.bem second.bem -o collection.zi
 
 ```text
 BetterEndfieldNext.BemConverter.exe inspect  <directory|zip|rar|7z|bem> [--ini path] [--report r.json]
-BetterEndfieldNext.BemConverter.exe convert  <source> -o out.bem [--recipe recipe.json] [--ini path] [--deformations m.json] [--report r.json]
-BetterEndfieldNext.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--report r.json]
+BetterEndfieldNext.BemConverter.exe convert  <source> -o out.bem [--recipe recipe.json] [--ini path] [--deformations m.json] [--game-baseline win=ver,android=ver,hotfix=n] [--report r.json]
+BetterEndfieldNext.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--game-baseline win=ver,android=ver,hotfix=n] [--report r.json]
 BetterEndfieldNext.BemConverter.exe validate pkg.bem [--report r.json]
 BetterEndfieldNext.BemConverter.exe unpack   pkg.bem|collection.zip -o new-directory [--report r.json]
 BetterEndfieldNext.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
@@ -283,6 +312,8 @@ BetterEndfieldNext.BemConverter.exe --version
 ```
 
 Running `convert` without `--recipe` creates a new random package ID each time. Use an export task when a stable ID is required.
+
+`--game-baseline` takes full platform names plus the hotfix counter: `windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0`. It defaults to the character data's `game` entry; see "Game version baseline" above.
 
 ## Frequently asked questions
 

@@ -100,6 +100,31 @@ def _components(catalog):
     return [(int(k), v) for k, v in sorted(catalog.get("components", {}).items(), key=lambda x: int(x[0]))]
 
 
+# Section 15: the exported package must carry the game version baseline that the
+# catalog entry declares. Both platform versions plus the `hotfix` counter are
+# required even when the package only targets one platform; the versions are
+# lookup keys, so their format stays free while the counter is numeric.
+_BASELINE_PLATFORMS = ("windows-x64", "android-arm64")
+_BASELINE_REQUIRED = _BASELINE_PLATFORMS + ("hotfix",)
+
+
+def _game_baseline(catalog):
+    baseline = catalog.get("game")
+    hint = ('catalog needs "game": {"windows-x64": "1.6.3", "android-arm64": "1.6.4", "hotfix": 0}')
+    if not isinstance(baseline, dict) or set(baseline) != set(_BASELINE_REQUIRED):
+        _fail("Catalog has no complete game baseline; " + hint)
+    for key in _BASELINE_PLATFORMS:
+        value = baseline[key]
+        if not isinstance(value, str) or not value or len(value.encode("utf-8")) > 64 or \
+                not all(0x20 <= ord(ch) <= 0x7e for ch in value):
+            _fail("Invalid game baseline version in catalog; " + hint)
+    hotfix = baseline["hotfix"]
+    if isinstance(hotfix, bool) or not (isinstance(hotfix, int) and hotfix >= 0 or
+                                       isinstance(hotfix, str) and hotfix.isdigit()):
+        _fail("Game baseline hotfix must be a non-negative integer starting at 0; " + hint)
+    return dict(baseline)
+
+
 def _attr_layout(component):
     strides = component.get("strides", [])
     attributes = component.get("attributes", [])
@@ -240,6 +265,7 @@ def export_scene(scene):
     manifest = dict(schema=1, package_id=scene.bem_package_id or "creator." + uuid.uuid4().hex,
                     name=scene.bem_package_name or project_root.name, author=scene.bem_package_author or "未填写",
                     version=scene.bem_package_version or "1.0.0",
+                    game_baseline=_game_baseline(catalog),
                     required_capabilities=["native-materials", "palette-u8", "indices-u32", "fixed-appearances"],
                     target=dict(character_id=character, platform="windows-x64", profile_id=catalog.get("profile_id", ""),
                                 revision=catalog.get("revision", ""), snapshot=catalog.get("source_snapshot", {}).get("manifest_version", ""),

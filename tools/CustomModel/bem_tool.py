@@ -11,7 +11,7 @@ from pathlib import Path
 import bem_v1 as bem
 import bem_projects
 
-TOOL_VERSION = "1.6.7"
+TOOL_VERSION = "1.6.8"
 FORMAT_VERSIONS = {0: '1.0', 1: '1.1', 2: '1.2', 3: '1.3', 4: '1.4', 5: '1.5'}
 from convert_efmi_poc import Source
 from efmi_source import sections, analyze_source
@@ -153,7 +153,7 @@ def check_geometry(m, payloads, minor=None):
         bem.require(len(textures)<=32 and resident<=bem.LIMIT, 'Appearance exceeds 32 texture bindings / 512 MiB budget')
 
 
-def convert(source, recipe_path, output, package=None, deformations=None):
+def convert(source, recipe_path, output, package=None, deformations=None, game_baseline=None):
     recipe_path=Path(recipe_path); recipe=bem.load_json(recipe_path); root=recipe_path.parent
     bem.require(recipe['schema']==1, 'Unsupported conversion recipe schema')
     def path(v):
@@ -233,6 +233,9 @@ def convert(source, recipe_path, output, package=None, deformations=None):
     from bem_v13 import apply_author_spec
     builder.m, builder.payloads, deformation_report = apply_author_spec(builder.m, builder.payloads, deformations)
     package_overrides(builder.m, package)
+    # Section 15: every appearance shares one target, so the last profile read is
+    # also the catalog entry this package was built from.
+    bem.require_game_baseline(builder.m, game_baseline, profile)
     bem.validate_manifest(builder.m,len(builder.payloads)); check_geometry(builder.m,builder.payloads)
     builder.write(output)
     return dict(package=builder.m,evidence=evidence,deformations=deformation_report,size=Path(output).stat().st_size,
@@ -240,7 +243,7 @@ def convert(source, recipe_path, output, package=None, deformations=None):
                 conversion_ready=True,render_verified=False,issues=[])
 
 
-def convert_automatic(source, output, ini=None, package=None, deformations=None):
+def convert_automatic(source, output, ini=None, package=None, deformations=None, game_baseline=None):
     from efmi_shapes import require_shape_binding
     require_shape_binding(source, deformations)
     if deformations:
@@ -255,9 +258,83 @@ def convert_automatic(source, output, ini=None, package=None, deformations=None)
     prepare_builder(builder); package_overrides(builder.m, package)
     from bem_v13 import apply_author_spec
     builder.m, builder.payloads, deformation_report = apply_author_spec(builder.m, builder.payloads, deformations)
+    # Automatic conversion keeps the matched catalog entry on the builder, so the
+    # baseline still defaults to the source data when the caller omits it.
+    bem.require_game_baseline(builder.m, game_baseline, getattr(builder, 'catalog', None))
     builder.write(output)
     return dict(package=builder.m,matching=inspection['matching'],issues=inspection['issues'],deformations=deformation_report,
         size=Path(output).stat().st_size,format_version=FORMAT_VERSIONS[bem.package_minor(output)],conversion_ready=True,render_verified=False)
+
+
+def baseline_map_default():
+    """The publisher-side batch table that ships beside the repository config."""
+    candidate = Path(__file__).resolve().parents[2] / 'config' / 'game-baseline-map.json'
+    return candidate if candidate.is_file() else None
+
+
+def load_baseline_map(path):
+    """revision -> game_baseline. Entries that do not validate are dropped, not guessed."""
+    data = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    table = {}
+    for batch in data.get('batches', []):
+        revision = batch.get('revision')
+        if not isinstance(revision, str) or not revision:
+            continue
+        value = {key: batch[key] for key in ('windows-x64', 'android-arm64', 'hotfix') if key in batch}
+        try:
+            bem.validate_game_baseline({'game_baseline': value})
+        except ValueError:
+            continue
+        table[revision] = value
+    return table
+
+
+def backfill_baselines(source, baseline=None, map_path=None, dry_run=False, output=None):
+    """Add `game_baseline` to packages that predate the field, without repacking.
+
+    The value comes either from an explicit baseline or from the package's own
+    `target.revision` matched against the declared batch table. A revision that
+    the table does not name is reported as unmatched and never guessed: the
+    field is a lookup key, so a wrong value would silently select a wrong repair.
+    """
+    source = Path(source)
+    files = [source] if source.is_file() else sorted(path for path in source.rglob('*.bem'))
+    table = None
+    if baseline is None:
+        known = Path(map_path) if map_path else baseline_map_default()
+        bem.require(known is not None and known.is_file(),
+                    'SET-BASELINE: 没有批次映射表，请提供 --map 或 --game-baseline')
+        table = load_baseline_map(known)
+    destination = Path(output) if output else None
+    bem.require(destination is None or not destination.is_file(), 'SET-BASELINE: 输出应是目录')
+    records = []
+    counts = dict(written=0, pending=0, skipped=0, unmatched=0, failed=0)
+    for path in files:
+        record = dict(file=str(path), action='', revision='', baseline=None, message='')
+        try:
+            manifest, _ = bem.read_package(path, decode=False)
+            revision = str((manifest.get('target') or {}).get('revision', ''))
+            record['revision'] = revision
+            if 'game_baseline' in manifest:
+                record.update(action='skipped', baseline=manifest['game_baseline'], message='已记录')
+            else:
+                chosen = baseline if baseline is not None else (table or {}).get(revision)
+                if chosen is None:
+                    record.update(action='unmatched', message='revision 不在批次表')
+                elif dry_run:
+                    record.update(action='pending', baseline=chosen)
+                else:
+                    target = None
+                    if destination is not None:
+                        destination.mkdir(parents=True, exist_ok=True)
+                        target = destination / path.name
+                    written = bem.set_game_baseline(path, chosen, output=target)
+                    record.update(action='written' if written else 'skipped', baseline=chosen)
+        except Exception as error:
+            record.update(action='failed', message=str(error))
+        counts[record['action']] += 1
+        records.append(record)
+    return dict(files=records, dry_run=dry_run, **counts)
 
 
 def main(argv=None):
@@ -271,7 +348,7 @@ def main(argv=None):
         raw_argv = ['init-workspace', *raw_argv[2:]]
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=['inspect','convert','validate','pack','pack-zip','unpack','bundle','new-project','build',
-                                           'init-workspace','workspace-init','target-profile'])
+                                           'init-workspace','workspace-init','target-profile','set-baseline'])
     parser.add_argument('--version', action='version', version='BEM Tools '+TOOL_VERSION+' / BEM 1.0+1.1+1.2+1.3+1.4+1.5')
     parser.add_argument('source',type=Path)
     parser.add_argument('additional',type=Path,nargs='*',help='Additional BEM files for bundle only')
@@ -294,6 +371,14 @@ def main(argv=None):
     parser.add_argument('--author')
     parser.add_argument('--package-version')
     parser.add_argument('--preview', type=Path, help='Optional preview.png embedded in a pack-zip package')
+    parser.add_argument('--game-baseline',
+                        help='Game version baseline for new packages, e.g. '
+                             'windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0. '
+                             'Defaults to the catalog `game` entry; all three values are required.')
+    parser.add_argument('--map', type=Path,
+                        help='Revision batch table for set-baseline; defaults to config/game-baseline-map.json')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='set-baseline reports what it would write without touching any file')
     args=parser.parse_args(raw_argv)
     result=dict(tool_version=TOOL_VERSION,format_version='1.0/1.1/1.2/1.3/1.4/1.5',command=args.command,source=str(args.source),success=False,conversion_ready=False,render_verified=False,issues=[])
     report_path = args.report
@@ -351,9 +436,14 @@ def main(argv=None):
             result.update(package=m,size=args.source.stat().st_size,format_version=FORMAT_VERSIONS[minor])
             if 'option_groups' in m:
                 result['selection_space']=selection_space
+        elif args.command == 'set-baseline':
+            result['backfill'] = backfill_baselines(
+                args.source,
+                bem.parse_game_baseline(args.game_baseline) if args.game_baseline else None,
+                args.map, args.dry_run, args.output)
         elif args.command in ('pack','unpack','bundle','pack-zip'):
             bem.require(args.output, 'OUTPUT: 缺少输出路径')
-            if args.command=='pack': result.update(bem_projects.pack_project(args.source,args.output,deformations=args.deformations))
+            if args.command=='pack': result.update(bem_projects.pack_project(args.source,args.output,deformations=args.deformations,game_baseline=args.game_baseline))
             elif args.command=='unpack': result.update(bem_projects.unpack(args.source,args.output))
             elif args.command=='pack-zip':
                 result.update(bem_projects.pack_zip(args.source,args.output,preview=args.preview))
@@ -361,8 +451,8 @@ def main(argv=None):
         else:
             bem.require(args.output,'OUTPUT: 请选择输出文件')
             bem.require(args.source.resolve()!=args.output.resolve(),'OUTPUT: 不能覆盖源文件')
-            result.update(convert(args.source,args.recipe,args.output,deformations=args.deformations) if args.recipe else
-                          convert_automatic(args.source,args.output,args.ini,deformations=args.deformations))
+            result.update(convert(args.source,args.recipe,args.output,deformations=args.deformations,game_baseline=args.game_baseline) if args.recipe else
+                          convert_automatic(args.source,args.output,args.ini,deformations=args.deformations,game_baseline=args.game_baseline))
         if args.resource or args.platform:
             import bem_v14
             manifest = result.get('package')

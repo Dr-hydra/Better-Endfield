@@ -5,6 +5,7 @@
 #include "../../shared/third_party/zstd/lib/zstd.h"
 #include "../../shared/third_party/miniz/miniz.h" 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -12,6 +13,7 @@
 #include <set>
 #include <stdexcept>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <charconv>
 
@@ -46,6 +48,37 @@ std::string Id(const J& j) {
     auto s=S(j,96); Check(std::all_of(s.begin(),s.end(),[](unsigned char c){return
         (c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'||c=='-'||c=='.';}),"Invalid stable ID");
     Check(s[0]!='.' && s[0]!='-' && s[0]!='_',"Invalid stable ID start"); return s;
+}
+// Section 15 game baseline. Absence is normal for older packages, and malformed
+// input is ignored rather than rejected: the field is a label for later repairs
+// and must never become a load precondition.
+void ReadBaseline(const J& m,BemPackageInfo& info) {
+    auto it=m.find("game_baseline");
+    if(it==m.end() || !it->is_object()) return;
+    const auto& b=*it;
+    auto text=[&](const char* key) {
+        auto entry=b.find(key);
+        if(entry==b.end() || !entry->is_string()) return std::string{};
+        auto value=entry->get<std::string>();
+        if(value.empty() || value.size()>64 || value.find('\0')!=std::string::npos ||
+            !std::all_of(value.begin(),value.end(),[](unsigned char c){return c>=0x20 && c<=0x7e;})) return std::string{};
+        return value;
+    };
+    auto windows=text("windows-x64"), android=text("android-arm64");
+    int hotfix=-1;
+    auto h=b.find("hotfix");
+    if(h!=b.end()) {
+        if(h->is_number_integer()) {
+            auto value=h->get<long long>();
+            if(value>=0 && value<=static_cast<long long>(std::numeric_limits<int>::max())) hotfix=static_cast<int>(value);
+        } else if(h->is_string()) {
+            auto raw=h->get<std::string>();
+            if(!raw.empty() && raw.size()<=9 && std::all_of(raw.begin(),raw.end(),[](char c){return c>='0'&&c<='9';}))
+                hotfix=std::stoi(raw);
+        }
+    }
+    if(windows.empty() || android.empty() || hotfix<0) return;
+    info.baseline_windows=windows; info.baseline_android=android; info.baseline_hotfix=hotfix;
 }
 BemRootOffset ReadRootOffset(const J& manifest, bool skip_validation = false) {
     BemRootOffset result;
@@ -425,6 +458,7 @@ struct Container {
         Check(U(m.at("schema"))==1,"Unknown manifest schema");
         info.package_id=Id(m.at("package_id")); info.name=S(m.at("name")); info.author=S(m.at("author"));
         info.version=S(m.at("version")); info.minor=minor;
+        ReadBaseline(m,info);
         Check(m.contains("option_groups")==bool(minor),"BEM version/manifest mismatch");
         if(minor) Check(!m.contains("appearances") && !m.contains("default_appearance_id"),
             "BEM 1.1 must not enumerate fixed appearances");
@@ -443,7 +477,7 @@ struct Container {
             slotCapability|=cap=="texture-slots";aliasCapability|=cap=="resource-bone-aliases";}
         Validate(minor?composable&&!fixed:!composable,"BEM capability/version mismatch");
         const auto& t=m.at("target"); Validate(S(t.at("platform"))=="windows-x64","Unsupported target platform");
-        Id(t.at("profile_id")); Id(t.at("revision"));
+        Id(t.at("profile_id")); info.revision=Id(t.at("revision"));
         // The target structure, not the header minor version, picks the parsing
         // route: 1.5 extends 1.3, and the 1.4 explicit resource targets remain an
         // optional branch that only applies when the target actually carries them.
@@ -1704,6 +1738,74 @@ bool ParseBem(std::span<const uint8_t> bytes,BemPocData& out,std::string& error,
         c.Open(bytes.size()); BemPocData parsed; c.Decode({},parsed,{},nullptr,resource_id); out=std::move(parsed); return true;
     } catch(const std::exception& e) {error=e.what(); return false;}
 }
+// Inserts one root-level manifest field by editing the manifest bytes in place,
+// so every payload block is copied verbatim. The Android installer uses this to
+// backfill `game_baseline` into packages built before section 15 existed without
+// paying for a texture decode/re-encode cycle.
+bool InsertBemManifestField(const std::filesystem::path& input,const std::filesystem::path& output,
+    std::string_view name,std::string_view value,std::string& error) {
+    try {
+        std::ifstream in(input,std::ios::binary); Check(bool(in),"Cannot open package");
+        Header header{}; in.read(reinterpret_cast<char*>(&header),sizeof(header));
+        Check(in.gcount()==static_cast<std::streamsize>(sizeof(header)),"Truncated BEM header");
+        Check(std::memcmp(header.magic,"BEM\0PKG\0",8)==0 && header.major==1 && header.size==sizeof(Header) && !header.flags,
+            "Unsupported BEM header");
+        Check(header.manifest>0 && header.manifest<=4*MiB,"Invalid BEM manifest size");
+        auto fileSize=std::filesystem::file_size(input);
+        Check(header.file==fileSize,"Invalid BEM file length");
+        std::string manifest(static_cast<size_t>(header.manifest),'\0');
+        in.read(manifest.data(),static_cast<std::streamsize>(manifest.size()));
+        Check(in.gcount()==static_cast<std::streamsize>(manifest.size()),"Truncated BEM manifest");
+        std::vector<Entry> entries(header.count);
+        if(header.count) {
+            in.read(reinterpret_cast<char*>(entries.data()),static_cast<std::streamsize>(entries.size()*sizeof(Entry)));
+            Check(in.gcount()==static_cast<std::streamsize>(entries.size()*sizeof(Entry)),"Truncated payload directory");
+        }
+        uint64_t end=sizeof(Header)+header.manifest+entries.size()*sizeof(Entry);
+        for(const auto& e:entries) {
+            Check(e.codec<=1 && !e.reserved && e.offset==end && e.stored>0,"Invalid payload directory");
+            end+=e.stored;
+        }
+        Check(end==fileSize,"Trailing or missing package bytes");
+        // A repeated backfill must be a no-op rather than a rewrite.
+        if(manifest.find("\""+std::string(name)+"\"")!=std::string::npos) {error="Field already present";return false;}
+        auto open=manifest.find_first_not_of(" \t\r\n");
+        Check(open!=std::string::npos && manifest[open]=='{',"Manifest does not open with an object");
+        auto next=manifest.find_first_not_of(" \t\r\n",open+1);
+        const bool empty=next!=std::string::npos && manifest[next]=='}';
+        std::string fragment; fragment.reserve(name.size()+value.size()+4);
+        fragment+='"'; fragment+=name; fragment+="\":"; fragment+=value;
+        if(!empty) fragment+=',';
+        manifest.insert(open+1,fragment);
+        Check(manifest.size()<=4*MiB,"Manifest too large after insertion");
+        Check(J::parse(manifest).contains(std::string(name)),"Inserted field does not read back");
+        uint64_t offset=sizeof(Header)+manifest.size()+entries.size()*sizeof(Entry);
+        for(auto& e:entries) {e.offset=offset;offset+=e.stored;}
+        Check(offset<=2ull*1024*MiB,"Package exceeds 2 GiB");
+        Header written{}; std::memcpy(written.magic,"BEM\0PKG\0",8);
+        written.major=1; written.minor=header.minor; written.size=sizeof(Header);
+        written.file=offset; written.manifest=manifest.size(); written.count=header.count;
+        std::ofstream out(output,std::ios::binary); Check(bool(out),"Cannot create output package");
+        out.write(reinterpret_cast<const char*>(&written),sizeof(written));
+        out.write(manifest.data(),static_cast<std::streamsize>(manifest.size()));
+        if(!entries.empty())
+            out.write(reinterpret_cast<const char*>(entries.data()),static_cast<std::streamsize>(entries.size()*sizeof(Entry)));
+        std::array<char,65536> buffer{};
+        while(in) {in.read(buffer.data(),static_cast<std::streamsize>(buffer.size()));
+            out.write(buffer.data(),in.gcount());}
+        Check(in.eof(),"Package read failed");
+        out.close(); Check(bool(out),"Output flush failed");
+        // Read the result back through the same validator the runtime uses.
+        BemPackageInfo check; std::string failure;
+        Check(ReadBemPackageInfo(output,check,failure),"Inserted package does not validate: "+failure);
+        return true;
+    } catch(const std::exception& failure) {
+        error=failure.what();
+        std::error_code ignored; std::filesystem::remove(output,ignored);
+        return false;
+    }
+}
+
 bool RewriteBemTextures(const std::filesystem::path& input,const std::filesystem::path& output,
     const TextureTransform& transform,const std::function<void()>& checkpoint,std::string& report,std::string& error) {
     // Caller owns a unique staging directory. Never overwrite a published package.

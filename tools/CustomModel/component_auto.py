@@ -172,7 +172,7 @@ def prepare(src, ini, database=None):
     target = bem.target_from_profile(catalog,catalog['character_id'],catalog['world_resource'],
         catalog['ui_resource'],catalog['profile_id'],catalog['revision'])
     label = PurePosixPath(ini).parent.name or src.path.stem
-    builder = bem.Builder('converted-'+uuid.uuid4().hex,label[:256], '未填写', '1.0',target)
+    builder = bem.Builder('converted-'+uuid.uuid4().hex,label[:256], '未填写', '1.0',target,catalog)
     textures, warnings = texture_table(src,ini,sec,catalog,builder)
     constants = default_constants(sec)
     # Metadata belongs to this INI, not an arbitrary same-named file elsewhere.

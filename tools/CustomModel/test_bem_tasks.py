@@ -137,6 +137,7 @@ class ExportTaskTests(unittest.TestCase):
     def conversion(self, float_skin=False):
         source = self.root / 'source'
         profile = source_fixture(source)
+        profile['game'] = {'windows-x64': '1.6.3', 'android-arm64': '1.6.4', 'hotfix': 0}
         profile['components']['0']['bone_name_aliases'] = [dict(index=0, resource='world', name='bone0_typo')]
         if float_skin:
             for native in profile['components'].values():
@@ -149,6 +150,7 @@ class ExportTaskTests(unittest.TestCase):
             ini.write_text(ini.read_text().replace('[ResourceB]\nstride = 16', '[ResourceB]\nstride = 32'))
         (self.root / 'native.json').write_text(json.dumps(profile), encoding='utf-8')
         recipe = dict(schema=1, package=dict(id='creator.fixed-id', name='测试', author='Test', version='1'),
+            game=dict(zip(('windows-x64', 'android-arm64'), ('1.6.3', '1.6.4'))) | dict(hotfix=0),
             target=dict(character_id='chr_test', world_resource='world', ui_resource='ui', profile_id='test', revision='1'),
             appearances=[dict(id='default', name='默认', source='source', format='hash-lod', profile='native.json', ini='mod.ini')])
         path = self.root / 'conversion.recipe.json'

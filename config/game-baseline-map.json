@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "kind": "bem-game-baseline-map",
+  "note": "把 catalog 与已发布包的 revision 批次映射到 game_baseline。回填依据是批次日期与发布记录，不是包内自证。1.5.3 期间的热更新没有留下可区分的资源快照（35 份 catalog 与 558 个存量包共用同一个 manifest_version），因此统一按 hotfix 0 处理。",
+  "batches": [
+    {
+      "revision": "20260918",
+      "windows-x64": "1.5.3",
+      "android-arm64": "1.5.3",
+      "hotfix": 0,
+      "evidence": "2026-09-18，早于 1.6.3 上线的 2026-10-15。"
+    },
+    {
+      "revision": "20260920-identities1",
+      "windows-x64": "1.5.3",
+      "android-arm64": "1.5.3",
+      "hotfix": 0,
+      "evidence": "catalog 首批提交 2026-09-20；1.5.3 于 2026-09-03 更新，1.6.3 于 2026-10-15 更新（5c1fbc18 发布 4.0.3）。",
+      "note": "1.5.3 内部热更无区分证据，统一按 hotfix 0。"
+    },
+    {
+      "revision": "20260926-bem12-cloth01",
+      "windows-x64": "1.5.3",
+      "android-arm64": "1.5.3",
+      "hotfix": 0,
+      "evidence": "2026-09-26，仍早于 1.6.3。",
+      "note": "1.5.3 内部热更无区分证据，统一按 hotfix 0。"
+    },
+    {
+      "revision": "20261001-purrche-runtime1",
+      "windows-x64": "1.5.3",
+      "android-arm64": "1.5.3",
+      "hotfix": 0,
+      "evidence": "2026-10-01，仍早于 1.6.3；已由 research/custom_model/1.5.3/purrche-catalog 归类为 1.5.3。",
+      "note": "1.5.3 内部热更无区分证据，统一按 hotfix 0。"
+    },
+    {
+      "revision": "20261015-1.6.3-snowshine1",
+      "windows-x64": "1.6.3",
+      "android-arm64": "1.6.4",
+      "hotfix": 0,
+      "evidence": "2026-10-15 切换至 1.6.3（5c1fbc18）；双端版本取自 config/distribution*.local.json。"
+    },
+    {
+      "revision": "20261017-1",
+      "windows-x64": "1.6.3",
+      "android-arm64": "1.6.4",
+      "hotfix": 0,
+      "evidence": "2026-10-17，处在 1.6.3 首发期内、2026-11-05 热更新之前。"
+    },
+    {
+      "revision": "20261017-si-inkmist-v4",
+      "windows-x64": "1.6.3",
+      "android-arm64": "1.6.4",
+      "hotfix": 0,
+      "evidence": "2026-10-17，处在 1.6.3 首发期内、2026-11-05 热更新之前。"
+    },
+    {
+      "revision": "20261018-si-inkmist-v4.1",
+      "windows-x64": "1.6.3",
+      "android-arm64": "1.6.4",
+      "hotfix": 0,
+      "evidence": "2026-10-18，处在 1.6.3 首发期内、2026-11-05 热更新之前。"
+    },
+    {
+      "revision": "20261105-1.6.3-identities2",
+      "windows-x64": "1.6.3",
+      "android-arm64": "1.6.4",
+      "hotfix": 1,
+      "evidence": "2026-11-05 客户端热更新后重扫（554e7851），资源快照换为 20261105-distribution，游戏版本号未变，故记为 hotfix 1。"
+    },
+    {
+      "revision": "20261105-1.6.3-sweep1",
+      "windows-x64": "1.6.3",
+      "android-arm64": "1.6.4",
+      "hotfix": 1,
+      "evidence": "同 20261105-1.6.3-identities2，属 2026-11-05 热更新后的同一批。"
+    }
+  ]
+}

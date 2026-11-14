@@ -184,7 +184,8 @@ def load_task(path):
     return task
 
 
-def new_project(source, project_path, mode='convert', recipe=None, package=None, export_output=None, deformations=None):
+def new_project(source, project_path, mode='convert', recipe=None, package=None, export_output=None,
+                deformations=None, game_baseline=None):
     source, project_path = Path(source).resolve(), Path(project_path).resolve()
     bem.require(mode in ('convert', 'pack') and source.exists(), 'Invalid project source/mode')
     bem.require(project_path != source, 'Project cannot overwrite source')
@@ -209,6 +210,11 @@ def new_project(source, project_path, mode='convert', recipe=None, package=None,
                 output=relative(root, Path(export_output).resolve()) if export_output else 'dist/' + source.stem + '.bem',
                 report='reports/build.json', package=metadata)
     if recipe: data['recipe'] = relative(root, recipe)
+    # Section 15: the project stores the baseline so repeated builds do not depend
+    # on a command-line argument. An explicit value wins over the recipe's.
+    baseline = game_baseline or (recipe_data.get('game') if recipe else None)
+    if baseline is not None:
+        data['game_baseline'] = bem.parse_game_baseline(baseline)
     if deformations:
         from bem_v13 import author_input_paths
         deformations = Path(deformations).resolve()
@@ -216,7 +222,6 @@ def new_project(source, project_path, mode='convert', recipe=None, package=None,
         data['deformations'] = relative(root, deformations)
     bem.atomic_write(project_path, json.dumps(data, ensure_ascii=False, indent=2).encode('utf-8'))
     return dict(project=data, output=str(project_path), conversion_ready=False)
-
 
 def init_workspace(workspace, source, mode='convert', recipe=None, package=None,
                    deformations=None, export_output=None):
@@ -315,9 +320,12 @@ def init_workspace(workspace, source, mode='convert', recipe=None, package=None,
 def build_task(task):
     if task['mode'] == 'pack':
         from bem_projects import pack_project
-        result = pack_project(task['source'], task['output'], task['package'], task['deformations'])
+        result = pack_project(task['source'], task['output'], task['package'], task['deformations'],
+                              game_baseline=task.get('game_baseline'))
     else:
         from bem_tool import convert, convert_automatic
-        result = (convert(task['source'], task['recipe'], task['output'], task['package'], task['deformations']) if task['recipe'] else
-                  convert_automatic(task['source'], task['output'], package=task['package'], deformations=task['deformations']))
+        result = (convert(task['source'], task['recipe'], task['output'], task['package'], task['deformations'],
+                          game_baseline=task.get('game_baseline')) if task['recipe'] else
+                  convert_automatic(task['source'], task['output'], package=task['package'], deformations=task['deformations'],
+                                    game_baseline=task.get('game_baseline')))
     return dict(result, output=str(task['output']), project_file=str(task['project_file']))

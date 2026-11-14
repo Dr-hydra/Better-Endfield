@@ -140,6 +140,35 @@ BetterEndfieldNext.BemConverter.exe build 我的角色工程/export.bemproj.json
 | 静态武器 MeshRenderer + MeshFilter | 1.4 `renderer_kind: static`，不添加伪骨骼 |
 | 同包包含 Windows 与 Android 的不同 LOD/donor | 1.4 按资源声明 `platforms` 和 `lod` |
 
+## 游戏版本基线
+
+每个包记录它创建时所依据的游戏版本：Windows 与 Android 各一个版本号，外加一个两端共用的热更序号 `hotfix`（从 0 开始，0 表示该版本首发、没打过热更）。它不是 BEM 格式版本（那个由 `pack` 按内容自动决定），也不影响加载和渲染。
+
+一般不用管：`pack` 默认从角色资料（`catalog/` 里对应条目的 `game`）取这三个值写进包里。
+
+唯一会遇到的情况是打包报错：
+
+```text
+game_baseline is required for new packages;
+pass --game-baseline windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0
+```
+
+这说明你用的角色资料没有登记版本。按提示自己指定：
+
+```text
+--game-baseline windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0
+```
+
+三条规则：
+
+- **三个值都要写**，少任何一个都会被拒绝。它与你实际面向哪个平台无关，锚定的是游戏版本本身。
+- **`hotfix` 从 0 开始**：资料取自该版本首发态就写 `0`；取自第一次热更之后写 `1`，依此类推。它不是可选的补充信息——不写区分不出"首发"和"打过补丁"。
+- **版本号写你实际导出资料时用的那个**。写错不会在打包时报错，但后续针对旧版本的适配会按这个值匹配，标错等于放弃适配。
+
+不要手工编辑已打包的 `.bem` 去补这个字段，应改工程后重新 `pack`。
+
+两个版本号不限定格式，推荐 `主.次.修订`（例如 `1.6.3`），只作为查表标签，不会被比较大小。`hotfix` 是数字序号，必须能递增，不接受 `hf2` 这类文字。
+
 ## 武器与大招工程（1.4）
 
 | 入口 | 1.4 支持范围 |
@@ -236,7 +265,7 @@ BetterEndfieldNext.BemConverter.exe inspect source-mod.zip --report inspection.j
 | --- | --- | --- |
 | 导入 | 模型管理页“导入 BEM / ZIP”，或把文件拖进页面；ZIP 合集可勾选要导入的包。**需要关闭游戏** | App 模型页导入单个 `.bem`，也可以从文件管理器“打开方式”或“分享”导入 |
 | 新包状态 | 默认停用 | 默认启用，并停用与其资源冲突的其他包 |
-| 存放位置 | 程序目录 `models/`（不可写时为 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model\packages`） | App 私有目录，并发布给游戏 |
+| 存放位置 | 程序目录 `models/`，文件名为 `<包名> v<版本> [<package_id 末 8 位>].bem`，可直接拿来分享；不可写时为 `%LOCALAPPDATA%\BetterEndfieldNext\catalog\custom-model\packages` | App 私有目录，并发布给游戏 |
 | 更新 | 相同 `package_id` 即覆盖更新，保留启用状态和仍有效的选择 | 每次导入生成新版本，保留选择 |
 | 生效 | 下次启动游戏；已开启热切换时，选择变化由游戏帧调度处理已加载实例 | 同左；1.4 按 Android 显式资源发现，仍需手机实机验收 |
 
@@ -274,8 +303,8 @@ BetterEndfieldNext.BemConverter.exe bundle first.bem second.bem -o collection.zi
 
 ```text
 BetterEndfieldNext.BemConverter.exe inspect  <源目录|zip|rar|7z|bem> [--ini 路径] [--report r.json]
-BetterEndfieldNext.BemConverter.exe convert  <源> -o out.bem [--recipe recipe.json] [--ini 路径] [--deformations m.json] [--report r.json]
-BetterEndfieldNext.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--report r.json]
+BetterEndfieldNext.BemConverter.exe convert  <源> -o out.bem [--recipe recipe.json] [--ini 路径] [--deformations m.json] [--game-baseline win=ver,android=ver,hotfix=n] [--report r.json]
+BetterEndfieldNext.BemConverter.exe pack     project.json -o out.bem [--deformations m.json] [--game-baseline win=ver,android=ver,hotfix=n] [--report r.json]
 BetterEndfieldNext.BemConverter.exe validate pkg.bem [--report r.json]
 BetterEndfieldNext.BemConverter.exe unpack   pkg.bem|collection.zip -o 新目录 [--report r.json]
 BetterEndfieldNext.BemConverter.exe bundle   a.bem b.bem ... -o collection.zip [--report r.json]
@@ -284,6 +313,8 @@ BetterEndfieldNext.BemConverter.exe workspace init <目录> --source <源|projec
 BetterEndfieldNext.BemConverter.exe build    task.bemproj.json [--report r.json]
 BetterEndfieldNext.BemConverter.exe --version
 ```
+
+`--game-baseline` 写完整的平台名，并带上热更序号：`windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0`。缺省从角色资料的 `game` 读取，见前文「游戏版本基线」。
 
 不带 `--recipe` 直接 `convert` 时，每次生成新的随机包 ID；需要稳定 ID 请使用导出工程。
 

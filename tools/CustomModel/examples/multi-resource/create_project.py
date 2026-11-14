@@ -27,6 +27,8 @@ def fixture():
     b = bem.Builder('synthetic.multi-resource', 'Synthetic multi-resource test', 'BEM tests', '1', target)
     m = b.m
     m.pop('appearances'); m.pop('default_appearance_id')
+    # Section 15: synthetic baseline, deliberately not a real game version.
+    m['game_baseline'] = {'windows-x64': '9.9.9', 'android-arm64': '9.9.9', 'hotfix': 0}
     m['required_capabilities'] = ['native-materials', 'palette-u8', 'indices-u32', 'composable-options',
                                   'multi-resource-targets', 'static-meshes', *bem_v13.CAPABILITIES]
     m['option_groups'] = [dict(id='detail', name='Detail', default='show',

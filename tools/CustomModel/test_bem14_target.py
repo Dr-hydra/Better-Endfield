@@ -18,7 +18,8 @@ def inputs():
     raw = fixture(); raw['objects'][0]['asset_paths'] = ['assets/test/character.prefab']
     raw['snapshot'] = dict(manifest_version='synthetic', perforce_cl='')
     spec = dict(schema=1, kind='bem-resource-target-spec', target_kind='character', id='chr_test',
-                profile_id='draft.test', revision='1', snapshot='synthetic', resources=[
+                profile_id='draft.test', revision='1', snapshot='synthetic',
+                game=dict(zip(('windows-x64', 'android-arm64'), ('1.6.3', '1.6.4'))) | dict(hotfix=0), resources=[
                     dict(id='body', asset_path='assets/test/character.prefab', platforms=['windows-x64'],
                          lod=0, renderer_paths=['mesh'])])
     return raw, spec

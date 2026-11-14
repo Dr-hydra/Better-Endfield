@@ -21,6 +21,8 @@ def create(root):
                struct.pack('<3H', 0, 1, 2)]
     for i, raw in enumerate(streams): (payload / f'{i}.bin').write_bytes(raw)
     m = dict(schema=1, package_id='example.body-slider', name='BEM 1.3 position test', author='BEM Tools', version='1',
+             # Section 15: synthetic baseline, deliberately not a real game version.
+             game_baseline={'windows-x64': '9.9.9', 'android-arm64': '9.9.9', 'hotfix': 0},
              required_capabilities=['native-materials', 'palette-u8', 'indices-u32', 'fixed-appearances'],
              target=dict(character_id='chr_test', platform='windows-x64', profile_id='example', revision='1', snapshot='synthetic',
                          world_resource='world', ui_resource='ui', components=[dict(id=0, mesh_name='body_lod0',

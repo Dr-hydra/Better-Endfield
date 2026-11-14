@@ -71,7 +71,10 @@ class Catalog163Tests(unittest.TestCase):
                     # Complete project pack/read exercises actual BEM 1.4 schema.
                     from bem_projects import pack_project
                     output = Path(temporary) / (Path(item["project"]).stem + ".bem")
-                    pack_project(PROFILES / item["project"], output)
+                    # Section 15: these shipped 1.6.3 targets predate the field, so the
+                    # test declares the baseline explicitly instead of editing them.
+                    pack_project(PROFILES / item["project"], output,
+                                 game_baseline={'windows-x64': '1.6.3', 'android-arm64': '1.6.4', 'hotfix': 0})
                     manifest, _ = bem.read_package(output)
                     self.assertEqual(manifest["target"], project["manifest"]["target"])
 

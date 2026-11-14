@@ -76,6 +76,8 @@ def build_profile(database, spec):
                     version=target['revision'], required_capabilities=capabilities, target=target, meshes=[], textures=[],
                     option_groups=[], component_rules=[dict(target=c['id'], candidates=[dict(operation='keep')])
                                                        for c in target['components']])
+    # Section 15: the spec declares the game versions the target was exported from.
+    bem.require_game_baseline(manifest, spec.get('game'))
     bem.validate_manifest(manifest, 0)
     return dict(schema=1, kind='bem-target-profile', bem_format='1.4', target=target,
                 required_capabilities=capabilities, evidence=evidence,

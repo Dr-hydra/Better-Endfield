@@ -220,6 +220,8 @@ struct BemPackageInfo {
     std::string package_id, name, author, version, character_id;
     // character_id remains the owner ID for legacy UI integrations.
     std::string target_kind = "character", target_id;
+    // Provenance batch label copied from the catalog the package was built from.
+    std::string revision;
     std::vector<std::string> resource_keys;
     std::vector<BemResourceInfo> resources;
     std::vector<std::string> component_resources, component_paths;
@@ -232,6 +234,11 @@ struct BemPackageInfo {
     std::vector<std::vector<uint32_t>> parameter_frame_values;
     std::vector<std::string> appearances, component_names;
     std::vector<uint32_t> original_counts;
+    // Section 15 game baseline. Empty when the package predates the field, and
+    // `baseline_hotfix` is -1 then. The values are lookup keys for version-based
+    // repairs, never compared by magnitude, so this is metadata only.
+    std::string baseline_windows, baseline_android;
+    int baseline_hotfix = -1;
     // Validated manifest for metadata-only management/selection. No payload bytes.
     std::string manifest_json;
     std::shared_ptr<const BemSelectionMetadata> selection_metadata;

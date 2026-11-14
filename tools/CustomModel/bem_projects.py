@@ -48,7 +48,7 @@ def load_project(source):
         raise ValueError(f'Project manifest is not readable JSON ({source}): {error}') from None
 
 
-def pack_project(source, output, package=None, deformations=None):
+def pack_project(source, output, package=None, deformations=None, game_baseline=None):
     source, output = project_manifest(source), Path(output)
     project = load_project(source)
     root = source.parent.resolve()
@@ -71,6 +71,9 @@ def pack_project(source, output, package=None, deformations=None):
         bem.require(output.resolve() not in author_input_paths(deformations), 'Output cannot overwrite shape input')
     project['manifest'], payloads, deformation_report = apply_author_spec(project['manifest'], payloads, deformations)
     package_overrides(project['manifest'], package)
+    # Section 15: an editable project keeps its own baseline; a project carried
+    # over from an older package must declare one before it can be re-packed.
+    bem.require_game_baseline(project['manifest'], game_baseline)
     from bem_tool import check_geometry
     bem.validate_manifest(project['manifest'], len(payloads))
     check_geometry(project['manifest'], payloads)

@@ -23,6 +23,8 @@ class AutoTests(unittest.TestCase):
             materials=['opaque','transparent'],material_textures=[[],[]])
         self.catalog=seed|dict(character_id='fixture',name='fixture',profile_id='fixture',
             components={'0':native},entries={'12345678':0},textures={},preserved_globals={})
+        # Section 15 baseline; the seeded real catalog has none yet.
+        self.catalog['game']={'windows-x64':'1.6.3','android-arm64':'1.6.4','hotfix':0}
         self.ini='''[Constants]
 global $component_count = 1
 global persist $choice = 0

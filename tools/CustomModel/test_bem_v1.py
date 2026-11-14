@@ -29,10 +29,88 @@ def fixture():
     b.m['appearances']=[dict(id='default',name='替换',description='',components=[dict(target=0,operation='replace',mesh=0),dict(target=1,operation='keep')]),
                         dict(id='hidden',name='隐藏',description='',components=[dict(target=0,operation='hide'),dict(target=1,operation='keep')])]
     b.m['default_appearance_id']='default'
+    # Section 15 baseline; every writer path now requires it, readers tolerate absence.
+    b.m['game_baseline']={'windows-x64':'1.6.3','android-arm64':'1.6.4','hotfix':0}
     return b
 
 
 class BemTests(unittest.TestCase):
+    def test_set_game_baseline_copies_payload_bytes_and_is_idempotent(self):
+        # A package built before section 15 looks exactly like this.
+        self.b.m.pop('game_baseline'); self.b.write(self.path)
+        with self.path.open('rb') as handle:
+            _, _, _, header_size, _, manifest_size, count, _ = bem.HEADER.unpack(handle.read(bem.HEADER.size))
+            handle.seek(header_size + manifest_size + count * bem.ENTRY.size)
+            before = handle.read()
+        baseline = {'windows-x64': '1.5.3', 'android-arm64': '1.5.3', 'hotfix': '0'}
+        self.assertTrue(bem.set_game_baseline(self.path, baseline))
+        manifest, payloads = bem.read_package(self.path)
+        # The counter is normalised to its numeric spelling on write.
+        self.assertEqual(manifest['game_baseline'],
+                         {'windows-x64': '1.5.3', 'android-arm64': '1.5.3', 'hotfix': 0})
+        self.assertEqual(payloads, self.b.payloads)
+        self.assertEqual({k: v for k, v in manifest.items() if k != 'game_baseline'},
+                         {k: v for k, v in self.b.m.items() if k != 'game_baseline'})
+        with self.path.open('rb') as handle:
+            _, _, _, header_size, _, manifest_size, count, _ = bem.HEADER.unpack(handle.read(bem.HEADER.size))
+            handle.seek(header_size + manifest_size + count * bem.ENTRY.size)
+            self.assertEqual(handle.read(), before)  # payload blocks are moved verbatim
+        self.native(self.path, True)
+        # The GUI runs this on every import, so a second pass must change nothing.
+        self.assertFalse(bem.set_game_baseline(self.path, baseline))
+
+    def test_backfill_uses_the_batch_table_and_never_guesses(self):
+        from bem_tool import backfill_baselines
+        self.b.m.pop('game_baseline'); self.b.write(self.path)
+        baseline = {'windows-x64': '1.5.3', 'android-arm64': '1.5.3', 'hotfix': 0}
+        self.assertEqual(backfill_baselines(self.path, baseline, dry_run=True)['pending'], 1)
+        # A revision the table does not name is reported, not mapped to a guess.
+        mapping = Path(self.tmp.name) / 'map.json'
+        mapping.write_text(json.dumps({'batches': [{'revision': 'other', 'windows-x64': '1.0.0',
+                                                    'android-arm64': '1.0.0', 'hotfix': 0}]}), encoding='utf-8')
+        report = backfill_baselines(self.path, map_path=mapping)
+        self.assertEqual((report['unmatched'], report['written']), (1, 0))
+        self.assertNotIn('game_baseline', bem.read_package(self.path)[0])
+
+    def test_game_baseline_absent_is_valid_for_older_packages(self):
+        # Read side must accept every package written before section 15 existed.
+        bem.validate_game_baseline({'schema': 1})
+        b = fixture(); b.m.pop('game_baseline'); b.write(self.path)
+        m, payloads = bem.read_package(self.path); bem.validate_manifest(m, len(payloads))
+        self.native(self.path, True)
+
+    def test_game_baseline_requires_three_keys_and_free_version_format(self):
+        both = {'windows-x64': '1.6.3', 'android-arm64': '1.6.4'}
+        bem.validate_game_baseline({'game_baseline': both | {'hotfix': 0}})
+        # Versions are free-form; the counter accepts its JSON spelling or a digit string.
+        bem.validate_game_baseline({'game_baseline': {'windows-x64': '2026-11-hf1',
+                                                      'android-arm64': 'build_2601', 'hotfix': '3'}})
+        for broken in (both,                                                        # missing hotfix
+                       {'windows-x64': '1.6.3', 'hotfix': 0},                       # missing platform
+                       {'windows-x64': '1.6.3', 'android-arm64': '', 'hotfix': 0},
+                       {'windows-x64': '1.6.3版', 'android-arm64': '1.6.4', 'hotfix': 0},
+                       both | {'hotfix': 0, 'ios': '1'},                            # unknown key
+                       {'windows-x64': 'x' * 65, 'android-arm64': '1.6.4', 'hotfix': 0},
+                       both | {'hotfix': -1},
+                       both | {'hotfix': 'hf2'},
+                       both | {'hotfix': True}):
+            with self.subTest(broken=broken):
+                with self.assertRaises(ValueError): bem.validate_game_baseline({'game_baseline': broken})
+
+    def test_game_baseline_precedence_explicit_then_catalog_then_existing(self):
+        catalog = {'game': {'windows-x64': '1.5.3', 'android-arm64': '1.5.3', 'hotfix': 1}}
+        m = {}; bem.require_game_baseline(m, None, catalog)
+        self.assertEqual(m['game_baseline'], catalog['game'])
+        m = {}; bem.require_game_baseline(m, 'windows-x64=1.6.3,android-arm64=1.6.4,hotfix=2', catalog)
+        self.assertEqual(m['game_baseline']['windows-x64'], '1.6.3')
+        self.assertEqual(m['game_baseline']['hotfix'], '2')
+        m = {'game_baseline': {'windows-x64': '1.5.2', 'android-arm64': '1.5.2', 'hotfix': 0}}
+        bem.require_game_baseline(m, None)
+        self.assertEqual(m['game_baseline']['windows-x64'], '1.5.2')
+        with self.assertRaises(ValueError): bem.require_game_baseline({}, None)
+        with self.assertRaises(ValueError): bem.require_game_baseline({}, 'windows-x64=1.6.3')
+        with self.assertRaises(ValueError): bem.require_game_baseline({}, 'windows-x64=1.6.3,android-arm64=1.6.4')
+
     def test_rgba32_and_r8_roundtrip_native_validation(self):
         for fmt,bpp in ((4,4),(63,1)):
             with self.subTest(format=fmt):

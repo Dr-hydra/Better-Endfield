@@ -55,6 +55,88 @@ def atomic_write(path, data):
             os.unlink(tmp)
 
 
+GAME_BASELINE_PLATFORMS = ('windows-x64', 'android-arm64')
+# Single value for both platforms: a hotfix belongs to the distribution batch, not
+# to one platform. It is a counter starting at 0 (0 = no hotfix) so two otherwise
+# identically numbered baselines stay distinguishable in the fix table.
+GAME_BASELINE_HOTFIX = 'hotfix'
+
+
+def validate_game_baseline(m):
+    """Section 15: optional root-level game version baseline.
+
+    Absence is valid and must stay valid: older packages never carry the field and
+    readers must not reject them. When present all three keys are required: both
+    platforms plus the `hotfix` counter. Version formats stay advisory because game
+    version identifiers may change, but the counter is ours, so it is numeric.
+    """
+    if 'game_baseline' not in m:
+        return
+    baseline = m['game_baseline']
+    require(isinstance(baseline, dict), 'game_baseline must be an object')
+    required = set(GAME_BASELINE_PLATFORMS) | {GAME_BASELINE_HOTFIX}
+    require(set(baseline) == required,
+            'game_baseline requires exactly windows-x64, android-arm64 and hotfix')
+    for platform in GAME_BASELINE_PLATFORMS:
+        value = baseline[platform]
+        require(isinstance(value, str) and value, 'game_baseline values must be non-empty strings')
+        require(len(value.encode('utf-8')) <= 64, 'game_baseline value exceeds 64 bytes')
+        require(all(0x20 <= ord(ch) <= 0x7e for ch in value),
+                'game_baseline values must be printable ASCII')
+    hotfix = baseline[GAME_BASELINE_HOTFIX]
+    # Accept the natural JSON spelling of a counter as well as its string form.
+    if isinstance(hotfix, int) and not isinstance(hotfix, bool):
+        require(0 <= hotfix <= 0xffffffff, 'game_baseline hotfix must be a non-negative integer')
+        return
+    require(isinstance(hotfix, str) and hotfix.isdigit() and len(hotfix) <= 10,
+            'game_baseline hotfix must be a non-negative integer, starting at 0')
+
+
+def parse_game_baseline(spec):
+    """Accept 'windows-x64=1.6.3,android-arm64=1.6.4[,hotfix=hf2]' or a built mapping."""
+    if spec is None:
+        return None
+    if isinstance(spec, dict):
+        value = dict(spec)
+    elif isinstance(spec, str):
+        value = {}
+        for part in spec.split(','):
+            part = part.strip()
+            require(part, 'Empty game_baseline entry')
+            require('=' in part, 'game_baseline entry must be key=value')
+            key, item = part.split('=', 1)
+            key, item = key.strip(), item.strip()
+            require(key not in value, 'Duplicate game_baseline key: ' + key)
+            value[key] = item
+    else:
+        raise ValueError('game_baseline must be a mapping or a key=value string')
+    validate_game_baseline({'game_baseline': value})
+    return value
+
+
+def require_game_baseline(m, explicit=None, catalog=None):
+    """Write-side rule: explicit argument > catalog `game` > existing manifest value > refuse.
+
+    Read-side validation stays inside `validate_game_baseline`, which tolerates
+    absence; only new packages must carry the field. An editable project that
+    already declares a baseline keeps it, so unpack/pack round-trips do not force
+    the author to retype it.
+    """
+    baseline = parse_game_baseline(explicit)
+    if baseline is None and isinstance(catalog, dict) and catalog.get('game') is not None:
+        candidate = catalog['game']
+        validate_game_baseline({'game_baseline': candidate})
+        baseline = dict(candidate)
+    if baseline is None and 'game_baseline' in m:
+        validate_game_baseline(m)
+        return m['game_baseline']
+    require(baseline is not None,
+            'game_baseline is required for new packages; pass '
+            '--game-baseline windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0')
+    m['game_baseline'] = baseline
+    return baseline
+
+
 def validate_manifest(m, payload_count, minor=None):
     """`minor` is the header minor; None validates composable content under the newest limits."""
     # Match native numeric/string bounds before Python indexing (negative indexes
@@ -79,6 +161,8 @@ def validate_manifest(m, payload_count, minor=None):
         elif isinstance(value, str):
             require('\0' not in value, 'NUL in manifest string')
     tree(m)
+    # Version-independent, so it runs before the per-version dispatch below.
+    validate_game_baseline(m)
     if minor == 5:
         import bem_v15
         return bem_v15.validate_manifest(m, payload_count, minor)
@@ -238,6 +322,96 @@ def write_package(path, manifest, payloads):
                  + raw + b''.join(entries) + b''.join(blocks))
 
 
+def _insert_after_open_brace(raw, fragment):
+    """Insert JSON `fragment` right after the manifest's opening brace.
+
+    Every other manifest byte is preserved, so a rewrite cannot reformat numbers,
+    reorder keys or change escaping. BEM manifests are always UTF-8 without a BOM,
+    matching `read_package`.
+    """
+    pos = 0
+    while pos < len(raw) and raw[pos] in b' \t\r\n':
+        pos += 1
+    require(pos < len(raw) and raw[pos:pos + 1] == b'{', 'Manifest does not open with an object')
+    empty = raw[pos + 1:].lstrip(b' \t\r\n').startswith(b'}')
+    return raw[:pos + 1] + fragment + (b'' if empty else b',') + raw[pos + 1:]
+
+
+def set_game_baseline(path, baseline, output=None, validate=True):
+    """Backfill `game_baseline` into an existing package without re-encoding payloads.
+
+    Only the two size fields in the header and every payload offset move; payload
+    blocks are copied byte for byte. That keeps a large package to one sequential
+    copy instead of a decode/re-encode cycle, and it cannot change rendering.
+
+    Returns False when the package already declares the field, so repeated
+    backfills stay idempotent. `output` writes beside the original; omitting it
+    replaces the file in place once the result reads back.
+    """
+    validate_game_baseline({'game_baseline': baseline})
+    normalized = dict(baseline)
+    normalized['hotfix'] = int(normalized['hotfix'])
+    path = Path(path)
+    target = Path(output) if output is not None else path
+    import os
+    import shutil
+    import tempfile
+    with path.open('rb') as source:
+        header = source.read(HEADER.size)
+        require(len(header) == HEADER.size, 'Truncated BEM header')
+        magic, major, minor, header_size, file_size, manifest_size, count, flags = HEADER.unpack(header)
+        require(magic == MAGIC and major == 1 and header_size == HEADER.size and not flags,
+                'Unsupported BEM header')
+        require(0 < manifest_size <= 4 * 1024 * 1024, 'Invalid BEM manifest size')
+        raw = source.read(manifest_size)
+        require(len(raw) == manifest_size, 'Truncated BEM manifest')
+        table = source.read(ENTRY.size * count)
+        require(len(table) == ENTRY.size * count, 'Truncated payload directory')
+        manifest = json.loads(raw.decode('utf-8'))
+        if 'game_baseline' in manifest:
+            return False
+        if validate:
+            validate_manifest(manifest, count, minor or None)
+        entries = list(ENTRY.iter_unpack(table))
+        payload_start = HEADER.size + manifest_size + ENTRY.size * count
+        cursor = payload_start
+        for codec, reserved, offset, stored, decoded in entries:
+            require(codec in (0, 1) and not reserved and offset == cursor and 0 < stored
+                    and stored <= file_size - cursor, 'Invalid payload directory')
+            cursor += stored
+        require(cursor == file_size, 'Trailing or missing package bytes')
+        fragment = json.dumps({'game_baseline': normalized}, ensure_ascii=True,
+                              separators=(',', ':')).encode('utf-8')[1:-1]
+        rewritten = _insert_after_open_brace(raw, fragment)
+        require(len(rewritten) <= 4 * 1024 * 1024, 'Manifest too large after backfill')
+        require(json.loads(rewritten.decode('utf-8')).get('game_baseline') == normalized,
+                'Backfilled manifest does not read back')
+        delta = len(rewritten) - manifest_size
+        target.parent.mkdir(parents=True, exist_ok=True)
+        handle, temporary = tempfile.mkstemp(dir=target.parent, prefix=target.name + '.', suffix='.tmp')
+        os.close(handle)
+        try:
+            with open(temporary, 'wb') as destination:
+                destination.write(HEADER.pack(MAGIC, 1, minor, HEADER.size, file_size + delta,
+                                              len(rewritten), count, 0))
+                destination.write(rewritten)
+                position = payload_start + delta
+                for codec, reserved, offset, stored, decoded in entries:
+                    destination.write(ENTRY.pack(codec, reserved, position, stored, decoded))
+                    position += stored
+                # The source sits exactly at the first payload block; copy it as is.
+                shutil.copyfileobj(source, destination, 1024 * 1024)
+            if validate:
+                read_package(temporary, decode=False)
+            # Windows refuses to replace a file that is still open for reading.
+            source.close()
+            os.replace(temporary, target)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+    return True
+
+
 def package_minor(path):
     """Header minor version (0..4: 1.0..1.4) without reading the manifest."""
     with Path(path).open('rb') as f:
@@ -291,11 +465,14 @@ def read_package(path, decode=True):
 
 
 class Builder:
-    def __init__(self, package_id, name, author, version, target):
+    def __init__(self, package_id, name, author, version, target, catalog=None):
         self.m = dict(schema=1, package_id=identity(package_id), name=name, author=author, version=version,
                       required_capabilities=CAPABILITIES, target=target, default_appearance_id='',
                       appearances=[], meshes=[], textures=[])
         self.payloads = []
+        # Source catalog entry, when the builder was created from one. Section 15
+        # reads `catalog['game']` to fill the baseline; it is never serialized here.
+        self.catalog = catalog
 
     def payload(self, data):
         # Exact byte equality; no artifact hashes or collision-based identity.

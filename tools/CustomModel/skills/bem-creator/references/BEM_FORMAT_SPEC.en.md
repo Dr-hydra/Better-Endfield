@@ -75,6 +75,7 @@ Top-level fields:
 | 1.2+: optional `texture_slots` | See section 9 |
 | 1.3: optional `parameters`, `mesh_deformations` | See section 10 |
 | 1.5: optional `root_offset`, `drivers` | See sections 12 and 13; `material_overrides` inside a draw also belongs to 1.5 |
+| All versions: optional `game_baseline` | See section 15; ignored by the current runtime, used by the toolchain and later version adaptation |
 
 ## 4. Target contract
 
@@ -693,3 +694,56 @@ model.zip (or .bem)
 1. Single Model Archive (Package): Root (or single top-level directory) contains valid manifest.json. Such an archive normally has no .bem members; when both are present the manifest wins and the archive is treated as a single package, not a bundle.
 2. Collection Bundle: Contains one or more .bem archives and no root model manifest.json. Dispatched to the bundle staging extractor.
 3. Single Top-Level Folder Tolerance: Archives wrapped in a single root folder containing manifest.json are automatically unfolded to ensure seamless creator workflow.
+
+## 15. Game Version Baseline `game_baseline`
+
+Available in BEM 1.0–1.5, independent of the header `minor`. It records **the game version the package was created against**, anchoring the package to a specific game resource baseline.
+
+```json
+{
+  "schema": 1,
+  "package_id": "chr_0014_aurora.snowshine",
+  "game_baseline": {
+    "windows-x64": "1.6.3",
+    "android-arm64": "1.6.4",
+    "hotfix": 0
+  }
+}
+```
+
+### Field rules
+
+- Lives at the manifest **root**, not inside `target`. The `profile_id` / `revision` / `snapshot` fields of `target` record the source data batch; `game_baseline` records the game version. They are two independent facts and must not be derived from one another.
+- **All three keys are required whenever the field is present**: `windows-x64`, `android-arm64` and `hotfix` must all exist, with no missing key and no extra key. This is independent of which platform the package targets, because both platforms read the same file.
+- **`hotfix` is not per platform**: one distribution batch shares a single hotfix counter across both platforms. It is a non-negative integer starting at **0** (`0` means the version shipped without a hotfix) and increments by one per hotfix. Write it either as the JSON integer `0` or as the digit string `"0"`.
+- The two platform version values are **not format-specified**. The only hard requirements: non-empty, at most 64 bytes, printable ASCII only, no NUL. `major.minor.patch` (for example `1.6.3`) is recommended, but game version identifiers may change, so validators must not enforce that shape.
+- The three values **together form the baseline identity** and are **only lookup keys**. They are not ordered, not compared by magnitude and not used for range matching; two baselines are equivalent only when all three values are exactly equal.
+- When absent the whole field is ignored; it affects neither loading, validation nor rendering. Absence means "baseline unknown", not "latest" and not "any version".
+
+### Why `hotfix` is required rather than optional
+
+A version number alone cannot separate "the release as shipped" from "the same release after a hotfix". If `hotfix` were optional, `1.6.3` would mean both "no hotfix" and "unknown whether a hotfix exists", and baseline-driven adaptation would degrade into guessing. Requiring a counter that starts at 0 keeps "shipped" and "after hotfix N" as two definite, non-overlapping identities.
+
+### Relation to version and capabilities
+
+- Declares no capability and never appears in `required_capabilities`.
+- Does not change the header `minor` and takes no part in the writer's "lowest version that can express this content" rule.
+- It is not the format version. The format version is the header `minor`; `game_baseline` describes the game resource version.
+
+### Current implementation status
+
+The runtime **ignores** this field in BEM 4.1.x: it is not parsed, not validated and does not affect loading. Writer-side validation (the format rules above) and toolchain constraints are already in force. The read and matching logic needed for later version adaptation is not part of this format contract and is defined separately.
+
+### ZIP container
+
+`game_baseline` is content, not a container attribute. It is preserved verbatim when packing into or writing back from a ZIP. This differs from `format_version`, which is only a container hint and is dropped when writing a binary package.
+
+### Toolchain conventions (maintainer responsibility)
+
+The specification only defines the package format. The following production constraints guide tool implementations; creator-facing instructions are in the [Creator Guide](BEM_CREATOR_GUIDE.en.md):
+
+- The `game` object in `catalog/*.json` is the authoritative source of the baseline and uses the same structure as this section (three keys, `hotfix` starting at 0). Maintainers fill it in by hand; it is never generated automatically, because it records the version fact at collection time and reading the "current environment version" would mistake the editing-time version for the collection-time one.
+- When updating an existing catalog without supplying a new value, the existing `game` in the file **must be preserved**, never cleared.
+- Packing precedence: explicit argument > `catalog.game` > refuse to produce. A new package must not omit the field.
+- The command-line form is `--game-baseline windows-x64=1.6.3,android-arm64=1.6.4,hotfix=0`.
+- The read side (validating existing packages, runtime loading) tolerates absence and must not reject an older package for lacking the field.
