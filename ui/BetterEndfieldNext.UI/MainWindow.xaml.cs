@@ -4514,14 +4514,10 @@ public sealed partial class MainWindow : Window
         CameraPageDescriptionTextBlock.Text = isZh
             ? "自由控制游戏相机，并调整镜头相关的画面效果。各项默认关闭，修改后立即保存。"
             : "Free camera control and visual tuning. Disabled by default; changes apply immediately.";
-        CameraFreeInfoBar.Title = isZh ? "自由视角操作" : "Free Camera Controls";
-        CameraFreeInfoBar.Message = isZh
-            ? "按自由视角热键进入或退出，按时间冻结热键冻结或恢复世界。鼠标转向，方向键前后左右移动，PageUp/PageDown 升降，Shift 加速、Ctrl 减速；冻结时间后仍可移动。切换场景或主相机时会自动退出。"
-            : "Use the free-camera hotkey to enter/exit and the pause hotkey to freeze/resume the world. The mouse turns the camera, arrow keys move it, PageUp/PageDown change height, Shift/Ctrl change speed; it keeps moving while the world is frozen. Exits automatically on scene transitions.";
         CameraFreeSectionTitle.Text = isZh ? "自由视角" : "Free Camera";
         CameraFreeSectionHint.Text = isZh
-            ? "进入时捕获主相机的位置、朝向和视野，退出后恢复原值。自由视角期间位置和朝向都由模块控制，不受时间冻结影响。"
-            : "Captures the main camera position, rotation and FOV on entry and restores them on exit. While active the mod controls both position and rotation, independent of the world time freeze.";
+            ? "启用后按设置的热键进入或退出：进入时捕获主相机的位置、朝向和视野，退出后恢复原值。鼠标转向，方向键前后左右移动，PageUp/PageDown 升降，Shift 加速、Ctrl 减速；冻结时间后仍可移动。切换场景或主相机时会自动退出。"
+            : "Enter or exit with the configured hotkey: the main camera position, rotation and FOV are captured on entry and restored on exit. The mouse turns the camera, arrow keys move it, PageUp/PageDown change height, Shift/Ctrl change speed; it keeps moving while the world is frozen. Exits automatically on scene transitions.";
         FreeCameraToggle.Header = isZh ? "启用自由视角功能" : "Enable Free Camera";
         FreeCameraToggle.OffContent = isZh ? "关闭" : "Disabled";
         FreeCameraToggle.OnContent = isZh ? "允许热键切换" : "Enabled";

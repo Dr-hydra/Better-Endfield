@@ -1311,13 +1311,24 @@
                                         TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                <InfoBar
-                                    x:Name="CameraFreeInfoBar"
-                                    IsClosable="False"
-                                    IsOpen="True"
-                                    Message="启用后按设置的热键进入或退出。鼠标转向，方向键前后左右移动，PageUp/PageDown 升降，Shift 加速、Ctrl 减速；冻结时间后仍可移动。切换场景或主相机时会自动退出。"
-                                    Severity="Informational"
-                                    Title="自由视角操作" />
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="16">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="CameraVisualSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="镜头画面" />
+                                            <TextBlock
+                                                x:Name="CameraVisualSectionHint"
+                                                Style="{StaticResource FieldHintStyle}"
+                                                Text="调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch
+                                            x:Name="DisableDitherToggle"
+                                            Header="移除角色近距离虚化"
+                                            OffContent="保留原效果"
+                                            OnContent="关闭虚化"
+                                            Toggled="CameraEnhancementToggle_Toggled" />
+                                    </StackPanel>
+                                </Border>
 
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="18">
@@ -1326,7 +1337,7 @@
                                             <TextBlock
                                                 x:Name="CameraFreeSectionHint"
                                                 Style="{StaticResource FieldHintStyle}"
-                                                Text="进入时捕获主相机的位置、朝向和视野，退出后恢复原值。自由视角期间位置和朝向都由模块控制，不受时间冻结影响。"
+                                                Text="启用后按设置的热键进入或退出：进入时捕获主相机的位置、朝向和视野，退出后恢复原值。鼠标转向，方向键前后左右移动，PageUp/PageDown 升降，Shift 加速、Ctrl 减速；冻结时间后仍可移动。切换场景或主相机时会自动退出。"
                                                 TextWrapping="Wrap" />
                                         </StackPanel>
                                         <ToggleSwitch
@@ -1797,27 +1808,6 @@
                                             <Button x:Name="MmdOpenFolderButton" Click="MmdOpenFolderButton_Click" Content="打开文件夹" />
                                             <Button x:Name="MmdRefreshButton" Click="MmdRefreshButton_Click" Content="刷新" />
                                         </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-
-
-                                <Border Style="{StaticResource SectionStyle}">
-                                    <StackPanel Spacing="16">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock x:Name="CameraVisualSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="镜头画面" />
-                                            <TextBlock
-                                                x:Name="CameraVisualSectionHint"
-                                                Style="{StaticResource FieldHintStyle}"
-                                                Text="调用游戏自身的清理逻辑，移除镜头贴近角色时出现的半透明虚化。"
-                                                TextWrapping="Wrap" />
-                                        </StackPanel>
-                                        <ToggleSwitch
-                                            x:Name="DisableDitherToggle"
-                                            Header="移除角色近距离虚化"
-                                            OffContent="保留原效果"
-                                            OnContent="关闭虚化"
-                                            Toggled="CameraEnhancementToggle_Toggled" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
