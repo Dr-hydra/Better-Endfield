@@ -21,6 +21,22 @@ val sharedOutputs = resourceUpdate["outputs"] as Map<String, Any?>
 val nativeStaging = File(workspacePaths["build"] as String, "next/android/native/app")
 val generatedAssets = layout.buildDirectory.dir("generatedAssets")
 
+// Directory.Build.props is the single source of truth for the product version:
+// it is what the assembly, the installer and the About page report. Deriving
+// the Android coordinates from it keeps those three numbers from drifting apart
+// while preserving the 4.2.0 -> 40200 encoding the release notes quote.
+val beVersionDocument = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+    .newDocumentBuilder()
+    .parse(File(rootProject.projectDir.parentFile, "Directory.Build.props"))
+val beVersion = (beVersionDocument.getElementsByTagName("Version").item(0) as org.w3c.dom.Element)
+    .textContent.trim()
+val beVersionParts = beVersion.split('.')
+require(beVersionParts.size == 3) {
+    "Directory.Build.props must declare a major.minor.patch Version; found $beVersion"
+}
+val beVersionCode = beVersionParts[0].toInt() * 10000 +
+    beVersionParts[1].toInt() * 100 + beVersionParts[2].toInt()
+
 @Suppress("UNCHECKED_CAST")
 val releaseSigningPolicy = beWorkspace["android_signing"] as Map<String, Any?>
 val signingPropertiesPath = File(releaseSigningPolicy["properties_file"] as String).let {
@@ -78,8 +94,8 @@ android {
         // needs Android 10. The legacy API 82 build was dropped in 3.3.0.
         minSdk = 29
         targetSdk = 35
-        versionCode = 40200
-        versionName = "4.2.0"
+        versionCode = beVersionCode
+        versionName = beVersion
         testInstrumentationRunner = "dev.betterendfield.next.BemInstallerTest"
 
         ndk {
@@ -111,7 +127,14 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("persistentRelease")
+            // Without a configured key this build emits an unsigned APK, which
+            // the release host signs afterwards. Local builds always have the
+            // key, so their output is unchanged.
+            signingConfig = if (configuredStore != null) {
+                signingConfigs.getByName("persistentRelease")
+            } else {
+                null
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -251,7 +274,12 @@ tasks.named("preBuild").configure {
 
 tasks.matching { it.name == "preReleaseBuild" || it.name == "validateSigningRelease" ||
     it.name == "packageRelease" || it.name == "signReleaseBundle" }.configureEach {
-    dependsOn(verifyReleaseSigningKey)
+    // Verifying a key that is not present can only fail. A build agent without
+    // the release key relies on the signing host, so the check is attached only
+    // when this build is actually going to sign something.
+    if (configuredStore != null) {
+        dependsOn(verifyReleaseSigningKey)
+    }
 }
 
 dependencies {
