@@ -99,6 +99,12 @@ jobs:
         shell: pwsh
         run: ./scripts/ci/fetch-core.ps1 -Platform windows -Archive core.zip
 
+      # The main build calls BuildBemTools.ps1, whose DSH packaging step needs
+      # the Python CLI tree that this produces. Nothing else supplies it.
+      - name: Build Android tool bundle
+        shell: pwsh
+        run: ./scripts/BuildBemCliAndroid.ps1
+
       - name: Build
         shell: pwsh
         run: ./scripts/ci/windows.ps1
@@ -257,13 +263,15 @@ jobs:
         shell: pwsh
         run: ./scripts/PrepareBemArchiveBackend.ps1
 
-      - name: Build tools
-        shell: pwsh
-        run: ./scripts/BuildBemTools.ps1 -SkipSigning
-
+      # The Python CLI tree has to exist before the DSH plugin can be packaged,
+      # and BuildBemTools.ps1 does that packaging itself.
       - name: Build Android tool bundle
         shell: pwsh
         run: ./scripts/BuildBemCliAndroid.ps1
+
+      - name: Build tools
+        shell: pwsh
+        run: ./scripts/BuildBemTools.ps1 -SkipSigning
 
       - name: Stage release payload
         id: stage
