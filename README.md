@@ -155,7 +155,7 @@ Android 使用 JDK 17 及以上、SDK、NDK 和 CMake，版本以 [`android/app/
 
 ## 许可
 
-Better Endfield Next 使用 [AGPL-3.0-only](LICENSE)，是独立的非官方项目，与游戏开发商及发行商无关联。MinHook、Dobby、EIEM、7-Zip 等依赖或引用保留各自许可证和来源说明；创作者应自行确认第三方模型、动作、音频和模块的分发授权。
+Better Endfield Next 使用 [AGPL-3.0-only](LICENSE)，是独立的非官方项目，与游戏开发商及发行商无关联。MinHook、Dobby、EIEM、7-Zip 等依赖或引用保留各自许可证和来源说明；创作者应自行确认第三方模型、动作、音频和模块的分发授权。名称与标识的使用约定见 [名称与标识使用声明](NAME_AND_LOGO.md)。
 
 功能效果取决于客户端、设备和用户导入内容。使用前请了解相关服务规则及账号/客户端风险；游戏更新后遇到契约失败，应关闭受影响功能并等待适配。
 

@@ -153,7 +153,7 @@ Build scripts consume generated repository indexes. Refresh affected data after 
 
 ## License
 
-Better Endfield Next is licensed under [AGPL-3.0-only](LICENSE). It is an independent, unofficial project and is not affiliated with the game developers/publishers. Dependencies/references including MinHook, Dobby, EIEM and 7-Zip retain their own licenses and attribution. Creators are responsible for distribution rights to their models, motion, audio and modules.
+Better Endfield Next is licensed under [AGPL-3.0-only](LICENSE). It is an independent, unofficial project and is not affiliated with the game developers/publishers. Dependencies/references including MinHook, Dobby, EIEM and 7-Zip retain their own licenses and attribution. Creators are responsible for distribution rights to their models, motion, audio and modules. See the [Name and Logo Usage Notice](NAME_AND_LOGO.en.md) for how the project name and logos may be used.
 
 Behavior depends on the client, device and imported content. Review the applicable service rules and account/client risks before use. Disable affected features when a game update breaks a contract and wait for adaptation.
 
