@@ -150,7 +150,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
-& (Join-Path $PSScriptRoot "BuildBemTools.ps1") -WorkspaceConfig $WorkspaceConfig
+& (Join-Path $PSScriptRoot "BuildBemTools.ps1") -WorkspaceConfig $WorkspaceConfig -SkipSigning:$SkipSigning
 $bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfieldNext.BemConverter"
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force

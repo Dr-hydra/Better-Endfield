@@ -2,7 +2,11 @@
 param(
     [string]$Destination = "",
     [string]$WorkspaceConfig = "",
-    [string]$ArchiveBackend = ""
+    [string]$ArchiveBackend = "",
+
+    # Set by scripts/ci/*.ps1: the tools are signed on the release host together
+    # with everything else, so an agent has no certificate to sign with.
+    [switch]$SkipSigning
 )
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot 'Workspace.ps1')
@@ -43,7 +47,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Native composer configuration failed.' }
 & $ws.tools.cmake --build $composerBuild --config Release --target BetterEndfieldNext.BemCompose --parallel 4
 if ($LASTEXITCODE -ne 0) { throw 'Native composer build failed.' }
 $composerDirectory = Join-Path $composerBuild 'stage\Release\tools\BemCompose'
-& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $composerDirectory -WorkspaceConfig $WorkspaceConfig
+if (-not $SkipSigning) {
+    & (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $composerDirectory -WorkspaceConfig $WorkspaceConfig
+}
 # Creator tools are self-contained at runtime. Build dependencies are explicit.
 & $python -c "import PyInstaller, zstandard"
 if ($LASTEXITCODE -ne 0) { throw "Install tools/CustomModel/requirements-build.txt into the build Python environment first." }
@@ -95,8 +101,10 @@ $guiPublishDir = Join-Path $Destination 'gui-publish'
     "-p:BEWorkspaceBuildRoot=$($ws.paths.build)" `
     "-p:Version=$toolVersion" "-p:InformationalVersion=$toolVersion"
 if ($LASTEXITCODE -ne 0) { throw "BEM creator GUI build failed." }
-& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $guiPublishDir -WorkspaceConfig $WorkspaceConfig
-& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path (Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter') -WorkspaceConfig $WorkspaceConfig
+if (-not $SkipSigning) {
+    & (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $guiPublishDir -WorkspaceConfig $WorkspaceConfig
+    & (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path (Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter') -WorkspaceConfig $WorkspaceConfig
+}
 $packageArgs = @((Join-Path $repo 'tools\CustomModel\package_toolchain.py'),
     (Join-Path $Destination 'dist\BetterEndfieldNext.BemConverter'),
     '--gui-directory', $guiPublishDir,
