@@ -130,7 +130,15 @@ if (Test-Path -LiteralPath $publishDir) {
 }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
 
-& $cmake -S $nativeRoot -B $nativeBuild -G "Visual Studio 17 2022" -A x64
+$configureArgs = @('-S', $nativeRoot, '-B', $nativeBuild, '-G', 'Visual Studio 17 2022', '-A', 'x64')
+if ($env:BE_CMAKE_LAUNCHER) {
+    # CI sets this to sccache. Embedded debug info (/Z7) is required so cached
+    # objects do not fight over a shared PDB under a parallel MSVC build.
+    $configureArgs += "-DCMAKE_C_COMPILER_LAUNCHER=$env:BE_CMAKE_LAUNCHER"
+    $configureArgs += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:BE_CMAKE_LAUNCHER"
+    $configureArgs += '-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded'
+}
+& $cmake @configureArgs
 if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield native configuration failed with exit code $LASTEXITCODE."
 }

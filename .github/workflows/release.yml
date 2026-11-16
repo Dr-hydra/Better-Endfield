@@ -13,6 +13,10 @@ on:
         description: Sign and publish the release after building
         type: boolean
         default: false
+      use_sccache:
+        description: Cache native C++ objects with sccache (experimental on MSVC/LTCG)
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -68,6 +72,43 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.nuget/packages
+            ~/AppData/Local/pip/Cache
+          key: ${{ runner.os }}-nuget-pip-${{ hashFiles('**/*.csproj', 'tools/CustomModel/requirements-build.txt') }}
+          restore-keys: ${{ runner.os }}-nuget-pip-
+
+      # Optional: cache native objects across runs. Default off because this
+      # project builds Release with LTCG; sccache needs the /Z7 launcher
+      # configuration, which changes PDB output and must be validated first.
+      - name: Prepare sccache
+        if: ${{ inputs.use_sccache }}
+        shell: pwsh
+        run: |
+          $version = 'v0.19.0'
+          $zip = "sccache-$version-x86_64-pc-windows-msvc.zip"
+          Invoke-WebRequest -Uri "https://github.com/mozilla/sccache/releases/download/$version/$zip" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath sccache-bin -Force
+          $exe = Get-ChildItem sccache-bin -Recurse -Filter sccache.exe | Select-Object -First 1
+          Copy-Item -LiteralPath $exe.FullName -Destination sccache.exe
+          (Resolve-Path sccache.exe).Path | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - uses: actions/cache@v6
+        if: ${{ inputs.use_sccache }}
+        with:
+          path: .sccache
+          key: ${{ runner.os }}-sccache-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-sccache-
+
+      - name: Enable sccache for native builds
+        if: ${{ inputs.use_sccache }}
+        shell: pwsh
+        run: |
+          "BE_CMAKE_LAUNCHER=sccache" >> $env:GITHUB_ENV
+          "SCCACHE_DIR=$((Resolve-Path .).Path)/.sccache" >> $env:GITHUB_ENV
 
       # The main build calls BuildBemTools.ps1, whose first act is importing
       # bem_tool.py. Without zstandard that import fails before anything builds.
@@ -157,6 +198,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle.kts', 'android/gradle.properties', 'android/settings.gradle.kts') }}
+          restore-keys: ${{ runner.os }}-gradle-
 
       # The action defaults to "tools platform-tools", but the legacy tools
       # package no longer exists in the SDK repository and fails the install.
@@ -257,6 +306,40 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.nuget/packages
+            ~/AppData/Local/pip/Cache
+          key: ${{ runner.os }}-nuget-pip-${{ hashFiles('**/*.csproj', 'tools/CustomModel/requirements-build.txt') }}
+          restore-keys: ${{ runner.os }}-nuget-pip-
+
+      - name: Prepare sccache
+        if: ${{ inputs.use_sccache }}
+        shell: pwsh
+        run: |
+          $version = 'v0.19.0'
+          $zip = "sccache-$version-x86_64-pc-windows-msvc.zip"
+          Invoke-WebRequest -Uri "https://github.com/mozilla/sccache/releases/download/$version/$zip" -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath sccache-bin -Force
+          $exe = Get-ChildItem sccache-bin -Recurse -Filter sccache.exe | Select-Object -First 1
+          Copy-Item -LiteralPath $exe.FullName -Destination sccache.exe
+          (Resolve-Path sccache.exe).Path | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - uses: actions/cache@v6
+        if: ${{ inputs.use_sccache }}
+        with:
+          path: .sccache
+          key: ${{ runner.os }}-sccache-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-sccache-
+
+      - name: Enable sccache for native builds
+        if: ${{ inputs.use_sccache }}
+        shell: pwsh
+        run: |
+          "BE_CMAKE_LAUNCHER=sccache" >> $env:GITHUB_ENV
+          "SCCACHE_DIR=$((Resolve-Path .).Path)/.sccache" >> $env:GITHUB_ENV
 
       # bem_tool.py imports zstandard at load time, so the version probe that
       # BuildBemTools.ps1 runs first fails without this.

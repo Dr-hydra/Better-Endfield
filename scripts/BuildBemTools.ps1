@@ -47,7 +47,13 @@ if ($LASTEXITCODE -ne 0 -or ($toolVersionText -join ' ') -notmatch '(\d+\.\d+\.\
 $toolVersion = $Matches[1]
 # The standalone creator ZIP must carry the same native engine as the player.
 $composerBuild = Join-Path $ws.paths.build 'next\windows\win-x64\Release\native'
-& $ws.tools.cmake -S (Join-Path $repo 'native') -B $composerBuild -G 'Visual Studio 17 2022' -A x64
+$composerConfigure = @('-S', (Join-Path $repo 'native'), '-B', $composerBuild, '-G', 'Visual Studio 17 2022', '-A', 'x64')
+if ($env:BE_CMAKE_LAUNCHER) {
+    $composerConfigure += "-DCMAKE_C_COMPILER_LAUNCHER=$env:BE_CMAKE_LAUNCHER"
+    $composerConfigure += "-DCMAKE_CXX_COMPILER_LAUNCHER=$env:BE_CMAKE_LAUNCHER"
+    $composerConfigure += '-DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded'
+}
+& $ws.tools.cmake @composerConfigure
 if ($LASTEXITCODE -ne 0) { throw 'Native composer configuration failed.' }
 & $ws.tools.cmake --build $composerBuild --config Release --target BetterEndfieldNext.BemCompose --parallel 4
 if ($LASTEXITCODE -ne 0) { throw 'Native composer build failed.' }
