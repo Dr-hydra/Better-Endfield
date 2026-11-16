@@ -9,7 +9,11 @@ param(
 
     [string]$OutputDir = "",
 
-    [string]$WorkspaceConfig = ""
+    [string]$WorkspaceConfig = "",
+
+    # Set by scripts/ci/windows.ps1: the Setup.exe is signed on the release
+    # host, which is the only machine holding the certificate.
+    [switch]$SkipSigning
 )
 
 $ErrorActionPreference = "Stop"
@@ -155,4 +159,6 @@ if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
 
 Write-Host ""
 Write-Host "Installer complete: $installer"
-& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $installer -WorkspaceConfig $WorkspaceConfig
+if (-not $SkipSigning) {
+    & (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $installer -WorkspaceConfig $WorkspaceConfig
+}

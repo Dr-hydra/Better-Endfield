@@ -8,7 +8,18 @@ param(
     [string]$WorkspaceConfig = "",
 
     [ValidateRange(0, 64)]
-    [int]$Parallel = 0
+    [int]$Parallel = 0,
+
+    # Set by scripts/ci/windows.ps1. There the generated inputs come from an
+    # already-verified core archive, so the cross-artifact freshness checks
+    # carry no signal -- and the two files they read (the 12 MB voice manifest
+    # and the combat build report) are deliberately absent from the archive.
+    [switch]$SkipStaleInputChecks,
+
+    # Signing belongs to the release host. An ephemeral build agent has no
+    # certificate, and copying one onto it defeats the point of keeping the
+    # key off the build machines.
+    [switch]$SkipSigning
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,33 +53,35 @@ foreach ($command in @($cmake, $dotnet, $python)) {
     }
 }
 
-if (-not (Test-Path -LiteralPath $voiceManifest -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $voiceCatalogIndex -PathType Leaf)) {
-    throw "Voice manifest or embedded catalog index is missing. Run scripts\UpdateResourceManifests.ps1."
-}
-$catalogIndexMetadata = Get-Content -LiteralPath $voiceCatalogIndex -Raw |
-    ConvertFrom-Json
-$voiceManifestSha256 = (Get-FileHash -LiteralPath $voiceManifest -Algorithm SHA256).Hash
-if ($catalogIndexMetadata.kind -ne 'betterendfield-voice-catalog-index' -or
-    $catalogIndexMetadata.sourceManifestSha256 -ne $voiceManifestSha256) {
-    throw "The embedded voice catalog index is stale. Run scripts\UpdateResourceManifests.ps1."
-}
-if (-not (Test-Path -LiteralPath $combatSemantics -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $combatSemanticsReport -PathType Leaf)) {
-    throw "Combat semantics catalogue or build report is missing. Run scripts\BuildCombatSemantics.py."
-}
-if (-not (Test-Path -LiteralPath $buffSourceMap -PathType Leaf) -or
-    (Get-Content -LiteralPath $buffSourceMap -TotalCount 1) -notin @("BESOURCE`t1", "BESOURCE`t2")) {
-    throw "Buff source map is missing or invalid. Run tools\CombatDataExporter\export_combat_data.py."
-}
-$combatReportMetadata = Get-Content -LiteralPath $combatSemanticsReport -Raw |
-    ConvertFrom-Json
-$combatSemanticsSha256 = (Get-FileHash -LiteralPath $combatSemantics `
-    -Algorithm SHA256).Hash
-if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report' -or
-    $combatReportMetadata.schemaVersion -ne 1 -or
-    $combatReportMetadata.catalogueSha256 -ne $combatSemanticsSha256) {
-    throw "The bundled combat semantics catalogue is stale or invalid. Run scripts\BuildCombatSemantics.py."
+if (-not $SkipStaleInputChecks) {
+    if (-not (Test-Path -LiteralPath $voiceManifest -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $voiceCatalogIndex -PathType Leaf)) {
+        throw "Voice manifest or embedded catalog index is missing. Run scripts\UpdateResourceManifests.ps1."
+    }
+    $catalogIndexMetadata = Get-Content -LiteralPath $voiceCatalogIndex -Raw |
+        ConvertFrom-Json
+    $voiceManifestSha256 = (Get-FileHash -LiteralPath $voiceManifest -Algorithm SHA256).Hash
+    if ($catalogIndexMetadata.kind -ne 'betterendfield-voice-catalog-index' -or
+        $catalogIndexMetadata.sourceManifestSha256 -ne $voiceManifestSha256) {
+        throw "The embedded voice catalog index is stale. Run scripts\UpdateResourceManifests.ps1."
+    }
+    if (-not (Test-Path -LiteralPath $combatSemantics -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $combatSemanticsReport -PathType Leaf)) {
+        throw "Combat semantics catalogue or build report is missing. Run scripts\BuildCombatSemantics.py."
+    }
+    if (-not (Test-Path -LiteralPath $buffSourceMap -PathType Leaf) -or
+        (Get-Content -LiteralPath $buffSourceMap -TotalCount 1) -notin @("BESOURCE`t1", "BESOURCE`t2")) {
+        throw "Buff source map is missing or invalid. Run tools\CombatDataExporter\export_combat_data.py."
+    }
+    $combatReportMetadata = Get-Content -LiteralPath $combatSemanticsReport -Raw |
+        ConvertFrom-Json
+    $combatSemanticsSha256 = (Get-FileHash -LiteralPath $combatSemantics `
+        -Algorithm SHA256).Hash
+    if ($combatReportMetadata.kind -ne 'betterendfield-combat-semantics-build-report' -or
+        $combatReportMetadata.schemaVersion -ne 1 -or
+        $combatReportMetadata.catalogueSha256 -ne $combatSemanticsSha256) {
+        throw "The bundled combat semantics catalogue is stale or invalid. Run scripts\BuildCombatSemantics.py."
+    }
 }
 
 # Keep explicit publish directories, but never reset retained data or installs.
@@ -263,7 +276,9 @@ if ($missingReleaseFiles) {
 
 # Persist a complete distributable outside the cleanable publish directory.
 $version = ([xml](Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw)).SelectSingleNode('//Version').InnerText.Trim()
-& (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $publishDir -WorkspaceConfig $WorkspaceConfig
+if (-not $SkipSigning) {
+    & (Join-Path $PSScriptRoot 'SignNextRelease.ps1') -Path $publishDir -WorkspaceConfig $WorkspaceConfig
+}
 $releaseDir = Get-BEReleaseDirectory -Workspace $ws -Version $version
 New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 $releaseArchive = Join-Path $releaseDir "BetterEndfieldNext-$version-win-x64.zip"
