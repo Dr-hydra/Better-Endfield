@@ -62,6 +62,16 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # The main build calls BuildBemTools.ps1, whose first act is importing
+      # bem_tool.py. Without zstandard that import fails before anything builds.
+      - name: Install tool build dependencies
+        shell: pwsh
+        run: pip install -r tools/CustomModel/requirements-build.txt
+
       - name: Prepare archive backend
         shell: pwsh
         run: ./scripts/PrepareBemArchiveBackend.ps1
@@ -151,8 +161,10 @@ jobs:
         with:
           packages: platform-tools
 
+      # android-37 is only visible on a preview channel; the stable repository
+      # does not carry it yet.
       - name: Install NDK and platform
-        run: sdkmanager --install "platforms;android-37" "ndk;$NDK_VERSION"
+        run: sdkmanager --channel=1 --install "platforms;android-37" "ndk;$NDK_VERSION"
 
       - name: Fetch Dobby
         run: |
@@ -242,7 +254,7 @@ jobs:
 
       - name: Build tools
         shell: pwsh
-        run: ./scripts/BuildBemTools.ps1
+        run: ./scripts/BuildBemTools.ps1 -SkipSigning
 
       - name: Build Android tool bundle
         shell: pwsh
