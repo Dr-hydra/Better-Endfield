@@ -161,10 +161,15 @@ jobs:
         with:
           packages: platform-tools
 
-      # android-37 is only visible on a preview channel; the stable repository
-      # does not carry it yet.
+      # The SDK repository ships minor versions from API 36 onward, so there is
+      # no platforms;android-37 package. AGP still resolves compileSdk 37 to
+      # platforms/android-37, which is why a local SDK has both directories.
       - name: Install NDK and platform
-        run: sdkmanager --channel=1 --install "platforms;android-37" "ndk;$NDK_VERSION"
+        run: |
+          sdkmanager --install "platforms;android-37.0" "ndk;$NDK_VERSION"
+          sdk="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          ln -sfn "$sdk/platforms/android-37.0" "$sdk/platforms/android-37"
+          ls -1 "$sdk/platforms"
 
       - name: Fetch Dobby
         run: |
