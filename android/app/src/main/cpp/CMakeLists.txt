@@ -10,7 +10,7 @@ if(NOT DEFINED DOBBY_ROOT OR DOBBY_ROOT STREQUAL "")
     if(DEFINED ENV{BE_WORKSPACE_DOBBY_ROOT} AND NOT "$ENV{BE_WORKSPACE_DOBBY_ROOT}" STREQUAL "")
         set(DOBBY_ROOT "$ENV{BE_WORKSPACE_DOBBY_ROOT}" CACHE PATH "Dobby source directory")
     else()
-        set(DOBBY_ROOT "${BETTER_ENDFIELD_NEXT_ROOT}/toolchains/android/dobby-1.0.5"
+        set(DOBBY_ROOT "${BETTER_ENDFIELD_NEXT_ROOT}/native/shared/third_party/dobby"
             CACHE PATH "Dobby source directory")
     endif()
 endif()

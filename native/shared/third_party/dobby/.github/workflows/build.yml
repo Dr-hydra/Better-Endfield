@@ -1,0 +1,132 @@
+name: Build
+
+on: push
+
+jobs:
+  win-build:
+    runs-on: windows-latest
+    name: Windows Build
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup-msbuild
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Configure CMake
+        shell: cmd
+        run: |
+          cmake -DCMAKE_SYSTEM_PROCESSOR=amd64 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_BUILD_TYPE=Release -DDynamicBinaryInstrument=OFF -DPlugin.SymbolResolver=OFF -A x64 -B build64
+          cmake -DCMAKE_SYSTEM_PROCESSOR=x86 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_BUILD_TYPE=Release -DDynamicBinaryInstrument=OFF -DPlugin.SymbolResolver=OFF -A Win32 -B build32
+
+      - name: Build x86
+        run: |
+          msbuild -m -p:Configuration=Release -t:dobby build32/Dobby.sln
+
+      - name: Build x64
+        run: |
+          msbuild -m -p:Configuration=Release -t:dobby build64/Dobby.sln
+
+      - name: Collect artifacts
+        shell: cmd
+        run: |
+          mkdir build_result
+          copy "build32\Release\dobby.dll" "build_result\dobby_x86.dll"
+          copy "build64\Release\dobby.dll" "build_result\dobby_x64.dll"
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: Windows
+          path: build_result
+
+  linux-build:
+    runs-on: ubuntu-latest
+    name: Linux Build
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install gcc-multilib g++-multilib libc6-dev-i386
+
+      - name: Configure CMake
+        run: |
+          cmake -DCMAKE_SYSTEM_PROCESSOR=amd64 -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_BUILD_TYPE=Release -DDynamicBinaryInstrument=OFF -DPlugin.SymbolResolver=OFF -B build64
+          cmake -DCMAKE_SYSTEM_PROCESSOR=x86 -DCMAKE_SYSTEM_NAME=Linux -DCMAKE_CXX_FLAGS="-m32" -DCMAKE_C_FLAGS="-m32" -DCMAKE_SHARED_LINKER_FLAGS="-m32" -DCMAKE_BUILD_TYPE=Release -DDynamicBinaryInstrument=OFF -DPlugin.SymbolResolver=OFF -B build86
+          
+      - name: Build x64
+        run: |
+          cd build64 && make dobby
+          
+      - name: Build x86
+        run: |
+          cd build86 && make dobby
+          
+      - name: Collect artifacts
+        run: |
+          mkdir build_result
+          cp build64/libdobby.so build_result/libdobby_x64.so
+          cp build86/libdobby.so build_result/libdobby_x86.so
+          
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: Linux
+          path: build_result
+
+  macos-build:
+    runs-on: macos-latest
+    name: macOS Build
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure CMake
+        run: |
+          cmake -DCMAKE_SYSTEM_PROCESSOR=amd64 -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_BUILD_TYPE=Release -DDynamicBinaryInstrument=OFF -DPlugin.SymbolResolver=OFF -B build64
+          
+      - name: Build x64
+        run: |
+          cd build64 && make dobby
+          
+      - name: Collect artifacts
+        run: |
+          mkdir build_result
+          cp build64/libdobby.dylib build_result/libdobby_x64.dylib
+          
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: macOS
+          path: build_result
+
+  collect:
+    runs-on: ubuntu-latest
+    name: Collect build
+    if: github.ref == 'refs/heads/master'
+    needs: [win-build, linux-build, macos-build]
+    
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+
+      - name: ZIP versions
+        run: |
+          zip -r -j dobby-win.zip Windows/*.dll
+          zip -r -j dobby-linux.zip Linux/*.so
+          zip -r -j dobby-macos.zip macOS/*.dylib
+      
+      - name: Automatic Releases
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "CI"
+          files: |
+            dobby-win.zip
+            dobby-linux.zip
+            dobby-macos.zip

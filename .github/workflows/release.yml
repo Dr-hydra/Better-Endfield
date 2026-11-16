@@ -171,11 +171,6 @@ jobs:
           ln -sfn "$sdk/platforms/android-37.0" "$sdk/platforms/android-37"
           ls -1 "$sdk/platforms"
 
-      - name: Fetch Dobby
-        run: |
-          git clone --depth 1 --branch v1.0.5 --recurse-submodules \
-            https://github.com/jmpews/Dobby.git toolchains/android/dobby-1.0.5
-
       - name: Download core package
         run: |
           set -euo pipefail
