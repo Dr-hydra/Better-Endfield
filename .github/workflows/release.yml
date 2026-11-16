@@ -223,6 +223,15 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # bem_tool.py imports zstandard at load time, so the version probe that
+      # BuildBemTools.ps1 runs first fails without this.
+      - name: Install tool build dependencies
+        run: pip install -r tools/CustomModel/requirements-build.txt
+
       - name: Prepare archive backend
         shell: pwsh
         run: ./scripts/PrepareBemArchiveBackend.ps1
