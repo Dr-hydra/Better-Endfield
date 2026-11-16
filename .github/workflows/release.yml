@@ -19,7 +19,10 @@ on:
 
 concurrency:
   group: release
-  cancel-in-progress: false
+  # A newer run supersedes an older one. While iterating on the pipeline this is
+  # what keeps a fix from sitting behind a doomed run for half an hour; a
+  # superseded attempt can only ever describe a build that is already stale.
+  cancel-in-progress: true
 
 # The build agents never write to the repository. Publishing happens on the
 # release host, so this token cannot create or modify a release even if a build
