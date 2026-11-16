@@ -37,7 +37,7 @@
 | 战斗字典、语义、Buff 来源表 | `resources/generated/combat/`、`manifests/combat/`、模块旁 `.besem` / `.bemap` | 平台基础包 |
 | 角色头像、物品图标 | native combat assets、UI 内嵌图片 | 平台基础包 |
 | 持续冲刺等骨骼姿态数据 | `native/modules/actions/assets/pose_*.bin`、APK actions assets | 平台基础包；继续提供游戏进程读取通路 |
-| 原生预览网格、纹理、骨骼、绑定元数据 | `resources/bem-preview/native-head-*.zip` | 可选平台预览包：Windows BC7 / Android ASTC |
+| 原生预览网格、纹理、骨骼、绑定元数据 | `BuildPreviewResources.py` 产出的全角色归档，经 `--preview-report` 显式指定 | 可选平台预览包：Windows BC7 / Android ASTC |
 | 预览 JS / CSS / HTML、解码器、本地化、启动 UI 资源 | 共享前端、UI 工程、APK res | 随程序发布，保持接口版本匹配 |
 | hook、偏移、原生适配代码 | native / Android C++ | 软件适配，不通过资源包更新代码 |
 

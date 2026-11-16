@@ -128,7 +128,22 @@ __pycache__/
 /temp/
 /cache/
 /releases/
+# Extracted game data. Regenerated from a local game install, or restored from the
+# private input store; never distribution content, never committed.
 /resources/generated/
+/android/resources/character-presets.json
+/android/resources/voice-catalog-index.json
+/android/resources/manifests/
+/manifests/model/
+/manifests/voice/
+/manifests/combat/buff-sources.bemap
+/manifests/combat/combat-dictionary.json
+/manifests/combat/combat-semantics.besem
+/manifests/combat/combat-semantics-report.json
+/manifests/shared/resource-manifest-report.md
+# Retired 2.x archives (IL2CPP dumps, animation clips, extracted tables) stay on
+# disk as reference material but are not distribution content.
+/legacy/
 
 # Workspace maintenance entry points and suite metadata.
 !scripts/workspace_config.py

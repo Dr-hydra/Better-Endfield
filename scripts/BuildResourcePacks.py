@@ -150,11 +150,15 @@ def main():
         if preview_report['failures'] or not completed or {e['character'] for e in completed}!=set(preview_report['requested']):
             raise ValueError('Preview generation is incomplete; resolve every character before packaging')
         archives=[Path(e[args.platform]) for e in completed]
-    if args.type=='preview' and not archives:archives=[REPO/'resources/bem-preview'/('native-head-pc.zip' if args.platform=='windows' else 'native-head-android.zip')]
+    if args.type=='preview' and not archives:
+        # The single-character prototype archives used to live in resources/bem-preview
+        # and were extracted game geometry. They are gone, so preview packaging must be
+        # told explicitly what to pack instead of silently falling back to a fixture.
+        raise ValueError('Preview packaging requires --preview-report or --preview-archive')
     # Preserve complete provenance on disk, but never ship local machine paths.
     provenance=dict(gameVersion=game,platform=args.platform,generator='BuildResourcePacks.py',coverage='existing inputs')
     if args.type=='preview':
-        provenance=dict(generator='BuildResourcePacks.py',coverage='explicit archive contents; defaults to Liino only',
+        provenance=dict(generator='BuildResourcePacks.py',coverage='explicit archive contents',
             sourceSnapshots='recorded per character',targetCompatibility='exact identity matching required; not a full-platform validation claim')
         if preview_report:
             provenance.update(coverage='all playable characters in current source manifest',characterCount=len(preview_report['requested']),
