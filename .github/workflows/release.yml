@@ -194,6 +194,9 @@ jobs:
       - name: Build APK
         run: |
           cd android
+          # The wrapper is committed from Windows, where the executable bit does
+          # not exist, so it arrives as 0644 and refuses to run.
+          chmod +x gradlew
           ./gradlew :app:assembleRelease --console=plain --no-daemon
 
       - name: Stage release payload
