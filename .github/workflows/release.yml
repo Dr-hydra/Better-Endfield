@@ -36,7 +36,7 @@ env:
 jobs:
   windows:
     name: Windows
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
@@ -145,7 +145,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # The action defaults to "tools platform-tools", but the legacy tools
+      # package no longer exists in the SDK repository and fails the install.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install NDK and platform
         run: sdkmanager --install "platforms;android-37" "ndk;$NDK_VERSION"
@@ -206,7 +210,7 @@ jobs:
 
   tools:
     name: Creator tools
-    runs-on: windows-latest
+    runs-on: windows-2022
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
