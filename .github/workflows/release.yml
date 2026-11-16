@@ -215,7 +215,9 @@ jobs:
           version=$(python3 -c "import xml.etree.ElementTree as ET;print(ET.parse('Directory.Build.props').getroot().findtext('.//Version'))")
           name="BetterEndfieldNext-$version-Android-arm64.apk"
           mkdir -p payload
-          apk=$(find android/app/build/outputs/apk/release -maxdepth 1 -name '*.apk' | head -1)
+          # Gradle redirects its build directory under the workspace build root,
+          # so the APK is not at android/app/build.
+          apk=$(find build -path '*/outputs/apk/release/*.apk' -type f | head -1)
           test -n "$apk"
           cp "$apk" "payload/$name"
           python3 - "$version" "$name" <<'PY'
