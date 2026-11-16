@@ -52,6 +52,10 @@ scripts/*
 !scripts/UpdateResourceManifests.ps1
 !scripts/UpdateCombatAvatars.py
 !scripts/GenerateBemBaselineTable.py
+# CI entry points: thin wrappers the release workflow calls. Kept tracked so the
+# workflow and the local build can never drift into two different procedures.
+!scripts/ci/
+!scripts/ci/*.ps1
 
 # Native build outputs.
 native/build/
@@ -237,3 +241,6 @@ __pycache__/
 /.workbuddy/
 /.workbuddy-ai/
 !scripts/CheckDistributionIndex.py
+
+# Release host deployment (keys and host layout live there, not in the repo)
+/deploy/
