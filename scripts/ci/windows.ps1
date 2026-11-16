@@ -4,7 +4,11 @@ param(
 
     [string]$WorkspaceConfig = '',
 
-    [string]$OutputDir = ''
+    [string]$OutputDir = '',
+
+    # The DSH bundle ships as its own asset from the tools job. Skipping it here
+    # keeps this job free of the Android CLI tree that packaging it requires.
+    [switch]$SkipDshPlugin
 )
 
 $ErrorActionPreference = 'Stop'
@@ -25,6 +29,7 @@ $buildArgs = @{
     Configuration        = 'Release'
     SkipStaleInputChecks = $true
     SkipSigning          = $true
+    SkipDshPlugin        = $SkipDshPlugin
 }
 if ($WorkspaceConfig) { $buildArgs['WorkspaceConfig'] = $WorkspaceConfig }
 & (Join-Path $scriptsRoot 'BuildBetterEndfieldNext.ps1') @buildArgs

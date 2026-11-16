@@ -19,7 +19,11 @@ param(
     # Signing belongs to the release host. An ephemeral build agent has no
     # certificate, and copying one onto it defeats the point of keeping the
     # key off the build machines.
-    [switch]$SkipSigning
+    [switch]$SkipSigning,
+
+    # The DSH bundle is released as its own asset by the tools job, which is
+    # also the only job that builds the Python CLI tree it needs.
+    [switch]$SkipDshPlugin
 )
 
 $ErrorActionPreference = "Stop"
@@ -150,7 +154,8 @@ if ($LASTEXITCODE -ne 0) {
     throw "Better Endfield UI publish failed with exit code $LASTEXITCODE."
 }
 
-& (Join-Path $PSScriptRoot "BuildBemTools.ps1") -WorkspaceConfig $WorkspaceConfig -SkipSigning:$SkipSigning
+& (Join-Path $PSScriptRoot "BuildBemTools.ps1") -WorkspaceConfig $WorkspaceConfig `
+    -SkipSigning:$SkipSigning -SkipDshPlugin:$SkipDshPlugin
 $bemTools = Join-Path $ws.paths.build "tools\bem\dist\BetterEndfieldNext.BemConverter"
 New-Item -ItemType Directory -Force -Path (Join-Path $publishDir "tools") | Out-Null
 Copy-Item -LiteralPath $bemTools -Destination (Join-Path $publishDir "tools\BemConverter") -Recurse -Force

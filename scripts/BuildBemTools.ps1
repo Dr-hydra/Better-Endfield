@@ -6,7 +6,12 @@ param(
 
     # Set by scripts/ci/*.ps1: the tools are signed on the release host together
     # with everything else, so an agent has no certificate to sign with.
-    [switch]$SkipSigning
+    [switch]$SkipSigning,
+
+    # The DSH bundle is a separate release asset owned by its own job; the job
+    # that builds the player does not need it and should not pay for the CLI
+    # tree it requires.
+    [switch]$SkipDshPlugin
 )
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot 'Workspace.ps1')
@@ -124,12 +129,15 @@ Write-Host "BEM toolchain ZIP: $releaseArchive"
 
 # The DeepSeek Harness bundle carries the same skill the ZIP ships, packaged so
 # `dsh plugin add` can install it. It does not depend on the GUI, so it is built
-# beside the ZIP rather than inside it.
-$pluginArgs = @((Join-Path $repo 'scripts\BuildDshPlugin.py'))
-if ($ws.config_file) { $pluginArgs += @('--workspace-config', $ws.config_file) }
-& $python @pluginArgs
-if ($LASTEXITCODE -ne 0) { throw "DSH plugin packaging failed." }
-Write-Host "DSH plugin bundle: $(Join-Path $releaseDir "dsh-bem-creator-$toolVersion.tgz")"
+# beside the ZIP rather than inside it. It does need the Python CLI tree, which
+# is why the release pipeline builds this only in the job that owns that tree.
+if (-not $SkipDshPlugin) {
+    $pluginArgs = @((Join-Path $repo 'scripts\BuildDshPlugin.py'))
+    if ($ws.config_file) { $pluginArgs += @('--workspace-config', $ws.config_file) }
+    & $python @pluginArgs
+    if ($LASTEXITCODE -ne 0) { throw "DSH plugin packaging failed." }
+    Write-Host "DSH plugin bundle: $(Join-Path $releaseDir "dsh-bem-creator-$toolVersion.tgz")"
+}
 
 Write-Host "BEM creator GUI: BEM-Tools/BetterEndfieldNext.BemTools.exe inside the ZIP"
 Write-Host "BEM converter: $Destination\dist\BetterEndfieldNext.BemConverter"
