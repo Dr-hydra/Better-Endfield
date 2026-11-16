@@ -1,1 +1,0 @@
-SCRIPT_ROOT = "LevelScripts/"
