@@ -351,7 +351,9 @@ jobs:
             test -f "payload/$dir/payload.json"
             tar -C "payload/$dir" -czf "part-$n.tgz" .
             echo "part $n/3 ($dir): $(stat -c%s "part-$n.tgz") bytes"
-            curl -fsS --retry 3 --max-time 1800 \
+            # --fail-with-body keeps the server's stdout/stderr visible. A plain
+            # -f hides the 500 body that says what actually failed on the host.
+            curl -fsS --fail-with-body --retry 0 --max-time 1800 \
               -H "X-Release-Token: $RELEASE_TOKEN" \
               -H "Content-Type: application/gzip" \
               --data-binary "@part-$n.tgz" \
