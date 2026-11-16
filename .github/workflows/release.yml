@@ -335,19 +335,26 @@ jobs:
         with:
           path: payload
 
-      - name: Merge job payloads
-        run: python3 scripts/ci/merge_payload.py payload
-
+      # Cloudflare refuses a request body over 100 MB and the whole release is
+      # larger than that, so each job's payload travels as its own part. The
+      # host assembles them and signs once the last part arrives.
       - name: Sign and publish
         env:
           RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           RELEASE_ENDPOINT: ${{ secrets.RELEASE_ENDPOINT }}
         run: |
           set -euo pipefail
-          version=$(python3 -c "import json;print(json.load(open('payload/payload.json'))['version'])")
-          tar -C payload -czf payload.tgz .
-          curl -fsS --retry 3 --max-time 3600 \
-            -H "X-Release-Token: $RELEASE_TOKEN" \
-            -H "Content-Type: application/gzip" \
-            --data-binary @payload.tgz \
-            "$RELEASE_ENDPOINT/sign?tag=v$version"
+          version=$(python3 -c "import json;print(json.load(open('payload/windows/payload.json'))['version'])")
+          n=0
+          for dir in windows android tools; do
+            n=$((n + 1))
+            test -f "payload/$dir/payload.json"
+            tar -C "payload/$dir" -czf "part-$n.tgz" .
+            echo "part $n/3 ($dir): $(stat -c%s "part-$n.tgz") bytes"
+            curl -fsS --retry 3 --max-time 1800 \
+              -H "X-Release-Token: $RELEASE_TOKEN" \
+              -H "Content-Type: application/gzip" \
+              --data-binary "@part-$n.tgz" \
+              "$RELEASE_ENDPOINT/sign?tag=v$version&part=$n&parts=3"
+            echo
+          done
