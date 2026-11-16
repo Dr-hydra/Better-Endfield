@@ -196,11 +196,18 @@ jobs:
       # APK and the release host signs it. build.gradle.kts decides that itself.
       - name: Build APK
         run: |
+          sdk="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          test -d "$sdk"
+          # settings.gradle.kts refuses to run when ANDROID_HOME and
+          # tools.android_sdk disagree. On an agent the SDK is wherever the image
+          # put it, so the workspace is pointed at it rather than the SDK moved.
+          printf '{"schema_version": 1, "tools": {"android_sdk": "%s"}}\n' "$sdk" > ci-workspace.json
           cd android
           # The wrapper is committed from Windows, where the executable bit does
           # not exist, so it arrives as 0644 and refuses to run.
           chmod +x gradlew
-          ./gradlew :app:assembleRelease --console=plain --no-daemon
+          ./gradlew :app:assembleRelease --console=plain --no-daemon \
+            -PworkspaceConfig="$GITHUB_WORKSPACE/ci-workspace.json"
 
       - name: Stage release payload
         run: |
