@@ -482,14 +482,19 @@ and the report is capped at 4 MiB.
 ## LSPosed scope troubleshooting
 
 Third-party BEM packages are managed from the separate `第三方模型` page.
-Import validates every appearance and preserves the original package bytes;
-texture conversion is optional. If textures look wrong in game, choose
-`转换手机纹理` on that package's management card. A successful conversion
-publishes a new generation while preserving its enabled state and selected
-appearance. Failure or cancellation leaves the active package intact. Packages
-without verified normal-map encoding can still be imported, but conversion
-requires that metadata. Restart after changes unless experimental hot switching
-was enabled before launch; that mode applies selections on normal resource reloads.
+Import validates every appearance and reads the package's texture format
+census. Android then probes the device for BC1/BC3/BC4/BC5/BC7 and ASTC: when
+every format in the package is supported the package is published without a
+full format rewrite (the existing normal-map repair may still re-encode normal
+textures); otherwise the texture set is rewritten to ASTC (or RGBA32 when ASTC
+is unavailable) before publication. The injected runtime still checks each
+texture with `SystemInfo.SupportsTextureFormat`, because the probe runs in the
+module app's GLES context while the game may use Vulkan. The management card's
+`转换手机纹理` action remains for packages imported by older builds. Failure or
+cancellation leaves the active package intact. Packages without verified
+normal-map encoding can still be imported as-is, but a texture rewrite requires
+that metadata. Restart after changes unless experimental hot switching was
+enabled before launch; that mode applies selections on normal resource reloads.
 
 If Endfield is missing from every module's scope list, open the scope page's
 overflow menu, choose `Hide`, and turn off the `Games` filter. LSPosed applies

@@ -100,8 +100,10 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 
 **平台格式**
 - Windows：使用 BC1/BC3/BC4/BC5/BC7、RGBA32、R8。
-- Android：设备不支持的格式会被拒绝（`Texture format unsupported by game backend`）。多数手机不支持 BC 格式，需要在安装页点“转换纹理”：
-  - 支持 ASTC 的设备：颜色贴图转 ASTC 6×6，线性数据转 ASTC 4×4；不支持 ASTC 的设备转 RGBA32。R8 和已经是 ASTC 的贴图不转换。
+- Android：导入时读取包内纹理格式清单，并探测设备的 BC1/BC3/BC4/BC5/BC7 与 ASTC 支持（`TextureSupport`，EGL/GLES；同时取 `GL_MAX_TEXTURE_SIZE`）：
+  - 包内所有格式都被设备支持：不做整包格式重编码（既有的法线修复仍会单独处理法线贴图）。支持 BC7 的设备（例如 Adreno 840）直接使用 BC7 包，避免无谓的有损转换。
+  - 任一格式不被支持：整包自动重编码。支持 ASTC 时颜色贴图转 ASTC 6×6、线性数据转 ASTC 4×4；不支持 ASTC 时转 RGBA32。R8 和已经是 ASTC 的贴图不转换。
+  - 运行时仍逐张调用 `SystemInfo.SupportsTextureFormat` 复核；探测只决定导入阶段是否需要重写，游戏后端仍是最终判据。已安装的旧包仍可在管理卡片手动转换。
   - 转换后单张不超过 8192 像素且不超过 64 MiB；超出时丢弃最高级 mip，单级贴图则按 2 的幂缩小。被缩小的贴图在报告里记为 `android_install_mip_skip`。
   - 法线贴图必须能确定编码：`semantic:"normal"` 加 `normal_encoding`，或命中内置法线规则（目前只覆盖部分角色的 `_N` 贴图）。否则会提示“此包缺少已确认的法线贴图编码信息”。`xy-unorm` 会重建 Z 分量。
 

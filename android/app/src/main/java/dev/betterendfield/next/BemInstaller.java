@@ -19,7 +19,7 @@ final class BemInstaller {
     static final String FAST_LOADING = "bem_fast_loading";
     static final String KEEP_LOCAL_COPIES = "bem_keep_local_copies";
     /** Idle hint. The page compares against it instead of matching localized status text. */
-    static final String IDLE_STATUS = Text.of("原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。");
+    static final String IDLE_STATUS = Text.of("导入 BEM 包；不支持的纹理格式会自动转换。");
     static volatile String status = IDLE_STATUS;
     static volatile boolean busy;
     static volatile boolean removing;
@@ -181,7 +181,9 @@ final class BemInstaller {
                     stage=null; // Ownership passes to confirmation/cancellation, including Activity recreation.
                 } else {
                     awaitPublishing();installPrepared(app,bundle.packages.get(0));
-                    status=Text.of("已原样导入：")+bundle.packages.get(0).report.getString("name")+Text.of("。重启游戏后生效。");
+                    String mode=bundle.packages.get(0).report.optString("texture_mode","original");
+                    status=(mode.equals("original")?Text.of("已原样导入："):Text.of("已转换："))
+                            +bundle.packages.get(0).report.getString("name")+Text.of("。重启游戏后生效。");
                 }
             } catch(Throwable error) {
                 status=Text.of("导入未完成：")+importError(error);
@@ -266,22 +268,50 @@ final class BemInstaller {
     static void installPrepared(Context app,PreparedPackage item) throws Exception {
         File bemFile=new File(item.item.directory,"installed.bem");
         if(bemFile.isFile()) {
-            File repaired=new File(item.item.directory,"installed.bem.repaired");
-            try {
+            TextureSupport.Profile gpu=TextureSupport.probe();
+            JSONObject formats=item.report.optJSONObject("texture_formats");
+            boolean rewrite=needsTextureRewrite(formats,gpu);
+            android.util.Log.i("BetterEndfieldNext.Install",
+                    "install texture decision: "+gpu.describe()+" formats="+formats+" rewrite="+rewrite);
+            if(rewrite) {
+                if(containsAstcTexture(formats) && !gpu.astc)
+                    throw new IOException(Text.of("此包包含 ASTC 纹理，但当前设备不支持 ASTC"));
+                File converted=new File(item.item.directory,"installed.bem.converted");
+                status=gpu.astc?Text.of("正在自动转换手机纹理（ASTC）…")
+                        :Text.of("正在自动转换手机纹理（RGBA32）…");
                 loadCodec();
-                repairNormalsNative(bemFile.getAbsolutePath(),repaired.getAbsolutePath(),true);
-                if(repaired.isFile() && repaired.length()>0) {
-                    if(bemFile.delete() && repaired.renameTo(bemFile)) {
-                        item.report.put("normal_repaired",true);
-                        item.report.put("bytes",bemFile.length());
-                        try(FileOutputStream out=new FileOutputStream(new File(item.item.directory,"report.json"))) {
-                            out.write(item.report.toString(2).getBytes(StandardCharsets.UTF_8));
-                            out.getFD().sync();
+                try {
+                    convertNative(bemFile.getAbsolutePath(),converted.getAbsolutePath(),normalRules(app),gpu.astc);
+                    if(!converted.isFile() || converted.length()==0)
+                        throw new IOException(Text.of("纹理转换未完成"));
+                    java.nio.file.Files.move(converted.toPath(),bemFile.toPath(),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } finally {
+                    if(converted.exists()) converted.delete();
+                }
+                item.report.put("texture_mode",gpu.astc?"astc":"rgba32");
+                item.report.put("astc_converted",gpu.astc);
+                item.report.put("auto_converted",true);
+                item.report.put("normal_repaired",true);
+                item.report.put("gpu_texture",gpu.describe());
+                item.report.put("bytes",bemFile.length());
+                writeReport(item);
+            } else {
+                File repaired=new File(item.item.directory,"installed.bem.repaired");
+                try {
+                    loadCodec();
+                    repairNormalsNative(bemFile.getAbsolutePath(),repaired.getAbsolutePath(),gpu.astc);
+                    if(repaired.isFile() && repaired.length()>0) {
+                        if(bemFile.delete() && repaired.renameTo(bemFile)) {
+                            item.report.put("normal_repaired",true);
+                            item.report.put("bytes",bemFile.length());
                         }
                     }
+                } catch(Throwable ignored) {
+                    if(repaired.exists()) repaired.delete();
                 }
-            } catch(Throwable ignored) {
-                if(repaired.exists()) repaired.delete();
+                item.report.put("gpu_texture",gpu.describe());
+                writeReport(item);
             }
         }
         File root=new File(app.getFilesDir(),"bem-installed");
@@ -311,16 +341,53 @@ final class BemInstaller {
         if(error instanceof SecurityException) return Text.of("读取授权已失效，请重新选择文件或从文件管理器打开。");
         String message=error.getMessage();return message==null || message.isEmpty()?error.getClass().getSimpleName():message;
     }
+    private static void writeReport(PreparedPackage item) {
+        try(FileOutputStream out=new FileOutputStream(new File(item.item.directory,"report.json"))) {
+            out.write(item.report.toString(2).getBytes(StandardCharsets.UTF_8));
+            out.getFD().sync();
+        } catch(Throwable ignored) {}
+    }
+    private static String normalRules(Context app) {
+        try(InputStream in=GameResourceStore.openCore(app,"model/android-normal-rules.json");
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
+            byte[] buffer=new byte[8192];int count;
+            while((count=in.read(buffer))!=-1) bytes.write(buffer,0,count);
+            return new String(bytes.toByteArray(),StandardCharsets.UTF_8);
+        } catch(Throwable ignored) { return "{}"; }
+    }
+    /** A package keeps its textures only when every format in it is supported. */
+    private static boolean needsTextureRewrite(JSONObject formats, TextureSupport.Profile gpu) {
+        if(formats==null) return false; // The native importer always reports it; absence keeps the old path.
+        java.util.Iterator<String> keys=formats.keys();
+        while(keys.hasNext()) {
+            try {
+                if(!gpu.supports(Integer.parseInt(keys.next()))) return true;
+            } catch(NumberFormatException ignored) {}
+        }
+        return false;
+    }
+    private static boolean containsAstcTexture(JSONObject formats) {
+        if(formats==null) return false;
+        java.util.Iterator<String> keys=formats.keys();
+        while(keys.hasNext()) {
+            try {
+                int format=Integer.parseInt(keys.next());
+                if(format>=TextureSupport.ASTC_4X4 && format<=TextureSupport.ASTC_6X6) return true;
+            } catch(NumberFormatException ignored) {}
+        }
+        return false;
+    }
     private static synchronized boolean run(Context context, Uri uri, String previousGeneration) {
         if(busy) return false;
         boolean converting=previousGeneration!=null;
         progressPercent=-1;startedAt=android.os.SystemClock.elapsedRealtime();
-        busy=true; cancelled=false; status=converting?Text.of("正在准备纹理转换…"):Text.of("正在读取并校验包（不转换纹理）…");
+        busy=true; cancelled=false; status=converting?Text.of("正在准备纹理转换…"):Text.of("正在读取并校验包…");
         Context app=context.getApplicationContext();
         boolean skipValidation=FrameworkSettings.open(app).getBoolean(SKIP_VALIDATION,false);
         try {
         worker.execute(() -> {
             File stage=null;
+            boolean autoConvert=false;
             try {
                 File root=new File(app.getFilesDir(),"bem-installed");
                 if(!root.isDirectory() && !root.mkdirs()) throw new IOException(Text.of("无法创建安装目录"));
@@ -351,23 +418,43 @@ final class BemInstaller {
                 }
                 loadCodec();checkpoint();
                 JSONObject result;
+                TextureSupport.Profile gpu;
                 if(converting) {
-                    boolean astc=AstcSupport.available();
+                    gpu=TextureSupport.probe();
+                    boolean astc=gpu.astc;
                     status=astc?Text.of("正在转换 ASTC 纹理；大包可能需要数分钟…"):Text.of("设备未报告 ASTC，正在生成 RGBA32 资源…");
-                    String rules;
-                    try(InputStream in=GameResourceStore.openCore(app,"model/android-normal-rules.json");
-                        ByteArrayOutputStream bytes=new ByteArrayOutputStream()) {
-                        byte[] buffer=new byte[8192];int count;
-                        while((count=in.read(buffer))!=-1) bytes.write(buffer,0,count);
-                        rules=new String(bytes.toByteArray(),StandardCharsets.UTF_8);
-                    }
-                    result=new JSONObject(convertNative(source.getAbsolutePath(),output.getAbsolutePath(),rules,astc));
+                    result=new JSONObject(convertNative(source.getAbsolutePath(),output.getAbsolutePath(),
+                            normalRules(app),astc));
                     result.put("texture_mode",astc?"astc":"rgba32");
                     source.delete();
                 } else {
                     result=new JSONObject(inspectNativeWithOptions(source.getAbsolutePath(),skipValidation));
-                    result.put("texture_mode","original");
+                    gpu=TextureSupport.probe();
+                    JSONObject formats=result.optJSONObject("texture_formats");
+                    boolean rewrite=needsTextureRewrite(formats,gpu);
+                    android.util.Log.i("BetterEndfieldNext.Install",
+                            "texture decision: "+gpu.describe()+" formats="+formats+" rewrite="+rewrite);
+                    if(rewrite) {
+                        if(containsAstcTexture(formats) && !gpu.astc)
+                            throw new IOException(Text.of("此包包含 ASTC 纹理，但当前设备不支持 ASTC"));
+                        autoConvert=true;
+                        status=gpu.astc?Text.of("正在自动转换手机纹理（ASTC）…")
+                                :Text.of("正在自动转换手机纹理（RGBA32）…");
+                        File original=new File(stage,"source.bem");
+                        if(!output.renameTo(original)) throw new IOException(Text.of("无法准备纹理转换"));
+                        JSONObject inspected=result;
+                        result=new JSONObject(convertNative(original.getAbsolutePath(),output.getAbsolutePath(),
+                                normalRules(app),gpu.astc));
+                        result.put("texture_mode",gpu.astc?"astc":"rgba32");
+                        result.put("auto_converted",true);
+                        if(inspected.optJSONObject("texture_formats")!=null)
+                            result.put("texture_formats",inspected.optJSONObject("texture_formats"));
+                        original.delete();
+                    } else {
+                        result.put("texture_mode","original");
+                    }
                 }
+                result.put("gpu_texture",gpu.describe());
                 checkpoint();
                 try(FileOutputStream out=new FileOutputStream(new File(stage,"report.json"))) {out.write(result.toString(2).getBytes(StandardCharsets.UTF_8));out.getFD().sync();}
                 String generation=UUID.randomUUID().toString();
@@ -391,7 +478,7 @@ final class BemInstaller {
                 // The game reads its private copy, so a replaced conversion source is unreachable.
                 if(converting) discardGeneration(root,previousGeneration);
                 if(!FrameworkSettings.open(app).getBoolean(KEEP_LOCAL_COPIES,true)) new File(installed,"installed.bem").delete();
-                stage=null;status=(converting?Text.of("已转换："):Text.of("已原样导入："))+result.getString("name")+Text.of("。重启游戏后生效。");
+                stage=null;status=((converting||autoConvert)?Text.of("已转换："):Text.of("已原样导入："))+result.getString("name")+Text.of("。重启游戏后生效。");
             } catch(Throwable error) {
                 String reason=error instanceof SecurityException
                         ?Text.of("没有读取权限或临时授权已失效，请从文件管理器重新打开，或使用应用内文件选择器。")
@@ -399,7 +486,8 @@ final class BemInstaller {
                 if(reason==null || reason.isEmpty()) reason=error.getClass().getSimpleName();
                 if(reason!=null && reason.contains("Normal slot has no verified source encoding"))
                     reason=Text.of("此包缺少已确认的法线贴图编码信息，暂时无法转换；可继续使用原包。");
-                status=(converting?Text.of("转换未完成，原包和启用状态已保留："):Text.of("导入未完成："))+reason;
+                status=(converting?Text.of("转换未完成，原包和启用状态已保留：")
+                        :autoConvert?Text.of("自动转换未完成，包未导入："):Text.of("导入未完成："))+reason;
                 android.util.Log.e("BetterEndfieldNext.Install",status,error);
             }
             finally {if(stage!=null) deleteOwned(stage);busy=false;}
@@ -632,24 +720,21 @@ final class BemInstaller {
             try {
                 checkpoint();
                 loadCodec();
-                String rules = "{}";
-                try(InputStream in = GameResourceStore.openCore(app,"model/android-normal-rules.json");
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
-                    byte[] buffer = new byte[8192]; int count;
-                    while((count = in.read(buffer)) != -1) bytes.write(buffer, 0, count);
-                    rules = new String(bytes.toByteArray(), StandardCharsets.UTF_8);
-                } catch(Throwable ignored) {}
+                String rules = normalRules(app);
+                TextureSupport.Profile gpu = TextureSupport.probe();
+                boolean astc = gpu.astc;
 
-                status = Text.of("正在转换为 ASTC 格式并流压缩…");
-                convertNative(bemFile.getAbsolutePath(), tempRepaired.getAbsolutePath(), rules, true);
+                status = astc ? Text.of("正在转换为 ASTC 格式并流压缩…")
+                        : Text.of("设备不支持 ASTC，正在转换为 RGBA32…");
+                convertNative(bemFile.getAbsolutePath(), tempRepaired.getAbsolutePath(), rules, astc);
                 if(tempRepaired.isFile() && tempRepaired.length() > 0) {
                     if(bemFile.delete() && tempRepaired.renameTo(bemFile)) {
                         File reportFile = new File(folder, "report.json");
                         JSONObject reportJson = reportFile.isFile()
                             ? new JSONObject(new String(java.nio.file.Files.readAllBytes(reportFile.toPath()), StandardCharsets.UTF_8))
                             : new JSONObject();
-                        reportJson.put("astc_converted", true);
-                        reportJson.put("texture_mode", "astc");
+                        reportJson.put("astc_converted", astc);
+                        reportJson.put("texture_mode", astc ? "astc" : "rgba32");
                         reportJson.put("normal_repaired", true);
                         reportJson.put("bytes", bemFile.length());
                         try(FileOutputStream out = new FileOutputStream(reportFile)) {
@@ -665,8 +750,8 @@ final class BemInstaller {
                             if(generation.equals(item.optString("generation"))) {
                                 modelName = item.optString("name", modelName);
                                 remote = item.optString("remote", remote);
-                                item.put("astc_converted", true);
-                                item.put("texture_mode", "astc");
+                                item.put("astc_converted", astc);
+                                item.put("texture_mode", astc ? "astc" : "rgba32");
                                 item.put("normal_repaired", true);
                                 item.put("bytes", bemFile.length());
                                 break;
@@ -674,14 +759,16 @@ final class BemInstaller {
                         }
                         commitIndex(app, list.toString(), list, Text.of("保存 ASTC 转换索引失败"));
                         FrameworkSettings.publishBem(bemFile, remote);
-                        status = Text.of("「") + modelName + Text.of("」已成功转换为 ASTC 格式。重启游戏后生效。");
+                        status = Text.of("「") + modelName
+                                + (astc ? Text.of("」已成功转换为 ASTC 格式。重启游戏后生效。")
+                                        : Text.of("」已成功转换为 RGBA32 格式。重启游戏后生效。"));
                     } else {
                         throw new IOException(Text.of("无法替换转换后的模型包"));
                     }
                 }
             } catch(Throwable error) {
                 if(tempRepaired.exists()) tempRepaired.delete();
-                status = Text.of("ASTC 转换未完成：") + importError(error);
+                status = Text.of("纹理转换未完成：") + importError(error);
             } finally {
                 busy = false; progressPercent = -1;
             }

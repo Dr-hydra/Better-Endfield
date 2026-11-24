@@ -99,8 +99,10 @@ The production callers load a generated Android relation table for the current r
 **Platform formats**
 
 - Windows supports BC1/BC3/BC4/BC5/BC7, RGBA32, and R8.
-- Android rejects formats unsupported by the device backend with `Texture format unsupported by game backend`. Most phones do not support BC formats, so use “Convert textures” during installation:
-  - ASTC devices convert color textures to ASTC 6×6 and linear data to ASTC 4×4; non-ASTC devices convert to RGBA32. R8 and already-ASTC textures are unchanged.
+- Android reads the package's texture-format census and probes the device for BC1/BC3/BC4/BC5/BC7 and ASTC support (`TextureSupport`, EGL/GLES, including `GL_MAX_TEXTURE_SIZE`):
+  - When every package format is supported, the package is not rewritten for format reasons (the existing normal-map repair may still re-encode normal textures). A BC7-capable device such as Adreno 840 keeps the BC7 package and avoids a lossy rewrite.
+  - When any format is unsupported, the whole package is rewritten. ASTC devices convert color textures to ASTC 6×6 and linear data to ASTC 4×4; non-ASTC devices convert to RGBA32. R8 and already-ASTC textures are unchanged.
+  - The runtime still calls `SystemInfo.SupportsTextureFormat` per texture. The probe only decides whether an import-time rewrite is needed; the game backend remains the final authority. Packages installed by older builds can still be converted from the management card.
   - Converted textures are limited to 8192 pixels and 64 MiB. The installer drops the highest mip, or downsizes a single-level texture by powers of two. The report records this as `android_install_mip_skip`.
   - Normal-map encoding must be known through `semantic:"normal"` and `normal_encoding`, or a built-in normal rule. Built-in rules currently cover only some character `_N` textures. `xy-unorm` reconstructs Z.
 

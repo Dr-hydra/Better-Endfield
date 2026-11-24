@@ -42,6 +42,18 @@ extern "C" JNIEXPORT jstring JNICALL Java_dev_betterendfield_next_BemInstaller_i
                 if (manifest.contains("drivers") && manifest["drivers"].is_array()) {
                     report["drivers"] = manifest["drivers"];
                 }
+                // The Android importer needs the package's format census to decide
+                // whether this device can keep the textures or must rewrite them.
+                if (manifest.contains("textures") && manifest["textures"].is_array()) {
+                    BemJson formats = BemJson::object();
+                    for (const auto& texture : manifest["textures"]) {
+                        if (!texture.is_object()) continue;
+                        const auto key = std::to_string(texture.value("format", 0));
+                        formats[key] = formats.value(key, 0) + 1;
+                    }
+                    report["texture_formats"] = formats;
+                    report["texture_count"] = manifest["textures"].size();
+                }
             } catch (...) {}
         }
         auto encoded=report.dump();

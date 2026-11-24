@@ -299,8 +299,8 @@ final class Text {
 
     /** BEM installer, its page and the archive reader. */
     private static void install() {
-        put("原样导入 BEM 包；贴图异常时，可在对应模型包下手动转换手机纹理。",
-                "Imports BEM packages as-is. If textures look wrong, convert the mobile texture format from the model package card.");
+        put("导入 BEM 包；不支持的纹理格式会自动转换。",
+                "Imports BEM packages; unsupported texture formats are converted automatically.");
         put("正在转换第 ", "Converting texture ");
         put(" 张纹理 · mip ", " · mip ");
         put("正在取消，保留原安装版本…", "Cancelling; keeping the previously installed version…");
@@ -338,7 +338,14 @@ final class Text {
         put("读取授权已失效，请重新选择文件或从文件管理器打开。",
                 "Read permission expired; select the file again or open it from a file manager.");
         put("正在准备纹理转换…", "Preparing texture conversion…");
-        put("正在读取并校验包（不转换纹理）…", "Reading and validating the package (no texture conversion)…");
+        put("正在读取并校验包…", "Reading and validating the package…");
+        put("正在自动转换手机纹理（ASTC）…",
+                "Converting textures to ASTC automatically; large packages may take minutes…");
+        put("正在自动转换手机纹理（RGBA32）…",
+                "Converting textures to RGBA32 automatically…");
+        put("此包包含 ASTC 纹理，但当前设备不支持 ASTC",
+                "This package contains ASTC textures, but this device does not support ASTC");
+        put("自动转换未完成，包未导入：", "Automatic conversion failed; the package was not imported: ");
         put("无效的模型包版本", "Invalid model package version");
         put("模型包已被替换，请刷新后重试", "The model package was replaced; refresh and try again");
         put("正在转换 ASTC 纹理；大包可能需要数分钟…",
@@ -392,11 +399,15 @@ final class Text {
         put("文件超过大小限制", "File exceeds the size limit");
         put("正在准备转换为 ASTC 格式…", "Preparing the ASTC conversion…");
         put("正在转换为 ASTC 格式并流压缩…", "Converting to ASTC with stream compression…");
+        put("设备不支持 ASTC，正在转换为 RGBA32…",
+                "The device does not support ASTC; converting to RGBA32…");
         put("保存 ASTC 转换索引失败", "Failed to save the ASTC conversion index");
         put("」已成功转换为 ASTC 格式。重启游戏后生效。",
                 "\" was converted to ASTC. Restart the game to apply.");
+        put("」已成功转换为 RGBA32 格式。重启游戏后生效。",
+                "\" was converted to RGBA32. Restart the game to apply.");
         put("无法替换转换后的模型包", "Unable to replace the converted model package");
-        put("ASTC 转换未完成：", "ASTC conversion incomplete: ");
+        put("纹理转换未完成：", "Texture conversion incomplete: ");
         put("正在扫描已安装模型包…", "Scanning installed model packages…");
         put("正在检查并修复法线 (", "Checking and repairing normals (");
         put("保存法线修复索引失败", "Failed to save the normal repair index");
@@ -422,11 +433,12 @@ final class Text {
         put("详细组件 / 外观选项 ▾", "Detailed component / appearance options ▾");
         put("启动外观", "Startup appearance");
         put("已转为 ASTC", "ASTC applied");
+        put("已转为 RGBA32", "RGBA32 applied");
         put("转为 ASTC 格式", "Convert to ASTC");
         put("将「", "Convert \"");
         put("」转为 ASTC？", "\" to ASTC?");
-        put("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。",
-                "Re-encodes every texture in the package to the mobile-native ASTC format (normals get a reconstructed Z axis and stream compression is enabled). Use it when some devices show black or pink textures or run out of video memory.");
+        put("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式；设备不支持 ASTC 时改为 RGBA32（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。",
+                "Re-encodes every texture in the package to the mobile-native ASTC format, or RGBA32 when the device does not support ASTC (normals get a reconstructed Z axis and stream compression is enabled). Use it when some devices show black or pink textures or run out of video memory.");
         put("开始转换", "Start conversion");
         put("预览", "Preview");
         put("模型预览", "Model preview");

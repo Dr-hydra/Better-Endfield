@@ -420,15 +420,18 @@ final class BemInstallPage {
                 previewLayout.rightMargin=dp(8);actions.addView(preview,previewLayout);
                 packageActions.add(preview);
                 preview.setOnClickListener(v -> BemPreviewActivity.open(activity,generation));
-                boolean isAstc=entry.optBoolean("astc_converted",false)||"astc".equals(entry.optString("texture_mode"));
-                Button convertAstc=actionButton(isAstc?Text.of("已转为 ASTC"):Text.of("转为 ASTC 格式"));
+                String textureMode=entry.optString("texture_mode");
+                boolean isAstc=entry.optBoolean("astc_converted",false)||"astc".equals(textureMode);
+                boolean isRgba32="rgba32".equals(textureMode);
+                Button convertAstc=actionButton(isAstc?Text.of("已转为 ASTC")
+                        :isRgba32?Text.of("已转为 RGBA32"):Text.of("转为 ASTC 格式"));
                 LinearLayout.LayoutParams convertLayout=new LinearLayout.LayoutParams(0,dp(48),1f);
                 actions.addView(convertAstc,convertLayout);
-                if(!isAstc) packageActions.add(convertAstc);
-                convertAstc.setEnabled(!isAstc && !BemInstaller.busy);
+                if(!isAstc && !isRgba32) packageActions.add(convertAstc);
+                convertAstc.setEnabled(!isAstc && !isRgba32 && !BemInstaller.busy);
                 convertAstc.setOnClickListener(v -> new android.app.AlertDialog.Builder(activity)
                         .setTitle(Text.of("将「")+packageName+Text.of("」转为 ASTC？"))
-                        .setMessage(Text.of("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。"))
+                        .setMessage(Text.of("将扫描模型包内所有纹理并重编码为移动端原生 ASTC 格式；设备不支持 ASTC 时改为 RGBA32（自动补全法线 Z 轴并启用流压缩）。用于解决部分机型贴图黑屏、粉屏或显存过大问题。"))
                         .setNegativeButton(Text.of("取消"),null)
                         .setPositiveButton(Text.of("开始转换"),(dialog,which)->BemInstaller.convertToAstc(activity,generation))
                         .show());
