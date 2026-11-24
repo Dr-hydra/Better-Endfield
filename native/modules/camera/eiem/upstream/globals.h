@@ -14,14 +14,50 @@ static CRITICAL_SECTION g_logLock;
 // BE-PATCH(log): internal linkage (EIEM is one TU inside the Camera module)
 // and a size cap, since DirectVmd diagnostics are verbose during playback.
 static uint64_t g_logBytesWritten = 0;
+static uint64_t g_logLinesDropped = 0;
+static uint64_t g_logLastDropReportMs = 0;
 static constexpr uint64_t kLogByteLimit = 32ull * 1024 * 1024;
 static void Log(const char *fmt, ...) {
   if (g_logHandle == INVALID_HANDLE_VALUE)
     return;
-  EnterCriticalSection(&g_logLock);
+  // Diagnostics must never be able to wedge the caller. The worker logs while
+  // it holds the lifecycle barrier, so an unbounded wait here (or a stalled
+  // WriteFile below) used to freeze the whole slot together with the reload
+  // path that was waiting for that barrier.
+  bool entered = false;
+  for (int attempt = 0; attempt < 64; ++attempt) {
+    if (TryEnterCriticalSection(&g_logLock)) {
+      entered = true;
+      break;
+    }
+    if ((attempt % 8) == 7)
+      Sleep(0); // a few milliseconds at most, then drop the line
+  }
+  if (!entered) {
+    ++g_logLinesDropped;
+    return;
+  }
   if (g_logBytesWritten >= kLogByteLimit) {
     LeaveCriticalSection(&g_logLock);
     return;
+  }
+  // Make dropped lines visible without adding a line per drop: one summary
+  // every second while the lock is contended.
+  if (g_logLinesDropped) {
+    const uint64_t now = GetTickCount64();
+    if (now - g_logLastDropReportMs >= 1000) {
+      char note[96];
+      const int noteLen =
+          snprintf(note, sizeof(note), "[LOG-DROP] dropped=%llu\n",
+                   (unsigned long long)g_logLinesDropped);
+      DWORD noteWritten = 0;
+      if (noteLen > 0)
+        WriteFile(g_logHandle, note, static_cast<DWORD>(noteLen), &noteWritten,
+                  NULL);
+      g_logBytesWritten += noteWritten;
+      g_logLinesDropped = 0;
+      g_logLastDropReportMs = now;
+    }
   }
   char buf[4096];
   va_list args;

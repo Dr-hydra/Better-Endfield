@@ -610,6 +610,8 @@ static void GhostRig_RequestEnabled(bool enabled,
 }
 
 static uint64_t GhostRig_RequestVmdReload(const char *path) {
+  Log("[BE-LOAD] reload enter path='%s' tid=%lu", path ? path : "",
+      GetCurrentThreadId());
   ClothRequestInvalidation();
   DirectVmdRuntime_BeginLifecycleMutation();
   DirectVmdRuntime_RequestLoad(path);
