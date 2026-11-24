@@ -28,6 +28,7 @@ internal static class HotkeyService
             0x0D => extended ? "NUMPAD_ENTER" : "ENTER",
             0x20 => "SPACE", 0x09 => "TAB", 0x1B => "ESC",
             0x6B => "ADD", 0x6D => "SUBTRACT", 0x6A => "MULTIPLY", 0x6F => "DIVIDE", 0x6E => "DECIMAL",
+            0xDC => "BACKSLASH",
             0xBB => "=", 0xBD => "-", 0x26 => "UP", 0x28 => "DOWN", 0x25 => "LEFT", 0x27 => "RIGHT",
             _ => string.Empty
         };
@@ -47,6 +48,7 @@ internal static class HotkeyService
         foreach (string modifier in parts[..^1])
             if (modifier is not ("CTRL" or "ALT" or "SHIFT" or "WIN")) return false;
         string key = parts[^1];
+        if (key is "\\" or "、" or "OEM_5") { parts[^1] = "BACKSLASH"; key = "BACKSLASH"; }
         if (key is "MINUS" or "OEM_MINUS") { parts[^1] = "-"; key = "-"; }
         else if (key is "OEMPLUS" or "OEM_PLUS" or "=") { parts[^1] = "PLUS"; key = "PLUS"; }
         else if (key is "NUMPAD_MINUS" or "NUMPADSUBTRACT") { parts[^1] = "SUBTRACT"; key = "SUBTRACT"; }
@@ -54,7 +56,7 @@ internal static class HotkeyService
         normalized = string.Join('+', parts);
         if (key.Length == 1 && (char.IsAsciiLetterOrDigit(key[0]) || key == "-")) return true;
         if (key is "ENTER" or "NUMPAD_ENTER" or "SPACE" or "TAB" or "ESC" or
-            "PLUS" or "ADD" or "SUBTRACT" or "MULTIPLY" or "DIVIDE" or "DECIMAL" or "UP" or "DOWN" or "LEFT" or "RIGHT") return true;
+            "BACKSLASH" or "PLUS" or "ADD" or "SUBTRACT" or "MULTIPLY" or "DIVIDE" or "DECIMAL" or "UP" or "DOWN" or "LEFT" or "RIGHT") return true;
         if (key.StartsWith("NUMPAD", StringComparison.Ordinal) && key.Length == 7 && key[^1] is >= '0' and <= '9') return true;
         return key.StartsWith('F') && int.TryParse(key[1..], out int number) && number is >= 1 and <= 24;
     }

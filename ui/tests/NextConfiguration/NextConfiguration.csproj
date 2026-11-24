@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../BetterEndfieldNext.UI/Services/HotkeyService.cs" Link="HotkeyService.cs" />
+    <Compile Include="../ModelOverlaySettings/VirtualKeyFixture.cs" Link="VirtualKeyFixture.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Models/ModConfiguration.cs" Link="ModConfiguration.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Models/MediaScreenConfiguration.cs" Link="MediaScreenConfiguration.cs" />
     <Compile Include="../../BetterEndfieldNext.UI/Models/FreeCameraExtras.cs" Link="FreeCameraExtras.cs" />

@@ -56,6 +56,12 @@ enum class ModuleState : uint8_t {
     Stopped,
 };
 
+struct CharacterOutlineStyle {
+    bool enabled=true;
+    float width=0.06f, intensity=8.3f, opacity=1.0f;
+    std::string color="FFFFFF";
+    bool operator==(const CharacterOutlineStyle&) const = default;
+};
 struct CameraConfiguration {
     int schema_version = 0;
     bool enabled = false;
@@ -93,6 +99,9 @@ struct CameraConfiguration {
     bool vmd_squad_follow=false;     // a single-dancer work also drives the squad
     bool vmd_outline=false;          // white character outline on every dancer
     float vmd_outline_width=3.0f;    // multiplier on the material's own outline width
+    bool character_outline_enabled=false;
+    int character_outline_key=0xDC; // 、 / backslash on a standard Chinese keyboard
+    CharacterOutlineStyle character_outline_slots[4];
     int vmd_cloth_mode=1;           // EiemBody::ClothMode: 0 game, 1 stable, 2 freeze
     float vmd_motion_scale=1;       // EIEM displacement multiplier on top of leg-length scaling
     float vmd_motion_weight=1;
@@ -1187,6 +1196,7 @@ void* FindModelTransform() {
 
 #include "free_camera_runtime.inc"
 #include "character_motion_runtime.inc"
+#include "character_outline_runtime.inc"
 #include "mmd_director_runtime.inc"
 
 // Time.unscaledDeltaTime keeps being read while Time.timeScale is 0, so it is
@@ -1205,6 +1215,7 @@ float __fastcall DetourTimeUnscaledDelta(void* method) {
         t_in_heartbeat = true;
         PumpMmdDirector(false);
         PumpCharacterMotion(false); // only the thread previously observed at TailLateTick
+        CharacterOutline::Pump(false);
         PumpFreeCameraControl();
         if (g_free_camera_active) {
             ApplyFreeCameraHeartbeat();
@@ -1243,6 +1254,7 @@ void __fastcall DetourTailLateTick(void* instance, float deltaTime, void* method
     (void)instance;
     PumpMmdDirector();
     PumpCharacterMotion();
+    CharacterOutline::Pump();
     PumpFreeCameraControl();
     if (g_free_camera_active) {
         ApplyFreeCamera();
@@ -1264,6 +1276,7 @@ void __fastcall DetourCameraTick(void* instance, void* method) {
     if (!g_original_tail_late_tick) {
         PumpMmdDirector();
         PumpCharacterMotion();
+        CharacterOutline::Pump();
         PumpFreeCamera();
     }
 }
@@ -1421,6 +1434,21 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "vmd_terrain_enabled") config.vmd_terrain_enabled = ParseBoolean(value);
         else if (key == "vmd_per_actor_anchor") config.vmd_per_actor_anchor = ParseBoolean(value);
         else if (key == "vmd_squad_follow") config.vmd_squad_follow = ParseBoolean(value);
+        else if (key == "character_outline_enabled") config.character_outline_enabled = ParseBoolean(value);
+        else if (key == "character_outline_hotkey") config.character_outline_key = ParseVirtualKey(value,0xDC);
+        else if (key.starts_with("character_outline_slot") && key.size()>24 && key[22]>='1' && key[22]<='4' && key[23]=='_') {
+            auto& slot=config.character_outline_slots[key[22]-'1'];
+            const auto field=key.substr(24);
+            if(field=="enabled")slot.enabled=ParseBoolean(value);
+            else if(field=="color") {
+                auto hex=value;
+                if(!hex.empty()&&hex[0]=='#')hex.erase(0,1);
+                if(hex.size()==6&&hex.find_first_not_of("0123456789abcdefABCDEF")==std::string::npos)slot.color=hex;
+            }
+            else if(field=="width")slot.width=ParseFloat(value,0.06f);
+            else if(field=="intensity")slot.intensity=ParseFloat(value,8.3f);
+            else if(field=="opacity")slot.opacity=ParseFloat(value,1.0f);
+        }
         else if (key == "vmd_outline") config.vmd_outline = ParseBoolean(value);
         else if (key == "vmd_outline_width") config.vmd_outline_width = ParseFloat(value,3);
         else if (key == "vmd_cloth_mode") {
@@ -1491,6 +1519,11 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
     config.vmd_motion_weight = std::clamp(config.vmd_motion_weight,0.0f,1.0f);
     config.vmd_motion_scale = std::isfinite(config.vmd_motion_scale) ? std::clamp(config.vmd_motion_scale,0.0f,5.0f) : 1.0f;
     config.vmd_outline_width = std::isfinite(config.vmd_outline_width) ? std::clamp(config.vmd_outline_width,0.5f,8.0f) : 3.0f;
+    for(auto& slot:config.character_outline_slots) {
+        slot.width=std::isfinite(slot.width)?std::clamp(slot.width,0.0f,1.0f):0.06f;
+        slot.intensity=std::isfinite(slot.intensity)?std::clamp(slot.intensity,1.0f,100.0f):8.3f;
+        slot.opacity=std::isfinite(slot.opacity)?std::clamp(slot.opacity,0.0f,1.0f):1.0f;
+    }
 #if defined(__ANDROID__)
     config.movement_speed = std::clamp(config.movement_speed, 0.2f, 60.0f);
 #else
@@ -1731,6 +1764,7 @@ BE_Result BE_CALL Initialize(const BE_HostApiV1* host) {
 BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
     const CameraConfiguration config = ParseConfiguration(raw_configuration);
     PublishCharacterConfiguration(config);
+    CharacterOutline::Publish(config);
     g_character_play_key=config.vmd_motion_key;
     g_character_pause_key=config.vmd_motion_pause_key;
     g_character_stop_key=config.vmd_motion_stop_key;
@@ -1816,7 +1850,7 @@ BE_Result BE_CALL ConfigurationChanged(const char* raw_configuration) {
         g_force_exit_request.store(true, std::memory_order_release);
     }
     g_state.store(free_camera || anti_dither || g_pause_enabled.load() || g_global_fov_enabled.load() || g_character_preview_enabled.load() ||
-            g_mmd_enabled.load()
+            g_mmd_enabled.load() || config.enabled&&config.character_outline_enabled
         ? ModuleState::Active
         : ModuleState::Disabled, std::memory_order_release);
 
@@ -1846,6 +1880,7 @@ void BE_CALL Shutdown() {
 #endif
     g_character_preview_enabled=false;
     StopCharacterMotion();
+    CharacterOutline::Shutdown();
     g_free_camera_enabled.store(false, std::memory_order_release);
     g_disable_dither_enabled.store(false, std::memory_order_release);
     g_global_fov_enabled.store(false,std::memory_order_release);

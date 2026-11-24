@@ -67,8 +67,6 @@ void* BE_CALL InvokeFake(void*,const void* method,void* instance,void** a,void**
         case CM::SquadMember:return squad.at(*static_cast<int*>(a[0]));
         case CM::IsHuman:return Box(object->human);
         case CM::ActiveEnabled:return Box(object->enabled);
-        case CM::OutlineGet:return Box(object->outline);
-        case CM::OutlineSet:object->outline=*static_cast<bool*>(a[0]);return nullptr;
     }
     *exception=reinterpret_cast<void*>(1);return nullptr;
 }
@@ -110,7 +108,6 @@ int main() {
     auto& r=CM::runtime;r.resolved=true;r.leases=&leases;r.applied=Config();std::atomic_store(&CM::config,r.applied);
     r.squad_manager_offset=int(offsetof(PlayerFake,manager));
     r.animator_class.type_object=reinterpret_cast<void*>(201);r.thread_id=GetCurrentThreadId();
-    r.skinned_class.type_object=reinterpret_cast<void*>(202);r.mesh_class.type_object=reinterpret_cast<void*>(203);
 
     // Another writer owns the rig: nothing is loaded, nothing stays pinned.
     auto foreign=registry.Acquire(&leader.root,"actions");
@@ -266,19 +263,6 @@ int main() {
     Ready();CHECK(Dancing()==2);
     CM::requests.store(16);PumpCharacterMotion();CHECK(pins.empty());
 
-    // Character outline: every dancer's renderers are flagged, and the value
-    // each one had before comes back when the session stops.
-    leader_skin_b.outline=true;
-    {auto config=Config();config->squad_follow=true;config->outline=true;r.applied=config;std::atomic_store(&CM::config,r.applied);}
-    RequestCharacterDirectorLoad(Cast(1));PumpCharacterMotion();
-    CHECK(leader_skin_a.outline&&leader_skin_b.outline&&leader_mesh.outline);
-    CHECK(member1_skin.outline&&member2_skin.outline);
-    Ready();CHECK(Dancing()==3);
-    CM::requests.store(16);PumpCharacterMotion();
-    CHECK(!leader_skin_a.outline&&leader_skin_b.outline&&!leader_mesh.outline);
-    CHECK(!member1_skin.outline&&!member2_skin.outline);CHECK(pins.empty());
-    leader_skin_b.outline=false;
-
     // Configuration invalidation dominates a running session.
     r.applied=Config();std::atomic_store(&CM::config,r.applied);
     CM::requests.store(1);PumpCharacterMotion();Ready();CHECK(Dancing()==1);
@@ -316,7 +300,7 @@ int main() {
     CHECK(!ParseConfiguration("").vmd_squad_follow&&!ParseConfiguration("").vmd_per_actor_anchor);
     auto follow=ParseConfiguration("vmd_squad_follow=true\nvmd_per_actor_anchor=true\n");
     CHECK(follow.vmd_squad_follow&&follow.vmd_per_actor_anchor);
-    // Outline width is a multiplier on each material's own line width.
+    // Retired MMD settings are still parsed for old configuration compatibility.
     CHECK(nearly(ParseConfiguration("").vmd_outline_width,3));
     CHECK(nearly(ParseConfiguration("vmd_outline_width=5\n").vmd_outline_width,5));
     CHECK(nearly(ParseConfiguration("vmd_outline_width=99\n").vmd_outline_width,8));

@@ -1,4 +1,4 @@
-<Window
+﻿<Window
     x:Class="BetterEndfieldNext.UI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -1332,6 +1332,67 @@
 
                                 <Border Style="{StaticResource SectionStyle}">
                                     <StackPanel Spacing="18">
+                                        <TextBlock x:Name="CharacterOutlineSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="角色描边" />
+                                        <TextBlock x:Name="CharacterOutlineSectionHint" Style="{StaticResource FieldHintStyle}" Text="独立于 MMD 和拍照模式。启用后按“、”（反斜杠键）显示或隐藏已勾选位置的描边；1–4 号位按队伍栏顺序，各自保存外观。" TextWrapping="Wrap" />
+                                        <ToggleSwitch x:Name="CharacterOutlineToggle" Header="启用角色描边" OffContent="关闭" OnContent="开启" Toggled="CameraEnhancementToggle_Toggled" />
+                                        <TextBox x:Name="CharacterOutlineHotkeyBox" Header="显示 / 隐藏快捷键（默认：、）" Text="BACKSLASH" LostFocus="CharacterOutlineText_LostFocus" />
+                                        <Expander x:Name="OutlineSlot1Expander" Header="1 号位" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                            <StackPanel Spacing="12">
+                                                <ToggleSwitch x:Name="OutlineSlot1Toggle" Header="此位置描边" IsOn="True" Toggled="CameraEnhancementToggle_Toggled" />
+                                                <TextBox x:Name="OutlineSlot1ColorBox" Header="颜色（RRGGBB）" Text="FFFFFF" MaxLength="7" LostFocus="CharacterOutlineText_LostFocus" />
+                                                <Grid ColumnSpacing="12" RowSpacing="12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <NumberBox x:Name="OutlineSlot1WidthBox" Header="描边粗细" Minimum="0" Maximum="1" Value="0.06" SmallChange="0.01" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot1IntensityBox" Grid.Column="1" Header="亮度" Minimum="1" Maximum="100" Value="8.3" SmallChange="0.5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot1OpacityBox" Grid.Row="1" Header="不透明度（%）" Minimum="0" Maximum="100" Value="100" SmallChange="5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Expander>
+                                        <Expander x:Name="OutlineSlot2Expander" Header="2 号位" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                            <StackPanel Spacing="12">
+                                                <ToggleSwitch x:Name="OutlineSlot2Toggle" Header="此位置描边" IsOn="True" Toggled="CameraEnhancementToggle_Toggled" />
+                                                <TextBox x:Name="OutlineSlot2ColorBox" Header="颜色（RRGGBB）" Text="FFFFFF" MaxLength="7" LostFocus="CharacterOutlineText_LostFocus" />
+                                                <Grid ColumnSpacing="12" RowSpacing="12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <NumberBox x:Name="OutlineSlot2WidthBox" Header="描边粗细" Minimum="0" Maximum="1" Value="0.06" SmallChange="0.01" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot2IntensityBox" Grid.Column="1" Header="亮度" Minimum="1" Maximum="100" Value="8.3" SmallChange="0.5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot2OpacityBox" Grid.Row="1" Header="不透明度（%）" Minimum="0" Maximum="100" Value="100" SmallChange="5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Expander>
+                                        <Expander x:Name="OutlineSlot3Expander" Header="3 号位" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                            <StackPanel Spacing="12">
+                                                <ToggleSwitch x:Name="OutlineSlot3Toggle" Header="此位置描边" IsOn="True" Toggled="CameraEnhancementToggle_Toggled" />
+                                                <TextBox x:Name="OutlineSlot3ColorBox" Header="颜色（RRGGBB）" Text="FFFFFF" MaxLength="7" LostFocus="CharacterOutlineText_LostFocus" />
+                                                <Grid ColumnSpacing="12" RowSpacing="12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <NumberBox x:Name="OutlineSlot3WidthBox" Header="描边粗细" Minimum="0" Maximum="1" Value="0.06" SmallChange="0.01" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot3IntensityBox" Grid.Column="1" Header="亮度" Minimum="1" Maximum="100" Value="8.3" SmallChange="0.5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot3OpacityBox" Grid.Row="1" Header="不透明度（%）" Minimum="0" Maximum="100" Value="100" SmallChange="5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Expander>
+                                        <Expander x:Name="OutlineSlot4Expander" Header="4 号位" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                                            <StackPanel Spacing="12">
+                                                <ToggleSwitch x:Name="OutlineSlot4Toggle" Header="此位置描边" IsOn="True" Toggled="CameraEnhancementToggle_Toggled" />
+                                                <TextBox x:Name="OutlineSlot4ColorBox" Header="颜色（RRGGBB）" Text="FFFFFF" MaxLength="7" LostFocus="CharacterOutlineText_LostFocus" />
+                                                <Grid ColumnSpacing="12" RowSpacing="12">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                                    <NumberBox x:Name="OutlineSlot4WidthBox" Header="描边粗细" Minimum="0" Maximum="1" Value="0.06" SmallChange="0.01" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot4IntensityBox" Grid.Column="1" Header="亮度" Minimum="1" Maximum="100" Value="8.3" SmallChange="0.5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                    <NumberBox x:Name="OutlineSlot4OpacityBox" Grid.Row="1" Header="不透明度（%）" Minimum="0" Maximum="100" Value="100" SmallChange="5" SpinButtonPlacementMode="Compact" ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Expander>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource SectionStyle}">
+                                    <StackPanel Spacing="18">
                                         <StackPanel Spacing="4">
                                             <TextBlock x:Name="CameraFreeSectionTitle" Style="{StaticResource SectionTitleStyle}" Text="自由视角" />
                                             <TextBlock
@@ -1687,24 +1748,6 @@
                                                     OffContent="播放一次"
                                                     OnContent="循环"
                                                     Toggled="CameraEnhancementToggle_Toggled" />
-                                                <ToggleSwitch
-                                                    x:Name="MmdOutlineToggle"
-                                                    Grid.Row="5"
-                                                    Header="角色描边"
-                                                    OffContent="关闭"
-                                                    OnContent="白色描边"
-                                                    Toggled="CameraEnhancementToggle_Toggled" />
-                                                <NumberBox
-                                                    x:Name="MmdOutlineWidthNumberBox"
-                                                    Grid.Row="5"
-                                                    Grid.Column="1"
-                                                    Header="描边粗细（%）"
-                                                    Minimum="50"
-                                                    Maximum="800"
-                                                    SmallChange="10"
-                                                    SpinButtonPlacementMode="Compact"
-                                                    Value="300"
-                                                    ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                                 <ToggleSwitch
                                                     x:Name="MmdPerActorAnchorToggle"
                                                     Grid.Row="4"

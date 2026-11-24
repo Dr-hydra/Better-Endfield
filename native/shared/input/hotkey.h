@@ -64,6 +64,7 @@ inline int ParseKey(std::string_view value, int fallback) {
             int key = 0;
             if (token == "NONE" || token == "OFF" || token == "DISABLED") key = 0;
             else if (token == "-" || token == "MINUS" || token == "OEM_MINUS") key = VK_OEM_MINUS;
+            else if (token == "\\" || token == "、" || token == "BACKSLASH" || token == "OEM_5") key = 0xDC;
             else if (token == "=" || token == "PLUS" || token == "OEM_PLUS" || token == "OEMPLUS") key = 0xBB;
             else if (token == "SUBTRACT" || token == "NUMPAD-") key = VK_SUBTRACT;
             else if (token == "ADD" || token == "NUMPAD+") key = VK_ADD;

@@ -28,12 +28,6 @@ struct Config {
     bool per_actor_anchor=false;
     // "Follow me": hand a single-dancer work to the remaining squad slots too.
     bool squad_follow=false;
-    // Character outline: the render pipeline draws a CharacterOutline pass for
-    // renderers carrying the engine flag, the same affordance the photo mode
-    // gives the character it is moving. The line's thickness comes from
-    // outline_width, a multiplier on each material's own _OutlineWidth.
-    bool outline=false;
-    float outline_width=3.0f;
     float motion_scale=1;
     EiemBody::ClothMode cloth=EiemBody::ClothMode::Stable;
     std::string file;
@@ -78,24 +72,9 @@ Method methods[]{
     // Optional: picks the body rig when the model carries more than one Animator.
     {{"UnityEngine.AnimationModule.dll","UnityEngine","Animator","get_isHuman",nullptr,"System.Boolean",0}},
     {{kCore,"UnityEngine","Behaviour","get_isActiveAndEnabled",nullptr,"System.Boolean",0}},
-    // Optional: per-renderer character outline. The photo mode's "move character"
-    // outline is this engine flag, rendered by the pipeline's CharacterOutline pass.
-    {{kCore,"UnityEngine","Renderer","get_enableCharacterOutline",nullptr,"System.Boolean",0}},
-    {{kCore,"UnityEngine","Renderer","set_enableCharacterOutline","System.Boolean",nullptr,1}},
-    // Optional: the outline's colour and width are material properties, so a
-    // property block recolours each dancer without touching shared materials.
-    {{kCore,"UnityEngine","Renderer","get_sharedMaterial",nullptr,"UnityEngine.Material",0}},
-    {{kCore,"UnityEngine","Material","HasProperty","System.String","System.Boolean",1}},
-    {{kCore,"UnityEngine","Material","GetFloat","System.String","System.Single",1}},
-    {{kCore,"UnityEngine","Material","GetColor","System.String","UnityEngine.Color",1}},
-    {{kCore,"UnityEngine","MaterialPropertyBlock",".ctor",nullptr,nullptr,0}},
-    {{kCore,"UnityEngine","MaterialPropertyBlock","SetColor","System.String|UnityEngine.Color",nullptr,2}},
-    {{kCore,"UnityEngine","MaterialPropertyBlock","SetFloat","System.String|System.Single",nullptr,2}},
-    {{kCore,"UnityEngine","Renderer","GetPropertyBlock","UnityEngine.MaterialPropertyBlock",nullptr,1}},
-    {{kCore,"UnityEngine","Renderer","SetPropertyBlock","UnityEngine.MaterialPropertyBlock",nullptr,1}},
+
 };
-enum Id {Alive,Transform,Children,ArrayLength,ArrayValue,IsChild,Movement,Player,SquadLoading,SquadCount,SquadMember,IsHuman,ActiveEnabled,OutlineGet,OutlineSet,
-    SharedMaterial,HasProperty,GetFloat,GetColor,BlockCtor,BlockSetColor,BlockSetFloat,BlockGet,BlockSet};
+enum Id {Alive,Transform,Children,ArrayLength,ArrayValue,IsChild,Movement,Player,SquadLoading,SquadCount,SquadMember,IsHuman,ActiveEnabled};
 void* Call(Id id,void* self,void** args=nullptr,bool* success=nullptr) {
     if(success)*success=false;
     if(!g_host || !g_host->runtime_invoke || !methods[id].value.method_info)return nullptr;
@@ -134,22 +113,12 @@ struct Actor {
     void* root=nullptr;
     uint64_t lease=0;
     std::vector<uint32_t> pins;
-    // Renderers this session switched the character outline on for, with the
-    // value each one had before, so the game's own state comes back on stop.
-    std::vector<void*> outline_objects;
-    std::vector<uint8_t> outline_previous;
-    // Renderers whose outline appearance was overridden, and the property block
-    // that was applied to them before (replayed on stop).
-    std::vector<void*> block_objects;
-    std::vector<void*> block_snapshots;
     bool loading=false,active=false;
     bool Bound()const{return lease!=0;}
 };
 struct Runtime final {
     const BE_PoseLeaseApiV1* leases=nullptr;
     BE_ResolvedClassV1 animator_class{};
-    // Renderer types the character outline is switched on for.
-    BE_ResolvedClassV1 skinned_class{},mesh_class{},block_class{};
     int squad_manager_offset=-1;
     std::shared_ptr<const Config> applied;
     CharacterPose::Clock clock;
@@ -175,7 +144,7 @@ struct Runtime final {
     // main_thread=false: shutdown on Host's thread; Unity must not be touched.
     void Release(int index,bool main_thread,const char* reason) {
         Actor& actor=actors[index];
-        if(main_thread && thread_id==GetCurrentThreadId()){RestoreOutline(index);EiemBody::Stop(index,reason);}
+        if(main_thread && thread_id==GetCurrentThreadId()){EiemBody::Stop(index,reason);}
         if(actor.lease && leases)leases->release(actor.root,kOwner,actor.lease);
         for(auto pin:actor.pins)if(g_host&&g_host->gchandle_free)g_host->gchandle_free(g_host->context,pin);
         actor=Actor{};
@@ -215,10 +184,6 @@ struct Runtime final {
                 squad_manager_offset=value.offset;
         }
         core &= g_host->resolve_class(g_host->context,"UnityEngine.AnimationModule.dll","UnityEngine","Animator",&animator_class)==BE_Result_Ok && animator_class.type_object;
-        // Optional: without these the character outline toggle does nothing.
-        g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll","UnityEngine","SkinnedMeshRenderer",&skinned_class);
-        g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll","UnityEngine","MeshRenderer",&mesh_class);
-        g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll","UnityEngine","MaterialPropertyBlock",&block_class);
         resolved=core;return resolved;
     }
     bool SquadReady()const {
@@ -332,153 +297,6 @@ struct Runtime final {
         }
         return true;
     }
-    // Character outline: the pipeline draws its CharacterOutline pass for every
-    // renderer carrying the engine flag, and the line's colour and width are
-    // material properties. The flag alone is not enough: most character
-    // renderers already carry it, but the outline stays invisible until its
-    // colour is opaque. A per-renderer property block recolours the dancers and
-    // is replayed back on stop, so shared materials are never touched.
-    static constexpr float kOutlineWidth=0.004f;
-    const char* const outline_colors[3]{"_OutlineColor","_Outline2Color","_outlineColor"};
-    const char* const outline_widths[3]{"_OutlineWidth","_Outline2Width","_outlineWidth"};
-    // Pinned for the module's lifetime: six short names, created once.
-    void* outline_names[6]{};
-    std::vector<void*> logged_materials;
-    void* OutlineName(int index,const char* text) {
-        if(outline_names[index])return outline_names[index];
-        if(!g_host||!g_host->string_new||!g_host->gchandle_new)return nullptr;
-        void* name=g_host->string_new(g_host->context,text);
-        if(!name||!g_host->gchandle_new(g_host->context,name,1))return nullptr;
-        outline_names[index]=name;return name;
-    }
-    bool OutlineAppearanceReady()const {
-        return g_host&&g_host->string_new&&g_host->object_new&&block_class.class_info&&
-            methods[SharedMaterial].value.method_info&&methods[HasProperty].value.method_info&&
-            methods[GetFloat].value.method_info&&methods[BlockCtor].value.method_info&&
-            methods[BlockSetColor].value.method_info&&methods[BlockSetFloat].value.method_info&&
-            methods[BlockGet].value.method_info&&methods[BlockSet].value.method_info;
-    }
-    void* NewBlock() {
-        void* block=g_host->object_new(g_host->context,block_class.class_info);
-        if(!block)return nullptr;
-        bool ok=false;Call(BlockCtor,block,nullptr,&ok);
-        return ok?block:nullptr;
-    }
-    int RecolourOutline(Actor& actor,void* renderer) {
-        void* material=Call(SharedMaterial,renderer);
-        if(!material)return 0;
-        std::vector<void*> colors,widths;
-        for(int i=0;i<3;++i) {
-            void* name=OutlineName(i,outline_colors[i]);
-            bool has=false;void* args[]{name};
-            if(name&&Value(HasProperty,material,has,args)&&has)colors.push_back(name);
-        }
-        for(int i=0;i<3;++i) {
-            void* name=OutlineName(3+i,outline_widths[i]);
-            bool has=false;void* args[]{name};
-            if(name&&Value(HasProperty,material,has,args)&&has)widths.push_back(name);
-        }
-        if(colors.empty()&&widths.empty())return 0;
-        bool seen=false;
-        for(void* known:logged_materials)if(known==material){seen=true;break;}
-        if(!seen&&logged_materials.size()<6) {
-            logged_materials.push_back(material);
-            std::string line="Character VMD: outline material '"+ObjectName(material)+"':";
-            for(void* name:colors)line+=" colour "+ReadManagedString(name);
-            for(void* name:widths) {
-                float value=0;void* args[]{name};
-                Value(GetFloat,material,value,args);
-                line+=" width "+ReadManagedString(name)+"="+std::to_string(value);
-            }
-            Log(line);
-        }
-        void* snapshot=NewBlock();
-        if(!snapshot)return 0;
-        bool got=false;void* get_args[]{snapshot};
-        Call(BlockGet,renderer,get_args,&got);
-        if(!got)return 0;
-        void* block=NewBlock();
-        if(!block)return 0;
-        Color white{1,1,1,1};
-        for(void* name:colors) {
-            bool ok=false;void* args[]{name,&white};
-            Call(BlockSetColor,block,args,&ok);
-        }
-        for(void* name:widths) {
-            float value=kOutlineWidth,current=0;void* args[]{name};
-            if(Value(GetFloat,material,current,args)&&current>0.0001f)value=current*applied->outline_width;
-            bool ok=false;void* set_args[]{name,&value};
-            Call(BlockSetFloat,block,set_args,&ok);
-        }
-        bool applied=false;void* set_args[]{block};
-        Call(BlockSet,renderer,set_args,&applied);
-        if(!applied)return 0;
-        actor.block_objects.push_back(renderer);
-        actor.block_snapshots.push_back(snapshot);
-        return 1;
-    }
-    int ApplyOutline(int count) {
-        if(!methods[OutlineGet].value.method_info||!methods[OutlineSet].value.method_info) {
-            Log("Character VMD: character outline is unavailable in this client.");
-            return 0;
-        }
-        const bool appearance=OutlineAppearanceReady();
-        if(!appearance)Log("Character VMD: character outline appearance contracts are unavailable; flag only.");
-        const BE_ResolvedClassV1* types[]{&skinned_class,&mesh_class};
-        int flagged=0,already=0,recoloured=0;
-        for(int i=0;i<count;++i) {
-            Actor& actor=actors[i];
-            for(const BE_ResolvedClassV1* type:types) {
-                if(!type->type_object)continue;
-                bool inactive=true;void* args[]{type->type_object,&inactive};
-                void* array=Call(Children,actor.model,args);
-                if(!array||!Pin(actor,array))continue;
-                int dimension=0,length=0;void* length_args[]{&dimension};
-                if(!Value(ArrayLength,array,length,length_args))continue;
-                for(int index=0;index<length;++index) {
-                    void* index_args[]{&index};
-                    void* renderer=Call(ArrayValue,array,index_args);
-                    if(!renderer)continue;
-                    bool current=false;
-                    if(!Value(OutlineGet,renderer,current)||!Pin(actor,renderer))continue;
-                    if(current)++already;
-                    bool enabled=true;bool ok=false;void* enabled_args[]{&enabled};
-                    Call(OutlineSet,renderer,enabled_args,&ok);
-                    if(!ok)continue;
-                    actor.outline_objects.push_back(renderer);
-                    actor.outline_previous.push_back(current?1:0);
-                    ++flagged;
-                    if(appearance)recoloured+=RecolourOutline(actor,renderer);
-                }
-            }
-        }
-        if(flagged)Log("Character VMD: character outline on, renderers="+std::to_string(flagged)+
-            ", already="+std::to_string(already)+", recoloured="+std::to_string(recoloured)+".");
-        else Log("Character VMD: character outline found no renderers to flag.");
-        return flagged;
-    }
-    void RestoreOutline(int index) {
-        Actor& actor=actors[index];
-        if(methods[BlockSet].value.method_info) {
-            for(size_t i=0;i<actor.block_objects.size()&&i<actor.block_snapshots.size();++i) {
-                void* renderer=actor.block_objects[i];void* snapshot=actor.block_snapshots[i];
-                if(!snapshot||!AliveObject(renderer))continue;
-                void* args[]{snapshot};Call(BlockSet,renderer,args);
-            }
-        }
-        if(methods[OutlineSet].value.method_info) {
-            for(size_t i=0;i<actor.outline_objects.size();++i) {
-                void* renderer=actor.outline_objects[i];
-                if(!AliveObject(renderer))continue;
-                bool value=actor.outline_previous[i]!=0;void* args[]{&value};
-                Call(OutlineSet,renderer,args);
-            }
-        }
-        actor.block_objects.clear();
-        actor.block_snapshots.clear();
-        actor.outline_objects.clear();
-        actor.outline_previous.clear();
-    }
     bool BeginLoad(const std::vector<Part>& input) {
         if(input.empty()||input[0].motion.empty())return false;
         // Squad follow: a single-dancer work is handed to the remaining slots as
@@ -523,7 +341,6 @@ struct Runtime final {
             }
         }
         if(bound==1)EiemBody::SetSharedAnchor(false,nullptr,nullptr);
-        if(applied->outline)ApplyOutline(bound);
         for(int i=0;i<bound;++i) {
             const Part& part=parts[size_t(cast[size_t(i)])];
             EiemBody::Load(i,part.motion,applied->face?part.face:std::string());
@@ -635,16 +452,12 @@ void PublishCharacterConfiguration(const CameraConfiguration& value) {
     next->cloth=static_cast<EiemBody::ClothMode>(std::clamp(value.vmd_cloth_mode,0,2));
     next->per_actor_anchor=value.vmd_per_actor_anchor;
     next->squad_follow=value.vmd_squad_follow;
-    next->outline=value.vmd_outline;
-    next->outline_width=value.vmd_outline_width;
     // Configuration only shows up in the log when it changes, so a silent
     // "nothing happened" is distinguishable from "the toggle never arrived".
     const auto previous=CharacterMotion::runtime.applied;
-    if(!previous||next->squad_follow!=previous->squad_follow||next->per_actor_anchor!=previous->per_actor_anchor||
-        next->outline!=previous->outline||next->outline_width!=previous->outline_width)
+    if(!previous||next->squad_follow!=previous->squad_follow||next->per_actor_anchor!=previous->per_actor_anchor)
         Log(std::string("Character VMD: squad follow ")+(next->squad_follow?"on":"off")+
-            ", per-actor anchor "+(next->per_actor_anchor?"on":"off")+
-            ", character outline "+(next->outline?"on":"off")+" x"+std::to_string(next->outline_width)+".");
+            ", per-actor anchor "+(next->per_actor_anchor?"on":"off")+".");
     if(next->enabled && !g_original_tail_late_tick
 #if defined(__ANDROID__)
         && !betterendfieldnext::HasAndroidFrameBridge()

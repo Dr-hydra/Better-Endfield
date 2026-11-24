@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -745,6 +745,39 @@ public sealed partial class MainWindow : Window
 
     // Everything except the hotkeys comes from the camera page; hotkeys keep the
     // values loaded from the configuration file.
+    private (ToggleSwitch Toggle, TextBox Color, NumberBox Width, NumberBox Intensity, NumberBox Opacity)[] CharacterOutlineControls() =>
+    [
+        (OutlineSlot1Toggle, OutlineSlot1ColorBox, OutlineSlot1WidthBox, OutlineSlot1IntensityBox, OutlineSlot1OpacityBox),
+        (OutlineSlot2Toggle, OutlineSlot2ColorBox, OutlineSlot2WidthBox, OutlineSlot2IntensityBox, OutlineSlot2OpacityBox),
+        (OutlineSlot3Toggle, OutlineSlot3ColorBox, OutlineSlot3WidthBox, OutlineSlot3IntensityBox, OutlineSlot3OpacityBox),
+        (OutlineSlot4Toggle, OutlineSlot4ColorBox, OutlineSlot4WidthBox, OutlineSlot4IntensityBox, OutlineSlot4OpacityBox),
+    ];
+
+    private bool ValidateCharacterOutline()
+    {
+        if (!HotkeyService.TryNormalize(CharacterOutlineHotkeyBox.Text, out _))
+        {
+            ShowStatus("角色描边快捷键无效", "默认键为 BACKSLASH（、），也可使用字母、F1–F24 或组合键。", InfoBarSeverity.Error);
+            return false;
+        }
+        var controls = CharacterOutlineControls();
+        for (int i = 0; i < controls.Length; i++)
+        {
+            string color = controls[i].Color.Text.Trim().TrimStart('#');
+            if (color.Length != 6 || !color.All(Uri.IsHexDigit))
+            {
+                ShowStatus("角色描边颜色无效", $"{i + 1} 号位请输入六位十六进制颜色，例如 FFFFFF 或 #40C8FF。", InfoBarSeverity.Error);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private async void CharacterOutlineText_LostFocus(object sender, RoutedEventArgs e)
+    {
+        await SaveCameraEnhancementAsync();
+    }
+
     private FreeCameraExtras ReadFreeCameraExtras()
     {
         static double Value(NumberBox numberBox, double fallback) =>
@@ -775,8 +808,22 @@ public sealed partial class MainWindow : Window
         extras.VmdTerrainEnabled = MmdTerrainToggle.IsOn;
         extras.VmdPerActorAnchor = MmdPerActorAnchorToggle.IsOn;
         extras.VmdSquadFollow = MmdSquadFollowToggle.IsOn;
-        extras.VmdOutline = MmdOutlineToggle.IsOn;
-        extras.VmdOutlineWidth = Math.Clamp(Value(MmdOutlineWidthNumberBox, 300.0) / 100.0, 0.5, 8.0);
+        extras.VmdOutline = false;
+        extras.CharacterOutlineEnabled = CharacterOutlineToggle.IsOn;
+        extras.CharacterOutlineHotkey = HotkeyService.TryNormalize(CharacterOutlineHotkeyBox.Text, out string outlineKey)
+            ? outlineKey : "BACKSLASH";
+        var outlineControls = CharacterOutlineControls();
+        for (int i = 0; i < 4; i++)
+        {
+            var c = outlineControls[i];
+            var slot = extras.CharacterOutlineSlots[i];
+            slot.Enabled = c.Toggle.IsOn;
+            string hex = c.Color.Text.Trim().TrimStart('#');
+            if (hex.Length == 6 && hex.All(Uri.IsHexDigit)) slot.Color = hex.ToUpperInvariant();
+            slot.Width = Math.Clamp(Value(c.Width, 0.06), 0, 1);
+            slot.Intensity = Math.Clamp(Value(c.Intensity, 8.3), 1, 100);
+            slot.Opacity = Math.Clamp(Value(c.Opacity, 100) / 100.0, 0, 1);
+        }
         int cloth = MmdClothComboBox.SelectedIndex;
         extras.VmdClothMode = FreeCameraExtras.ClothModes[
             cloth >= 0 && cloth < FreeCameraExtras.ClothModes.Length ? cloth : 0];
@@ -839,8 +886,17 @@ public sealed partial class MainWindow : Window
         MmdTerrainToggle.IsOn = extras.VmdTerrainEnabled;
         MmdPerActorAnchorToggle.IsOn = extras.VmdPerActorAnchor;
         MmdSquadFollowToggle.IsOn = extras.VmdSquadFollow;
-        MmdOutlineToggle.IsOn = extras.VmdOutline;
-        MmdOutlineWidthNumberBox.Value = extras.VmdOutlineWidth * 100;
+        CharacterOutlineToggle.IsOn = extras.CharacterOutlineEnabled;
+        CharacterOutlineHotkeyBox.Text = extras.CharacterOutlineHotkey;
+        var outlineControls = CharacterOutlineControls();
+        for (int i = 0; i < 4; i++)
+        {
+            var c = outlineControls[i];
+            var slot = extras.CharacterOutlineSlots[i];
+            c.Toggle.IsOn = slot.Enabled; c.Color.Text = slot.Color;
+            c.Width.Value = slot.Width; c.Intensity.Value = slot.Intensity;
+            c.Opacity.Value = slot.Opacity * 100;
+        }
         MmdClothComboBox.SelectedIndex = Math.Max(0,
             Array.IndexOf(FreeCameraExtras.ClothModes, extras.VmdClothMode));
         MmdFaceToggle.IsOn = extras.VmdFaceEnabled;
@@ -1187,10 +1243,26 @@ public sealed partial class MainWindow : Window
         MmdSquadFollowToggle.Header = isZh ? "队友跟跳" : "Squad Follow";
         MmdSquadFollowToggle.OffContent = isZh ? "只跳主控" : "Leader only";
         MmdSquadFollowToggle.OnContent = isZh ? "小队一起跳" : "Whole squad";
-        MmdOutlineToggle.Header = isZh ? "角色描边" : "Character Outline";
-        MmdOutlineToggle.OffContent = isZh ? "关闭" : "Off";
-        MmdOutlineToggle.OnContent = isZh ? "白色描边" : "White outline";
-        MmdOutlineWidthNumberBox.Header = isZh ? "描边粗细（%）" : "Outline Width (%)";
+        CharacterOutlineSectionTitle.Text = isZh ? "角色描边" : "Character outlines";
+        CharacterOutlineSectionHint.Text = isZh
+            ? "独立于 MMD 和拍照模式。启用后按“、”（反斜杠键）显示或隐藏已勾选位置的描边；1–4 号位按队伍栏顺序，各自保存外观。"
+            : "Independent of MMD and photo mode. Press backslash to show or hide enabled slots. Slots 1–4 follow squad order and keep individual styles.";
+        CharacterOutlineToggle.Header = isZh ? "启用角色描边" : "Enable character outlines";
+        CharacterOutlineToggle.OffContent = isZh ? "关闭" : "Off";
+        CharacterOutlineToggle.OnContent = isZh ? "开启" : "On";
+        CharacterOutlineHotkeyBox.Header = isZh ? "显示 / 隐藏快捷键（默认：、）" : "Show / hide hotkey (default: backslash)";
+        var outlineControls = CharacterOutlineControls();
+        Expander[] outlineExpanders = [OutlineSlot1Expander, OutlineSlot2Expander, OutlineSlot3Expander, OutlineSlot4Expander];
+        for (int i = 0; i < 4; i++)
+        {
+            var c = outlineControls[i];
+            outlineExpanders[i].Header = isZh ? $"{i + 1} 号位" : $"Slot {i + 1}";
+            c.Toggle.Header = isZh ? "此位置描边" : "Outline this slot";
+            c.Color.Header = isZh ? "颜色（RRGGBB）" : "Color (RRGGBB)";
+            c.Width.Header = isZh ? "描边粗细" : "Width";
+            c.Intensity.Header = isZh ? "亮度" : "Intensity";
+            c.Opacity.Header = isZh ? "不透明度（%）" : "Opacity (%)";
+        }
         MmdFaceToggle.Header = isZh ? "表情" : "Face";
         MmdClothComboBox.Header = isZh ? "衣物物理" : "Cloth Physics";
         string[] clothModes = isZh
@@ -1308,6 +1380,8 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
+
+        if (!ValidateCharacterOutline()) return;
 
         static double Value(NumberBox numberBox, double fallback) =>
             double.IsFinite(numberBox.Value) ? numberBox.Value : fallback;
@@ -3296,6 +3370,12 @@ public sealed partial class MainWindow : Window
             out string voiceLanguageRules,
             out error))
         {
+            return false;
+        }
+
+        if (!ValidateCharacterOutline())
+        {
+            error = "角色描边快捷键或颜色格式无效。";
             return false;
         }
 

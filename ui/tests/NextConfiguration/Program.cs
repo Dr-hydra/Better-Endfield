@@ -15,6 +15,22 @@ static class Program
     }
     static void Main()
     {
+        foreach (var key in new[] { "、", "\\", "OEM_5", "BACKSLASH" })
+            Require(BetterEndfieldNext.UI.Services.HotkeyService.TryNormalize(key, out var normalizedKey) && normalizedKey=="BACKSLASH", "Outline key alias was rejected.");
+        Require(BetterEndfieldNext.UI.Services.HotkeyService.TryNormalize("CTRL+、", out var chord) && chord=="CTRL+BACKSLASH", "Outline hotkey modifiers were lost.");
+        var outline = FreeCameraExtras.FromValues(new Dictionary<string, string> {
+            ["character_outline_enabled"]="true", ["character_outline_hotkey"]="CTRL+BACKSLASH",
+            ["character_outline_slot2_enabled"]="false", ["character_outline_slot3_color"]="#12A0ff",
+            ["character_outline_slot3_width"]="0.12", ["character_outline_slot4_width"]="NaN",
+            ["character_outline_slot4_intensity"]="999", ["character_outline_slot4_opacity"]="-1"
+        });
+        Require(outline.RequiresCameraModule && outline.CharacterOutlineHotkey=="CTRL+BACKSLASH", "Outline alone must enable Camera and retain its independent hotkey.");
+        Require(!outline.CharacterOutlineSlots[1].Enabled && outline.CharacterOutlineSlots[2].Color=="12A0FF", "Per-slot switches and colors were lost.");
+        Require(outline.CharacterOutlineSlots[2].Width==0.12 && outline.CharacterOutlineSlots[3].Width==0.06 &&
+            outline.CharacterOutlineSlots[3].Intensity==100 && outline.CharacterOutlineSlots[3].Opacity==0, "Outline numeric validation failed.");
+        string outlineIni=outline.ToIniLines();
+        Require(outlineIni.Contains("character_outline_slot3_color=12A0FF") && outlineIni.Contains("character_outline_slot2_enabled=false") &&
+            !outlineIni.Contains("vmd_outline="), "Independent outline serialization or retired setting removal failed.");
         var configuration = new ModConfiguration();
         Require(Camera(configuration).Contains("\nenabled=false\n", StringComparison.Ordinal), "All disabled camera controls must leave the module disabled.");
         configuration.PauseGameInFreeCamera = true;
@@ -26,6 +42,9 @@ static class Program
         configuration.FreeCameraExtras.MmdEnabled = true;
         Require(Camera(configuration).Contains("\nenabled=true\n", StringComparison.Ordinal), "MMD alone must still enable its camera runtime.");
         configuration.FreeCameraExtras.MmdEnabled = false;
+        configuration.FreeCameraExtras.CharacterOutlineEnabled=true;
+        Require(Camera(configuration).Contains("\nenabled=true\n", StringComparison.Ordinal), "Outline-only configuration did not enable the native module.");
+        configuration.FreeCameraExtras.CharacterOutlineEnabled=false;
         configuration.MusicReplacementEnabled = false;
         configuration.MediaScreen.Enabled = true;
         var screenDefaults = MediaScreenConfiguration.FromValues(new Dictionary<string, string>());
@@ -76,6 +95,7 @@ static class Program
         try { configuration.MediaScreen.ToIni(); } catch (InvalidDataException) { rejected = true; }
         Require(rejected, "Media paths must not inject configuration lines.");
         Console.WriteLine("Next camera configuration: 5 standalone-freeze/MMD/retired-setting checks passed.");
+        Console.WriteLine("Independent outline configuration, per-slot styles, standalone activation and hotkey aliases passed.");
         Console.WriteLine("Next media configuration: 6 audio-gating/path/decimal/injection checks passed.");
         Console.WriteLine("Next media hotkeys: default minus, legacy migration and custom chord serialization passed.");
         var defaultAppearance = new WeaponAppearanceConfiguration();

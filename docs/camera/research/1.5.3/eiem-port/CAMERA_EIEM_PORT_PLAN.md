@@ -288,6 +288,8 @@ Windows 检查：`dev/pc-camera-motion-20260927` 用 MSVC 编译 Host/Actions/Ca
 
 ## 2026-11-25 角色描边（`vmd_outline`）
 
+> 以下为已撤回的旧实验记录。`enableCharacterOutline` 与角色材质线宽不能等同于拍照站位白边入口；旧实现已移除。独立功能的真实资源链、配置与验证边界见 [角色描边](../../1.6.3/character-outline/CHARACTER_OUTLINE.md)。
+
 - 来源：拍照模式「调整角色站位」会给选中的角色加一圈白色描边。逆向 `global-metadata.dat` 得到的链路：
   `ToggleSelectedCharOutline`（站位控制器）落到逐渲染器的 `UnityEngine.Renderer.enableCharacterOutline`；
   管线侧由独立的 `CharacterOutline` shader pass 在前向不透明阶段多画一遍
