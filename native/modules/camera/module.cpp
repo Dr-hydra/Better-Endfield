@@ -91,6 +91,7 @@ struct CameraConfiguration {
     bool vmd_terrain_enabled=false; // EIEM grounder terrain follow
     bool vmd_per_actor_anchor=false; // each dancer keeps its own spot instead of the leader's
     bool vmd_squad_follow=false;     // a single-dancer work also drives the squad
+    bool vmd_outline=false;          // white character outline on every dancer
     int vmd_cloth_mode=1;           // EiemBody::ClothMode: 0 game, 1 stable, 2 freeze
     float vmd_motion_scale=1;       // EIEM displacement multiplier on top of leg-length scaling
     float vmd_motion_weight=1;
@@ -1412,6 +1413,7 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "vmd_terrain_enabled") config.vmd_terrain_enabled = ParseBoolean(value);
         else if (key == "vmd_per_actor_anchor") config.vmd_per_actor_anchor = ParseBoolean(value);
         else if (key == "vmd_squad_follow") config.vmd_squad_follow = ParseBoolean(value);
+        else if (key == "vmd_outline") config.vmd_outline = ParseBoolean(value);
         else if (key == "vmd_cloth_mode") {
             const std::string mode = LowerAscii(Unquote(value));
             config.vmd_cloth_mode = mode == "game" ? 0 : mode == "freeze" ? 2 : 1;

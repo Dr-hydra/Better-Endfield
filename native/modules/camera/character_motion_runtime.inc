@@ -28,6 +28,10 @@ struct Config {
     bool per_actor_anchor=false;
     // "Follow me": hand a single-dancer work to the remaining squad slots too.
     bool squad_follow=false;
+    // Character outline: the render pipeline draws a CharacterOutline pass for
+    // renderers carrying the engine flag, the same affordance the photo mode
+    // gives the character it is moving.
+    bool outline=false;
     float motion_scale=1;
     EiemBody::ClothMode cloth=EiemBody::ClothMode::Stable;
     std::string file;
@@ -72,8 +76,12 @@ Method methods[]{
     // Optional: picks the body rig when the model carries more than one Animator.
     {{"UnityEngine.AnimationModule.dll","UnityEngine","Animator","get_isHuman",nullptr,"System.Boolean",0}},
     {{kCore,"UnityEngine","Behaviour","get_isActiveAndEnabled",nullptr,"System.Boolean",0}},
+    // Optional: per-renderer character outline. The photo mode's "move character"
+    // outline is this engine flag, rendered by the pipeline's CharacterOutline pass.
+    {{kCore,"UnityEngine","Renderer","get_enableCharacterOutline",nullptr,"System.Boolean",0}},
+    {{kCore,"UnityEngine","Renderer","set_enableCharacterOutline","System.Boolean",nullptr,1}},
 };
-enum Id {Alive,Transform,Children,ArrayLength,ArrayValue,IsChild,Movement,Player,SquadLoading,SquadCount,SquadMember,IsHuman,ActiveEnabled};
+enum Id {Alive,Transform,Children,ArrayLength,ArrayValue,IsChild,Movement,Player,SquadLoading,SquadCount,SquadMember,IsHuman,ActiveEnabled,OutlineGet,OutlineSet};
 void* Call(Id id,void* self,void** args=nullptr,bool* success=nullptr) {
     if(success)*success=false;
     if(!g_host || !g_host->runtime_invoke || !methods[id].value.method_info)return nullptr;
@@ -112,12 +120,18 @@ struct Actor {
     void* root=nullptr;
     uint64_t lease=0;
     std::vector<uint32_t> pins;
+    // Renderers this session switched the character outline on for, with the
+    // value each one had before, so the game's own state comes back on stop.
+    std::vector<void*> outline_objects;
+    std::vector<uint8_t> outline_previous;
     bool loading=false,active=false;
     bool Bound()const{return lease!=0;}
 };
 struct Runtime final {
     const BE_PoseLeaseApiV1* leases=nullptr;
     BE_ResolvedClassV1 animator_class{};
+    // Renderer types the character outline is switched on for.
+    BE_ResolvedClassV1 skinned_class{},mesh_class{};
     int squad_manager_offset=-1;
     std::shared_ptr<const Config> applied;
     CharacterPose::Clock clock;
@@ -143,7 +157,7 @@ struct Runtime final {
     // main_thread=false: shutdown on Host's thread; Unity must not be touched.
     void Release(int index,bool main_thread,const char* reason) {
         Actor& actor=actors[index];
-        if(main_thread && thread_id==GetCurrentThreadId())EiemBody::Stop(index,reason);
+        if(main_thread && thread_id==GetCurrentThreadId()){RestoreOutline(index);EiemBody::Stop(index,reason);}
         if(actor.lease && leases)leases->release(actor.root,kOwner,actor.lease);
         for(auto pin:actor.pins)if(g_host&&g_host->gchandle_free)g_host->gchandle_free(g_host->context,pin);
         actor=Actor{};
@@ -183,6 +197,9 @@ struct Runtime final {
                 squad_manager_offset=value.offset;
         }
         core &= g_host->resolve_class(g_host->context,"UnityEngine.AnimationModule.dll","UnityEngine","Animator",&animator_class)==BE_Result_Ok && animator_class.type_object;
+        // Optional: without these the character outline toggle does nothing.
+        g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll","UnityEngine","SkinnedMeshRenderer",&skinned_class);
+        g_host->resolve_class(g_host->context,"UnityEngine.CoreModule.dll","UnityEngine","MeshRenderer",&mesh_class);
         resolved=core;return resolved;
     }
     bool SquadReady()const {
@@ -296,6 +313,59 @@ struct Runtime final {
         }
         return true;
     }
+    // Character outline: the pipeline draws its CharacterOutline pass for every
+    // renderer that carries the engine flag, which is exactly what the photo
+    // mode switches on for the character it is moving. Remember each renderer's
+    // previous value so stop puts the game's own state back.
+    int ApplyOutline(int count) {
+        if(!methods[OutlineGet].value.method_info||!methods[OutlineSet].value.method_info) {
+            Log("Character VMD: character outline is unavailable in this client.");
+            return 0;
+        }
+        const BE_ResolvedClassV1* types[]{&skinned_class,&mesh_class};
+        int flagged=0;
+        for(int i=0;i<count;++i) {
+            Actor& actor=actors[i];
+            for(const BE_ResolvedClassV1* type:types) {
+                if(!type->type_object)continue;
+                bool inactive=true;void* args[]{type->type_object,&inactive};
+                void* array=Call(Children,actor.model,args);
+                if(!array||!Pin(actor,array))continue;
+                int dimension=0,length=0;void* length_args[]{&dimension};
+                if(!Value(ArrayLength,array,length,length_args))continue;
+                for(int index=0;index<length;++index) {
+                    void* index_args[]{&index};
+                    void* renderer=Call(ArrayValue,array,index_args);
+                    if(!renderer)continue;
+                    bool current=false;
+                    if(!Value(OutlineGet,renderer,current)||!Pin(actor,renderer))continue;
+                    bool enabled=true;bool ok=false;void* enabled_args[]{&enabled};
+                    Call(OutlineSet,renderer,enabled_args,&ok);
+                    if(!ok)continue;
+                    actor.outline_objects.push_back(renderer);
+                    actor.outline_previous.push_back(current?1:0);
+                    ++flagged;
+                }
+            }
+        }
+        if(flagged)Log("Character VMD: character outline on, renderers="+std::to_string(flagged)+".");
+        else Log("Character VMD: character outline found no renderers to flag.");
+        return flagged;
+    }
+    void RestoreOutline(int index) {
+        Actor& actor=actors[index];
+        if(actor.outline_objects.empty())return;
+        if(methods[OutlineSet].value.method_info) {
+            for(size_t i=0;i<actor.outline_objects.size();++i) {
+                void* renderer=actor.outline_objects[i];
+                if(!AliveObject(renderer))continue;
+                bool value=actor.outline_previous[i]!=0;void* args[]{&value};
+                Call(OutlineSet,renderer,args);
+            }
+        }
+        actor.outline_objects.clear();
+        actor.outline_previous.clear();
+    }
     bool BeginLoad(const std::vector<Part>& input) {
         if(input.empty()||input[0].motion.empty())return false;
         // Squad follow: a single-dancer work is handed to the remaining slots as
@@ -340,6 +410,7 @@ struct Runtime final {
             }
         }
         if(bound==1)EiemBody::SetSharedAnchor(false,nullptr,nullptr);
+        if(applied->outline)ApplyOutline(bound);
         for(int i=0;i<bound;++i) {
             const Part& part=parts[size_t(cast[size_t(i)])];
             EiemBody::Load(i,part.motion,applied->face?part.face:std::string());
@@ -451,12 +522,15 @@ void PublishCharacterConfiguration(const CameraConfiguration& value) {
     next->cloth=static_cast<EiemBody::ClothMode>(std::clamp(value.vmd_cloth_mode,0,2));
     next->per_actor_anchor=value.vmd_per_actor_anchor;
     next->squad_follow=value.vmd_squad_follow;
+    next->outline=value.vmd_outline;
     // Configuration only shows up in the log when it changes, so a silent
     // "nothing happened" is distinguishable from "the toggle never arrived".
     const auto previous=CharacterMotion::runtime.applied;
-    if(!previous||next->squad_follow!=previous->squad_follow||next->per_actor_anchor!=previous->per_actor_anchor)
+    if(!previous||next->squad_follow!=previous->squad_follow||next->per_actor_anchor!=previous->per_actor_anchor||
+        next->outline!=previous->outline)
         Log(std::string("Character VMD: squad follow ")+(next->squad_follow?"on":"off")+
-            ", per-actor anchor "+(next->per_actor_anchor?"on":"off")+".");
+            ", per-actor anchor "+(next->per_actor_anchor?"on":"off")+
+            ", character outline "+(next->outline?"on":"off")+".");
     if(next->enabled && !g_original_tail_late_tick
 #if defined(__ANDROID__)
         && !betterendfieldnext::HasAndroidFrameBridge()

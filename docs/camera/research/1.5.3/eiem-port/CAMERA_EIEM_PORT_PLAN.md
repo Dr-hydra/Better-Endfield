@@ -285,3 +285,20 @@ Windows 检查：`dev/pc-camera-motion-20260927` 用 MSVC 编译 Host/Actions/Ca
     `core=1 finalIkSolver=1` 是身体动作的前提；`grounder/floorLayout` 为 0 时地形贴合不可用。
   - 冻结（8 键，timeScale=0）时 FinalIK 的 `SolverManager.LateUpdate` 是否仍执行——决定暂停画面时姿势是否保持。
   - 与 Actions 冲刺姿态互斥：冲刺中按播放应提示等待。
+
+## 2026-11-25 角色描边（`vmd_outline`）
+
+- 来源：拍照模式「调整角色站位」会给选中的角色加一圈白色描边。逆向 `global-metadata.dat` 得到的链路：
+  `ToggleSelectedCharOutline`（站位控制器）落到逐渲染器的 `UnityEngine.Renderer.enableCharacterOutline`；
+  管线侧由独立的 `CharacterOutline` shader pass 在前向不透明阶段多画一遍
+  （`PrepareForwardOpaqueCharacterOutlineRendererList`、`characterOutlineOpaque*ECSList`、`s_CharacterOutlineName`），
+  这一遍是否执行由 `HGCharacterVolume.charOutlineQualityMode`（`AlwaysOn/Tier10/Tier20/AlwaysOff`）和管线级
+  `enableCharacterOutline` 共同决定。
+- 实现：新开关 `vmd_outline`（相机页「角色描边」）。开播时遍历每个 dancer 模型下的 `SkinnedMeshRenderer` 与 `MeshRenderer`，
+  读取当前值后置 true 并记录；停播、队员离场、配置变更时逐个还原原值。组件数组与渲染器都 pin 在 slot 上随释放解除。
+  方法解析失败只写一行日志，不影响播放本身。
+- 边界：描边颜色与粗细没有 C# 属性（推测走 `_CharacterParamsN` 全局量或 `SetPerDrawData_CharacterParams` 的逐渲染器数据），
+  实机看到的颜色/宽度以引擎默认为准。如果开放世界相机的档位是 `AlwaysOff`，只置渲染器 flag 不会出图，
+  下一步需要临时覆盖 `charOutlineQualityMode`。
+- 验证：`camera_playback` 9/9；角色适配层 149 checks（新增 6 项：开播置位、原值恢复、停播还原）；
+  Camera 模块编译通过；管理器 C#/XAML 构建通过。已部署到测试目录待实机验证。

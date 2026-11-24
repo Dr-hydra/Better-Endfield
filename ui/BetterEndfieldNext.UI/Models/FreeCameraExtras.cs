@@ -43,6 +43,7 @@ public sealed class FreeCameraExtras
     public bool VmdTerrainEnabled { get; set; }
     public bool VmdPerActorAnchor { get; set; }
     public bool VmdSquadFollow { get; set; }
+    public bool VmdOutline { get; set; }
     public string VmdClothMode { get; set; } = "stable";
     public double VmdMotionScale { get; set; } = 1.0;
     public string VmdMotionHotkey { get; set; } = "NONE";
@@ -121,6 +122,7 @@ public sealed class FreeCameraExtras
         Line("vmd_terrain_enabled", Boolean(VmdTerrainEnabled));
         Line("vmd_per_actor_anchor", Boolean(VmdPerActorAnchor));
         Line("vmd_squad_follow", Boolean(VmdSquadFollow));
+        Line("vmd_outline", Boolean(VmdOutline));
         Line("vmd_cloth_mode", VmdClothMode);
         Line("vmd_motion_scale", Number(VmdMotionScale));
         Line("vmd_motion_hotkey", VmdMotionHotkey);
@@ -205,6 +207,7 @@ public sealed class FreeCameraExtras
         extras.VmdTerrainEnabled = Boolean("vmd_terrain_enabled", false);
         extras.VmdPerActorAnchor = Boolean("vmd_per_actor_anchor", false);
         extras.VmdSquadFollow = Boolean("vmd_squad_follow", false);
+        extras.VmdOutline = Boolean("vmd_outline", false);
         string cloth = Text("vmd_cloth_mode", "stable").ToLowerInvariant();
         extras.VmdClothMode = System.Array.IndexOf(ClothModes, cloth) >= 0 ? cloth : "stable";
         extras.VmdMotionScale = System.Math.Clamp(Number("vmd_motion_scale", 1), 0, 5);

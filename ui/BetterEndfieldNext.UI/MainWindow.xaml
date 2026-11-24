@@ -1687,6 +1687,14 @@
                                                     OnContent="循环"
                                                     Toggled="CameraEnhancementToggle_Toggled" />
                                                 <ToggleSwitch
+                                                    x:Name="MmdOutlineToggle"
+                                                    Grid.Row="3"
+                                                    Grid.Column="1"
+                                                    Header="角色描边"
+                                                    OffContent="关闭"
+                                                    OnContent="白色描边"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
                                                     x:Name="MmdPerActorAnchorToggle"
                                                     Grid.Row="4"
                                                     Header="各自原地"

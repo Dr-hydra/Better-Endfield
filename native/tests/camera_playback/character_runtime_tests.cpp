@@ -13,6 +13,8 @@ struct Object {
     Object* model_go=nullptr;
     Object* movement=nullptr;
     std::vector<Object*> animators;
+    std::vector<Object*> skinned, meshes;
+    bool outline=false;
     Vector3 position{};
     bool human=true,enabled=true;
 };
@@ -25,6 +27,7 @@ struct Rig {
 };
 struct PlayerFake {char header[16]{};void* manager=nullptr;};
 Rig leader,member1,member2;
+Object leader_skin_a,leader_skin_b,leader_mesh,member1_skin,member2_skin;
 Object manager;
 PlayerFake player;
 std::vector<Object*> squad;
@@ -49,7 +52,11 @@ void* BE_CALL InvokeFake(void*,const void* method,void* instance,void** a,void**
     switch(CM::Id(id-1)) {
         case CM::Alive:return Box(a[0]&&static_cast<Object*>(a[0])->alive);
         case CM::Transform:return object->transform;
-        case CM::Children:return a[0]==reinterpret_cast<void*>(201)?static_cast<void*>(&object->animators):nullptr;
+        case CM::Children:
+            if(a[0]==reinterpret_cast<void*>(201))return static_cast<void*>(&object->animators);
+            if(a[0]==reinterpret_cast<void*>(202))return static_cast<void*>(&object->skinned);
+            if(a[0]==reinterpret_cast<void*>(203))return static_cast<void*>(&object->meshes);
+            return nullptr;
         case CM::ArrayLength:return Box(int(static_cast<std::vector<Object*>*>(instance)->size()));
         case CM::ArrayValue:return static_cast<std::vector<Object*>*>(instance)->at(*static_cast<int*>(a[0]));
         case CM::IsChild:return Box(object->alive&&a[0]==object->transform);
@@ -60,6 +67,8 @@ void* BE_CALL InvokeFake(void*,const void* method,void* instance,void** a,void**
         case CM::SquadMember:return squad.at(*static_cast<int*>(a[0]));
         case CM::IsHuman:return Box(object->human);
         case CM::ActiveEnabled:return Box(object->enabled);
+        case CM::OutlineGet:return Box(object->outline);
+        case CM::OutlineSet:object->outline=*static_cast<bool*>(a[0]);return nullptr;
     }
     *exception=reinterpret_cast<void*>(1);return nullptr;
 }
@@ -95,10 +104,13 @@ int main() {
     Contract("unity.transform.position.get")->method_info=reinterpret_cast<void*>(1005);
     Contract("unity.transform.rotation.get")->method_info=reinterpret_cast<void*>(1006);
     leader.Setup(3);member1.Setup(10);member2.Setup(20);
+    leader.model.skinned={&leader_skin_a,&leader_skin_b};leader.model.meshes={&leader_mesh};
+    member1.model.skinned={&member1_skin};member2.model.skinned={&member2_skin};
     player.manager=&manager;squad={&member1.entity,&leader.entity,&member2.entity};
     auto& r=CM::runtime;r.resolved=true;r.leases=&leases;r.applied=Config();std::atomic_store(&CM::config,r.applied);
     r.squad_manager_offset=int(offsetof(PlayerFake,manager));
     r.animator_class.type_object=reinterpret_cast<void*>(201);r.thread_id=GetCurrentThreadId();
+    r.skinned_class.type_object=reinterpret_cast<void*>(202);r.mesh_class.type_object=reinterpret_cast<void*>(203);
 
     // Another writer owns the rig: nothing is loaded, nothing stays pinned.
     auto foreign=registry.Acquire(&leader.root,"actions");
@@ -253,6 +265,19 @@ int main() {
     CHECK(EiemFake::actor_anchor_valid[1]&&nearly(EiemFake::actor_anchor_position[1][0],10));
     Ready();CHECK(Dancing()==2);
     CM::requests.store(16);PumpCharacterMotion();CHECK(pins.empty());
+
+    // Character outline: every dancer's renderers are flagged, and the value
+    // each one had before comes back when the session stops.
+    leader_skin_b.outline=true;
+    {auto config=Config();config->squad_follow=true;config->outline=true;r.applied=config;std::atomic_store(&CM::config,r.applied);}
+    RequestCharacterDirectorLoad(Cast(1));PumpCharacterMotion();
+    CHECK(leader_skin_a.outline&&leader_skin_b.outline&&leader_mesh.outline);
+    CHECK(member1_skin.outline&&member2_skin.outline);
+    Ready();CHECK(Dancing()==3);
+    CM::requests.store(16);PumpCharacterMotion();
+    CHECK(!leader_skin_a.outline&&leader_skin_b.outline&&!leader_mesh.outline);
+    CHECK(!member1_skin.outline&&!member2_skin.outline);CHECK(pins.empty());
+    leader_skin_b.outline=false;
 
     // Configuration invalidation dominates a running session.
     r.applied=Config();std::atomic_store(&CM::config,r.applied);

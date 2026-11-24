@@ -775,6 +775,7 @@ public sealed partial class MainWindow : Window
         extras.VmdTerrainEnabled = MmdTerrainToggle.IsOn;
         extras.VmdPerActorAnchor = MmdPerActorAnchorToggle.IsOn;
         extras.VmdSquadFollow = MmdSquadFollowToggle.IsOn;
+        extras.VmdOutline = MmdOutlineToggle.IsOn;
         int cloth = MmdClothComboBox.SelectedIndex;
         extras.VmdClothMode = FreeCameraExtras.ClothModes[
             cloth >= 0 && cloth < FreeCameraExtras.ClothModes.Length ? cloth : 0];
@@ -837,6 +838,7 @@ public sealed partial class MainWindow : Window
         MmdTerrainToggle.IsOn = extras.VmdTerrainEnabled;
         MmdPerActorAnchorToggle.IsOn = extras.VmdPerActorAnchor;
         MmdSquadFollowToggle.IsOn = extras.VmdSquadFollow;
+        MmdOutlineToggle.IsOn = extras.VmdOutline;
         MmdClothComboBox.SelectedIndex = Math.Max(0,
             Array.IndexOf(FreeCameraExtras.ClothModes, extras.VmdClothMode));
         MmdFaceToggle.IsOn = extras.VmdFaceEnabled;
@@ -1183,6 +1185,9 @@ public sealed partial class MainWindow : Window
         MmdSquadFollowToggle.Header = isZh ? "队友跟跳" : "Squad Follow";
         MmdSquadFollowToggle.OffContent = isZh ? "只跳主控" : "Leader only";
         MmdSquadFollowToggle.OnContent = isZh ? "小队一起跳" : "Whole squad";
+        MmdOutlineToggle.Header = isZh ? "角色描边" : "Character Outline";
+        MmdOutlineToggle.OffContent = isZh ? "关闭" : "Off";
+        MmdOutlineToggle.OnContent = isZh ? "白色描边" : "White outline";
         MmdFaceToggle.Header = isZh ? "表情" : "Face";
         MmdClothComboBox.Header = isZh ? "衣物物理" : "Cloth Physics";
         string[] clothModes = isZh
