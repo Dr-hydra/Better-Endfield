@@ -454,19 +454,8 @@ bool g_workerLastPlaying = false;
 // Releases the lifecycle barrier on every exit path, including the early
 // returns below: a leaked shared lock used to wedge the next reload forever.
 struct LifecycleSharedGuard {
-  ULONGLONG started = GetTickCount64();
   LifecycleSharedGuard() { AcquireSRWLockShared(&s_directVmdLifecycleLock); }
-  ~LifecycleSharedGuard() {
-    const uint32_t phase =
-        s_directVmdWorkerPhase.exchange(0, std::memory_order_acq_rel);
-    ReleaseSRWLockShared(&s_directVmdLifecycleLock);
-    const ULONGLONG elapsed = GetTickCount64() - started;
-    if (elapsed >= 500) {
-      Log("[P2-WORKER-SLOW] tickMs=%llu lastPhase=%s tid=%lu",
-          (unsigned long long)elapsed, DirectVmdWorkerPhaseName(phase),
-          GetCurrentThreadId());
-    }
-  }
+  ~LifecycleSharedGuard() { ReleaseSRWLockShared(&s_directVmdLifecycleLock); }
 };
 
 // DirectVmdRuntime_WorkerTick (1bc9baa) with the free-running QPC clock
@@ -474,20 +463,12 @@ struct LifecycleSharedGuard {
 // are forwarded as EIEM seek requests / loop cycles so its root, terrain and
 // cadence state resets exactly like EIEM's own transport.
 void WorkerTick() {
-  s_directVmdWorkerHeartbeatMs.store(GetTickCount64(),
-                                     std::memory_order_release);
-  s_directVmdWorkerPhase.store(1, std::memory_order_release);
   DirectVmdSource_HandleCommandWorker();
   LifecycleSharedGuard lifecycle;
-  s_directVmdWorkerPhase.store(2, std::memory_order_release);
   DirectVmdRuntime_HandleClipCommandWorker();
-  s_directVmdWorkerPhase.store(3, std::memory_order_release);
   DirectVmdRuntime_HandleCameraOverrideCommandWorker();
-  s_directVmdWorkerPhase.store(4, std::memory_order_release);
   DirectVmdRuntime_HandleMorphOverrideCommandWorker();
-  s_directVmdWorkerPhase.store(5, std::memory_order_release);
   DirectVmdRuntime_HandlePlaybackCommandWorker();
-  s_directVmdWorkerPhase.store(6, std::memory_order_release);
   DirectVmdRuntime_HandleSeekWorker();
 
   auto &clock = s_directVmdWorker.clock;
@@ -541,7 +522,6 @@ void WorkerTick() {
   }
 
   DirectVmdSampleFrame frame;
-  s_directVmdWorkerPhase.store(7, std::memory_order_release);
   DirectVmdSampleClip(
       *clip, clock.frame, ++s_directVmdWorker.sequence,
       s_directVmdTargetGeneration.load(std::memory_order_acquire),
@@ -567,15 +547,11 @@ void WorkerTick() {
   }
   frame.playbackCycle = clock.loopCycle;
   frame.seekRevision = s_directVmdWorker.handledSeekRevision;
-  s_directVmdWorkerPhase.store(8, std::memory_order_release);
   DirectVmdRuntime_PublishFrame(frame);
 }
 
 DWORD WINAPI WorkerMain(LPVOID) {
   bool timerActive = false;
-  Log("[P2-WORKER] started tid=%lu", GetCurrentThreadId());
-  s_directVmdWorkerThreadId.store(GetCurrentThreadId(),
-                                  std::memory_order_release);
   while (g_workerRun.load(std::memory_order_acquire)) {
     WorkerTick();
     // WorkerTick loads synchronously, so once it returns the handled request

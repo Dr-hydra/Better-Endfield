@@ -162,76 +162,25 @@ static void DirectVmdRuntime_SetActive(bool active) {
   ReleaseSRWLockExclusive(&s_directVmdSourceLock);
 }
 
-// Worker progress marker. A hang inside the worker while it holds the
-// lifecycle lock leaves the main thread waiting forever in
-// BeginLifecycleMutation, so the wait below reports which step the worker was
-// on instead of blocking silently.
-static std::atomic<uint32_t> s_directVmdWorkerPhase{0};
-static std::atomic<uint64_t> s_directVmdWorkerHeartbeatMs{0};
-static std::atomic<unsigned long> s_directVmdWorkerThreadId{0};
+// A worker that stops making progress while holding the lifecycle barrier must
+// not freeze the reload path with it, so the wait below is bounded.
 static thread_local bool t_directVmdLifecycleDegraded = false;
-static const char *DirectVmdWorkerPhaseName(uint32_t phase) {
-  switch (phase) {
-  case 1: return "source-command";
-  case 2: return "clip-command";
-  case 3: return "camera-command";
-  case 4: return "morph-command";
-  case 5: return "playback-command";
-  case 6: return "seek-command";
-  case 7: return "sample";
-  case 8: return "publish";
-  case 20: return "clip-enter";
-  case 21: return "clip-path";
-  case 22: return "clip-load";
-  case 23: return "clip-log";
-  case 24: return "clip-logged";
-  case 40: return "morph-enter";
-  case 41: return "morph-path";
-  case 42: return "morph-load";
-  case 43: return "morph-log";
-  case 44: return "morph-logged";
-  case 50: return "playback-enter";
-  case 51: return "playback-revision";
-  case 52: return "playback-switch";
-  case 53: return "playback-qpc";
-  case 54: return "playback-log";
-  case 55: return "playback-logged";
-  default: return "idle";
-  }
-}
 
 static void DirectVmdRuntime_BeginLifecycleMutation() {
   const DWORD start = GetTickCount();
   for (;;) {
     if (TryAcquireSRWLockExclusive(&s_directVmdLifecycleLock)) {
-      const DWORD waited = GetTickCount() - start;
-      if (waited >= 50) {
-        Log("[P2-LIFECYCLE-WAIT] acquired ms=%lu workerPhase=%s tid=%lu",
-            waited,
-            DirectVmdWorkerPhaseName(
-                s_directVmdWorkerPhase.load(std::memory_order_acquire)),
-            GetCurrentThreadId());
-      }
       t_directVmdLifecycleDegraded = false;
       return;
     }
     const DWORD waited = GetTickCount() - start;
     if (waited >= 2000) {
-      // Never freeze the game on a worker that stopped making progress. The
-      // request itself only writes atomics and a command-lock guarded path,
-      // and every consumer validates the generation it was published with, so
-      // proceeding without the barrier costs at most one rejected frame.
-      const uint64_t heartbeat =
-          s_directVmdWorkerHeartbeatMs.load(std::memory_order_acquire);
-      Log("[P2-LIFECYCLE-TIMEOUT] waited=%lu ms workerPhase=%s "
-          "heartbeatAgeMs=%llu workerTid=%lu tid=%lu "
-          "proceedingWithoutBarrier=1",
-          waited,
-          DirectVmdWorkerPhaseName(
-              s_directVmdWorkerPhase.load(std::memory_order_acquire)),
-          heartbeat ? (unsigned long long)(GetTickCount64() - heartbeat) : 0ull,
-          s_directVmdWorkerThreadId.load(std::memory_order_acquire),
-          GetCurrentThreadId());
+      // The request itself only writes atomics and a command-lock guarded
+      // path, and every consumer validates the generation it was published
+      // with, so proceeding without the barrier costs at most one rejected
+      // frame. Never freeze the game instead.
+      Log("[P2-LIFECYCLE-TIMEOUT] waited=%lu ms proceedingWithoutBarrier=1",
+          waited);
       t_directVmdLifecycleDegraded = true;
       return;
     }
@@ -424,7 +373,6 @@ static void DirectVmdRuntime_ResetQpcWorker() {
 }
 
 static void DirectVmdRuntime_HandleClipCommandWorker() {
-  s_directVmdWorkerPhase.store(20, std::memory_order_release);
   const uint64_t revision =
       s_directVmdClipRequestRevision.load(std::memory_order_acquire);
   if (revision == s_directVmdWorker.handledClipRevision)
@@ -436,7 +384,6 @@ static void DirectVmdRuntime_HandleClipCommandWorker() {
   memcpy(path, s_directVmdRequestedPath, sizeof(path));
   ReleaseSRWLockShared(&s_directVmdCommandLock);
   path[sizeof(path) - 1] = '\0';
-  s_directVmdWorkerPhase.store(21, std::memory_order_release);
 
   s_directVmdWorker.resource.Reset();
   s_directVmdSourceClipReady = false;
@@ -456,7 +403,6 @@ static void DirectVmdRuntime_HandleClipCommandWorker() {
   }
 
   const bool loaded = s_directVmdWorker.resource.Load(path);
-  s_directVmdWorkerPhase.store(22, std::memory_order_release);
   const VmdFile *clip = s_directVmdWorker.resource.Get();
   s_directVmdClipGenerationPublic.store(
       s_directVmdWorker.resource.generation, std::memory_order_release);
@@ -478,7 +424,6 @@ static void DirectVmdRuntime_HandleClipCommandWorker() {
   s_directVmdLoadedPublic.store(true, std::memory_order_release);
   s_directVmdDurationPublic.store(static_cast<double>(clip->totalFrames),
                                   std::memory_order_release);
-  s_directVmdWorkerPhase.store(23, std::memory_order_release);
   Log("[P2-VMD-WORKER] loaded path='%s' bones=%zu morphs=%zu cameras=%zu "
       "frames=%u morphPodLimit=%u morphDropped=%zu "
       "clipGeneration=%llu tid=%lu unityObjects=0",
@@ -564,7 +509,6 @@ static void DirectVmdRuntime_HandleCameraOverrideCommandWorker() {
 }
 
 static void DirectVmdRuntime_HandleMorphOverrideCommandWorker() {
-  s_directVmdWorkerPhase.store(40, std::memory_order_release);
   const uint64_t revision =
       s_directVmdMorphOverrideRequestRevision.load(
           std::memory_order_acquire);
@@ -577,12 +521,10 @@ static void DirectVmdRuntime_HandleMorphOverrideCommandWorker() {
   memcpy(path, s_directVmdRequestedMorphOverridePath, sizeof(path));
   ReleaseSRWLockShared(&s_directVmdCommandLock);
   path[sizeof(path) - 1] = '\0';
-  s_directVmdWorkerPhase.store(41, std::memory_order_release);
 
   s_directVmdWorker.morphOverrideResource.Reset();
   s_directVmdMorphOverrideLoadedPublic.store(false,
                                               std::memory_order_release);
-  s_directVmdWorkerPhase.store(42, std::memory_order_release);
   if (!path[0]) {
     Log("[P6-MORPH-OVERRIDE] unloaded generation=%llu "
         "fallback=direct-vmd-morph tid=%lu",
@@ -618,13 +560,11 @@ static void DirectVmdRuntime_HandleMorphOverrideCommandWorker() {
 }
 
 static void DirectVmdRuntime_HandlePlaybackCommandWorker() {
-  s_directVmdWorkerPhase.store(50, std::memory_order_release);
   const uint64_t revision =
       s_directVmdPlaybackRequestRevision.load(std::memory_order_acquire);
   if (revision == s_directVmdWorker.handledPlaybackRevision)
     return;
   s_directVmdWorker.handledPlaybackRevision = revision;
-  s_directVmdWorkerPhase.store(51, std::memory_order_release);
   const DirectVmdRuntimeCommand command =
       static_cast<DirectVmdRuntimeCommand>(
           s_directVmdPlaybackRequest.load(std::memory_order_acquire));
@@ -645,10 +585,7 @@ static void DirectVmdRuntime_HandlePlaybackCommandWorker() {
     s_directVmdWorker.pausedForInactive = false;
     break;
   }
-  s_directVmdWorkerPhase.store(52, std::memory_order_release);
   DirectVmdRuntime_ResetQpcWorker();
-  s_directVmdWorkerPhase.store(53, std::memory_order_release);
-  s_directVmdWorkerPhase.store(54, std::memory_order_release);
   Log("[P2-VMD-CLOCK] command=%u state=%u frame=%.6f cycle=%llu "
       "active=%d clipGeneration=%llu tid=%lu",
       static_cast<unsigned>(command),
@@ -658,7 +595,6 @@ static void DirectVmdRuntime_HandlePlaybackCommandWorker() {
       s_directVmdRuntimeActive.load(std::memory_order_acquire) ? 1 : 0,
       (unsigned long long)s_directVmdWorker.resource.generation,
       GetCurrentThreadId());
-  s_directVmdWorkerPhase.store(55, std::memory_order_release);
 }
 
 static void DirectVmdRuntime_HandleSeekWorker() {

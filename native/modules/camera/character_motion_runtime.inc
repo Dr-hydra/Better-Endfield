@@ -340,10 +340,8 @@ struct Runtime final {
             }
         }
         if(bound==1)EiemBody::SetSharedAnchor(false,nullptr,nullptr);
-        Log("Character VMD: handing "+std::to_string(bound)+" part(s) to EIEM.");
         for(int i=0;i<bound;++i) {
             const Part& part=parts[size_t(cast[size_t(i)])];
-            Log("Character VMD: EIEM load for dancer "+std::to_string(i+1)+"/"+std::to_string(bound)+".");
             EiemBody::Load(i,part.motion,applied->face?part.face:std::string());
             actors[i].loading=true;
         }

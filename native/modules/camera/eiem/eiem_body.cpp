@@ -364,14 +364,9 @@ void SetOptions(const Options& options) {
 }
 
 void Load(int actor, const std::string& motion_utf8, const std::string& face_utf8) {
-    HostLog("load actor " + std::to_string(actor) + " begin");
-    if (!EnsureActor(actor)) {
-        HostLog("load actor " + std::to_string(actor) + " skipped: no slot");
-        return;
-    }
+    if (!EnsureActor(actor)) return;
     if (g_options.face) InstallFaceHooks();
     g_slots[actor]->load(motion_utf8, face_utf8);
-    HostLog("load actor " + std::to_string(actor) + " accepted");
 }
 
 LoadState LoadStatus(int actor) {
