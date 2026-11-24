@@ -201,12 +201,27 @@ bool PrepareAndroidWorldResource(const CharacterAdapter& adapter,const BemPocDat
         if (target.saved_original) target.custom_bones=DonorBones(target);
         // Validate keep overrides against the world material using the same
         // shared-source texture policy used to prepare the UI material clone.
+        const int world_slots=ArrayLength(DonorMaterials(target));
+        const int ui_slots=ArrayLength(DonorMaterials(source));
+        if (!component.keep_material_overrides.empty() && world_slots<=0)
+            return refuse("world material table unavailable: "+target_name);
         for (size_t k=0;k<component.keep_material_overrides.size();++k) {
             const auto& override=component.keep_material_overrides[k];
             if (k>=component.keep_material_names.size()) return refuse("keep material identity missing: "+target_name);
-            if (override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(target))) ||
-                override.material_slot>=static_cast<uint32_t>(ArrayLength(DonorMaterials(source))))
-                return refuse("keep material slot outside world/UI arrays: "+target_name+" slot="+std::to_string(override.material_slot));
+            // A slot beyond the UI donor table means the package does not match
+            // the resource it was authored against. That is not platform trim.
+            if (override.material_slot>=static_cast<uint32_t>(ui_slots))
+                return refuse("keep material slot outside UI donor array: "+target_name+" slot="+std::to_string(override.material_slot));
+            // The package is authored against the Windows donor table, where this
+            // slot exists. Android world LOD1 trims material slots the platform
+            // does not expose, so an override on such a slot has no object to
+            // apply to. Skip it and keep the rest of the component intact.
+            if (override.material_slot>=static_cast<uint32_t>(world_slots)) {
+                Log("Android platform-trimmed keep slot skipped: "+target_name+" slot="+
+                    std::to_string(override.material_slot)+" worldSlots="+std::to_string(world_slots)+
+                    " uiSlots="+std::to_string(ui_slots));
+                continue;
+            }
             void* world_material=ArrayValue(DonorMaterials(target),override.material_slot);
             void* ui_material=ArrayValue(DonorMaterials(source),override.material_slot);
             const auto ui_name=ObjectName(ui_material),world_name=ObjectName(world_material);

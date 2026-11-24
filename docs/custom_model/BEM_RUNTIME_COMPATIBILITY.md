@@ -86,6 +86,11 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 - `keep` 保留原网格，但整组材质会被复制；`material_overrides` 只替换指定槽位的贴图。
 - `hide` 关闭该 Renderer，原网格不变。
 - Android 场景模型直接复用详情模型准备好的材质和网格。keep 覆盖要求两边材质同名，或符合 `M_actor_X` 对应 `M_actor_lod_X` 的关系。
+- **材质槽裁剪（Android 场景）**：手机场景 LOD1 的材质表可能比 Windows LOD0 / 详情模型短。包是按 Windows 材质表编写的，因此 `material_overrides` 引用到场景侧不存在的槽位时，**该槽位直接跳过**，不算包错误，也不回退整个模型；同一部件的其余槽位照常生效。
+  - 判定边界：槽位超出详情模型（UI donor）材质表仍属包与资源不符，拒绝（`keep material slot outside UI donor array`）；场景材质表长度为 0 也拒绝（`world material table unavailable`），因为这不是少一个槽，而是材质表整体不可用。
+  - 跳过写日志 `Android platform-trimmed keep slot skipped: <部件> slot=N worldSlots=N uiSlots=N`。被跳过的槽在场景侧没有对应的材质对象，Unity 不渲染该槽，因此不改变渲染结果；日志用于确认某个覆盖没有生效。
+  - 已核实案例：`chr_0003_endminf` 的 hair 在 Windows / 详情侧是 2 个材质槽、1 个子网格，Android 场景 LOD1 只有 1 个槽。`hair_color=white` 对 slot 1 的覆盖被跳过，slot 0 的发色替换正常生效。2026-11-24 实机确认主世界显示恢复。
+  - 该规则只作用于旧角色包的 UI LOD0 → world LOD1 适配；BEM 1.4 显式 Android 资源使用自身材质表，不经过这条路径。
 
 **贴图替换**：在复制出的材质里，按 `original_name` 查找使用该原贴图的属性。
 - 多个属性指向同一个原贴图对象：全部替换。
@@ -201,6 +206,7 @@ Windows 与 Android 使用同一套原生读取与构建代码（`native/modules
 | `Duplicate texture slot assignment` | 同一原贴图被赋值两次 | 去掉重复 |
 | `Texture format unsupported by game backend` | 设备不支持该贴图格式（多见于手机上的 BC 格式） | 在安装页“转换纹理” |
 | `Android world adapter refused: …` | 手机场景模型映射失败，后面跟具体原因 | 见第 3、4 节 |
+| `Android platform-trimmed keep slot skipped: …` | 包引用的材质槽在 Android 场景 LOD1 不存在，该覆盖已跳过（不是失败） | 通常无需处理；若该槽在 PC 上有可见效果，手机侧会缺少这一项 |
 | `Android world bone path missing` / `bone name differs from package` | 场景骨架路径或名称不同 | 声明骨骼别名 |
 | `LOD prerequisite unavailable` | Windows 强制 LOD0 失败 | 通常是游戏更新导致，需要更新程序 |
 | `Resource preparation failed; original retained` | 准备阶段失败，前面的日志有原因 | 查看前几行 |

@@ -801,7 +801,22 @@ int main() {
             fixture.bem.skip_validation=true;
             Check(fixture.Run(),"unchecked world still rejects a missing texture pin");
             fixture.bem.components[0].keep_material_overrides[0].material_slot=1;
-            Check(!fixture.Run(),"unchecked world accessed a material outside the live slot array");
+            Check(!fixture.Run(),"keep slot outside the UI donor array was accepted");
+        }
+        {
+            // The package is authored against the Windows donor table. Android
+            // world LOD1 trims slots the platform does not expose; an override
+            // on a trimmed slot has no world object and is skipped.
+            Fixture fixture; fixture.KeepTexture();
+            ui_sources[0].original_materials=Array({fixture.ui_material,Make("Material")});
+            ui_sources[0].custom_materials=Array({Make("Copy0"),Make("Copy1")});
+            fixture.bem.components[0].keep_material_overrides.push_back({1,0,1});
+            fixture.bem.components[0].keep_material_names.push_back("Material");
+            Check(fixture.Run(),"platform-trimmed keep slot refused the whole world resource");
+            Check(fixture.bindings.size()==1 && ArrayLength(fixture.bindings[0].custom_materials)==2,
+                "platform-trimmed keep slot changed the world material binding");
+            fixture.bem.components[0].keep_material_overrides[0].material_slot=2;
+            Check(!fixture.Run(),"keep slot outside the UI donor array was accepted after a trim");
         }
         std::cout<<"PASS "<<checks<<" Android world route, paired publication/rollback, current prefab names, shared texture, live bones and shadow checks\n";
         return 0;
