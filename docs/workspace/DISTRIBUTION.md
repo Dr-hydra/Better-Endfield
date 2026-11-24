@@ -56,8 +56,10 @@ ZIP 根包含 manifest.json 和 payload。Windows 也可解压到 resources/<类
 
 **清理旧归档是可选的**：加 `--prune-assets`（必须与 `--publish` 同用）后，本次上传完成后按 `(packageType, platform)` 只保留版本号最高的一个归档，删除其余已发布资产并从索引剔除对应条目，同时清掉指向已不存在资产的悬空条目。客户端选包是按当前 gameVersion 过滤后取最高版本，被删的旧归档没有运行时消费者，留下的那一份即留档；删除不可逆。裁剪后若某一类没有可用归档、或会丢掉本次刚上传的归档，脚本直接报错且不写索引。软件发布时可用 `PublishRelease.py --publish --prune-resources` 把同一步并入软件发布。
 
-软件发布以 GitHub Actions 的 `release` workflow 为准：先提升 `Directory.Build.props` 的 `<Version>`，补齐 `docs/workspace/releases/<version>/RELEASE_<version>.md`，提交后推送 `v<version>` tag；workflow 由 tag 触发，依次构建 Windows / Android / Tools，最后签名并发布。`workflow_dispatch` 只用于不发布的构建验证：publish job 只在 tag push 时运行，不要在 `main` 上用 dispatch 发布，否则发布端点创建的同名 tag 会再次触发 workflow，并在并发组里把正在收尾的 publish job 顶掉。
+**本地软件发布**必须走 `PublishRelease.py --publish`：只有它的 `--publish` 分支会在公开 release 之后刷新索引（`--refresh-software`，旧索引保留为 `distribution-index.previous.json`）。用 `gh release create` 或网页直接发布会跳过这一步，索引仍停在上一版，已装客户端读 `software.version` 后判定为最新，收不到更新提示。
 
-本地兜底仍可使用 `PublishRelease.py --publish`：只有它的 `--publish` 分支会在公开 release 之后刷新索引（`--refresh-software`，旧索引保留为 `distribution-index.previous.json`）。无论走哪条路径，发布后都用 `CheckDistributionIndex.py` 自检：它比对最新稳定 release 与已发布索引的 `software.version`、`releaseUrl`、资产名与字节数、tools 下载地址，不一致时退出码为 1。索引过期时单独补跑：`PublishResourceRelease.py --refresh-software --publish --output <目录>/distribution-index.json`。
+**云端发布**走 GitHub Actions 的 `release` workflow，和本地路径是两条独立通道：先提升 `Directory.Build.props` 的 `<Version>`，补齐 `docs/workspace/releases/<version>/RELEASE_<version>.md`，提交后推送 `v<version>` tag；workflow 由 tag 触发，依次构建 Windows / Android / Tools，最后由 release host 签名并发布，并刷新发行索引。`workflow_dispatch` 只用于不发布的构建验证：publish job 只在 tag push 时运行，不要在 `main` 上用 dispatch 发布，否则发布端点创建的同名 tag 会再次触发 workflow，并在并发组里把正在收尾的 publish job 顶掉。
+
+无论走本地还是云端，发布后都用 `CheckDistributionIndex.py` 自检：它比对最新稳定 release 与已发布索引的 `software.version`、`releaseUrl`、资产名与字节数、tools 下载地址，不一致时退出码为 1。索引过期时单独补跑：`PublishResourceRelease.py --refresh-software --publish --output <目录>/distribution-index.json`。
 
 默认不计算产物哈希。已有音频来源协议要求的输入 PCK 完整性字段继续保留；它们不属于分发 ZIP 的额外产物哈希。源码、生成输入、资源版本与设备实测边界分别记录。
