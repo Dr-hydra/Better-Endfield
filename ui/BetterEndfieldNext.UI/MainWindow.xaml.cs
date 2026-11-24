@@ -1038,8 +1038,8 @@ public sealed partial class MainWindow : Window
             isZh ? "留空时使用动作 VMD 里的镜头" : "Empty uses the motion's camera keys", ".vmd");
         TextBox face = FileRow(isZh ? "表情 VMD（可选）" : "Face VMD (optional)",
             isZh ? "留空时使用动作 VMD 里的表情" : "Empty uses the motion's morph keys", ".vmd");
-        TextBox music = FileRow(isZh ? "音乐（可选）" : "Music (optional)", "WAV / MP3 / M4A / AAC / FLAC / WMA",
-            ".wav", ".mp3", ".m4a", ".aac", ".flac", ".wma");
+        TextBox music = FileRow(isZh ? "音乐（可选）" : "Music (optional)", "WAV / MP3 / M4A / AAC / FLAC / WMA / OGG",
+            ".wav", ".mp3", ".m4a", ".aac", ".flac", ".wma", ".ogg");
         var offset = new NumberBox
         {
             Header = isZh ? "音乐偏移（秒；正数表示音乐比动作早开始）" : "Music offset (s; positive starts the music earlier)",

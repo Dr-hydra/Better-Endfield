@@ -9,7 +9,7 @@
 //   face=face.vmd          ; optional, replaces the motion's morph keys
 //   motion2..motion4       ; optional, squad playback: 2nd..4th dancer
 //   face2..face4           ; optional, their face VMDs
-//   music=music.mp3        ; optional WAV/MP3/M4A/AAC/FLAC/WMA
+//   music=music.mp3        ; optional WAV/MP3/M4A/AAC/FLAC/WMA/OGG
 //   audio_offset=0         ; seconds; music position = motion time + offset
 // File entries must be plain names inside the work folder.
 #include <algorithm>

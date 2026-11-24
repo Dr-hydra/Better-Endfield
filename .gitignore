@@ -68,6 +68,7 @@ vendor/unity-libs-2021.3.34/
 *.suo
 *.log
 *.pdb
+*.pch
 BetterEndfieldNext.ini
 diagnostics/
 

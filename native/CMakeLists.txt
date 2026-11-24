@@ -124,7 +124,13 @@ add_library(BetterEndfieldNext.Music SHARED
     modules/music/music_bank.h
     modules/music/omni_pcm_abi.h
     modules/music/local_track.inc
+    modules/music/ogg_track.h
+    shared/third_party/stb_vorbis/stb_vorbis.c
 )
+# stb_vorbis is third-party C with its own warning level; keep /W4 meaningful
+# for the module's own code without turning its diagnostics into noise.
+set_source_files_properties(shared/third_party/stb_vorbis/stb_vorbis.c
+    PROPERTIES COMPILE_FLAGS "/W0")
 better_endfield_target_defaults(BetterEndfieldNext.Music)
 target_link_libraries(BetterEndfieldNext.Music PRIVATE mfplat mfreadwrite mfuuid ole32)
 set_target_properties(BetterEndfieldNext.Music PROPERTIES

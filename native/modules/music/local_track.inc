@@ -60,7 +60,16 @@ bool AllowedExtension(const std::filesystem::path& path) {
         character = static_cast<wchar_t>(towlower(character));
     }
     return extension == L".wav" || extension == L".mp3" || extension == L".m4a" ||
-        extension == L".aac" || extension == L".flac" || extension == L".wma" || extension == L".mp4";
+        extension == L".aac" || extension == L".flac" || extension == L".wma" ||
+        extension == L".ogg" || extension == L".mp4";
+}
+
+bool IsOgg(const std::filesystem::path& path) {
+    std::wstring extension = path.extension().wstring();
+    for (wchar_t& character : extension) {
+        character = static_cast<wchar_t>(towlower(character));
+    }
+    return extension == L".ogg";
 }
 
 class Decoder {
@@ -76,8 +85,17 @@ public:
             return false;
         }
         if (!AllowedExtension(file)) {
-            message = "music must be WAV, MP3, M4A, AAC, FLAC, WMA or MP4";
+            message = "music must be WAV, MP3, M4A, AAC, FLAC, WMA, OGG or MP4";
             return false;
+        }
+        if (IsOgg(file)) {
+            // Media Foundation cannot open Ogg in a classic Win32 process, so
+            // this format is decoded by stb_vorbis and joins the same ring.
+            if (!ogg_.Open(path, message)) return false;
+            rate_ = ogg_.Rate();
+            channels_ = ogg_.Channels();
+            duration_ = ogg_.Duration();
+            return true;
         }
         HRESULT result = MFCreateSourceReaderFromURL(path.c_str(), nullptr, &reader_);
         if (FAILED(result) || !reader_) {
@@ -119,17 +137,34 @@ public:
     void Close() {
         if (reader_) reader_->Release();
         reader_ = nullptr;
+        ogg_.Close();
         pending_.clear();
         eof_ = false;
     }
 
-    bool IsOpen() const { return reader_ != nullptr; }
+    bool IsOpen() const { return reader_ != nullptr || ogg_.IsOpen(); }
     bool Drained() const { return eof_ && pending_.empty(); }
     double Duration() const { return duration_; }
     uint32_t OutputRate() const { return output_rate_; }
     void SetGain(float gain) { gain_ = std::clamp(gain, 0.0f, 2.0f); }
 
     bool Seek(double seconds, uint32_t output_rate) {
+        if (ogg_.IsOpen()) {
+            seconds = std::clamp(seconds, 0.0, kMaximumSeekSeconds);
+            if (!ogg_.Seek(seconds)) return false;
+            output_rate_ = std::max(output_rate, 1u);
+            resampler_.Configure(rate_, channels_, output_rate_);
+            pending_.clear();
+            eof_ = false;
+            {
+                std::scoped_lock lock(g_ring_producer_mutex);
+                g_ring.Clear();
+                base_seconds.store(seconds, std::memory_order_release);
+                base_rate.store(output_rate_, std::memory_order_release);
+                consumed_frames.store(0, std::memory_order_release);
+            }
+            return true;
+        }
         if (!reader_) return false;
         seconds = std::clamp(seconds, 0.0, kMaximumSeekSeconds);
         PROPVARIANT value;
@@ -153,8 +188,27 @@ public:
         return true;
     }
 
-    // Decodes one Media Foundation sample when the ring has room.
+    // Decodes one Media Foundation sample or one Ogg frame when the ring has room.
     bool Pump(std::string& message) {
+        if (ogg_.IsOpen()) {
+            if (!pending_.empty()) {
+                PushPending();
+                return true;
+            }
+            if (eof_ || g_ring.AvailableWrite() < kPushFloorFrames) return true;
+            uint32_t frames = 0;
+            const float* data = ogg_.Read(frames);
+            if (!data || !frames) {
+                eof_ = true;
+                return true;
+            }
+            resampler_.Convert(data, frames, pending_);
+            if (gain_ != 1.0f) {
+                for (float& value : pending_) value *= gain_;
+            }
+            PushPending();
+            return true;
+        }
         if (!reader_) return true;
         if (!pending_.empty()) {
             PushPending();
@@ -238,6 +292,7 @@ private:
     }
 
     IMFSourceReader* reader_ = nullptr;
+    BetterEndfieldNext::Music::Ogg::Track ogg_;
     LinearStereoResampler resampler_;
     std::vector<float> pending_;
     int32_t rate_ = 48000;

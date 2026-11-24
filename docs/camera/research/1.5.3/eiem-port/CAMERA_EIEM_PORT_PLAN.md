@@ -187,7 +187,8 @@ Windows 检查：`dev/pc-camera-motion-20260927` 用 MSVC 编译 Host/Actions/Ca
   - `hotkey_layout=2` 表示新布局；旧配置（layout 1）里的 F6–F10 默认键会被替换成小键盘默认值。
 - [x] 统一播放（`mmd_director_runtime.inc`）：动作、镜头、表情、音乐共用一个 QPC 时钟，支持播放/暂停/停止/跳转/循环；
   镜头模式 VMD / 自由 / 游戏可切换；没有单独镜头文件时用动作 VMD 里的镜头段。
-- [x] 音乐：音乐模块新增 `local_track.inc`（Media Foundation 解码 WAV/MP3/M4A/AAC/FLAC/WMA），
+- [x] 音乐：音乐模块新增 `local_track.inc`（Media Foundation 解码 WAV/MP3/M4A/AAC/FLAC/WMA；OGG 由 `stb_vorbis` 在模块内解码，
+  因为打包版 Web Media Extensions 的 Vorbis 解码器对经典 Win32 进程不可见），
   导出 `BetterEndfield_GetLocalMusicApiV1`（`native/shared/include/BetterEndfield/LocalMusic.h`）。
   本地曲目优先于 OmniMix，播放时让出 OmniMix、保持原生 BGM 暂停，结束后恢复。相机模块用 `mmd_music_enabled` 联动。
 - [x] 悬浮窗 `BetterEndfield.MmdOverlay.exe`：由相机模块在 MMD 开启时拉起；可点击但不激活窗口；

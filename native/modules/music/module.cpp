@@ -5,6 +5,7 @@
 #include "music_bank.h"
 #include "omni_pcm_abi.h"
 #include "bgm_pause.h"
+#include "ogg_track.h"
 
 #include <Windows.h>
 #include <mfapi.h>

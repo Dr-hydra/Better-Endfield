@@ -51,7 +51,7 @@ internal static class MmdLibraryService
 {
     private const long MaxVmdBytes = 64L << 20;
     private const long MaxMusicBytes = 1L << 30;
-    private static readonly string[] MusicExtensions = [".wav", ".mp3", ".m4a", ".aac", ".flac", ".wma"];
+    private static readonly string[] MusicExtensions = [".wav", ".mp3", ".m4a", ".aac", ".flac", ".wma", ".ogg"];
 
     public static string LibraryRoot
     {
@@ -261,7 +261,7 @@ internal static class MmdLibraryService
         var info = new FileInfo(path);
         if (!info.Exists) throw new FileNotFoundException(zh ? "找不到音乐文件" : "Music file not found", path);
         if (Array.IndexOf(MusicExtensions, info.Extension.ToLowerInvariant()) < 0)
-            throw new InvalidOperationException(zh ? "音乐需为 WAV/MP3/M4A/AAC/FLAC/WMA。" : "Music must be WAV/MP3/M4A/AAC/FLAC/WMA.");
+            throw new InvalidOperationException(zh ? "音乐需为 WAV/MP3/M4A/AAC/FLAC/WMA/OGG。" : "Music must be WAV/MP3/M4A/AAC/FLAC/WMA/OGG.");
         if (info.Length == 0 || info.Length > MaxMusicBytes)
             throw new InvalidOperationException(zh ? "音乐文件大小无效（上限 1 GB）。" : "Music file has an invalid size (limit 1 GB).");
     }
