@@ -9,10 +9,6 @@ on:
       version:
         description: Version from Directory.Build.props, without the leading v
         required: true
-      publish:
-        description: Sign and publish the release after building
-        type: boolean
-        default: false
       use_sccache:
         description: Cache native C++ objects with sccache (experimental on MSVC/LTCG)
         type: boolean
@@ -23,10 +19,9 @@ on:
 
 concurrency:
   group: release
-  # A newer run supersedes an older one. While iterating on the pipeline this is
-  # what keeps a fix from sitting behind a doomed run for half an hour; a
-  # superseded attempt can only ever describe a build that is already stale.
-  cancel-in-progress: true
+  # Releases queue instead of canceling. A tag run may already be signing or
+  # uploading; canceling it leaves a half-published release behind.
+  cancel-in-progress: false
 
 # The build agents never write to the repository. Publishing happens on the
 # release host, so this token cannot create or modify a release even if a build
@@ -410,7 +405,10 @@ jobs:
     needs: [windows, android, tools]
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    if: github.event_name == 'push' || inputs.publish
+    # Only a v* tag publishes. workflow_dispatch is a build-only check; publishing
+    # from a branch creates the tag at the release endpoint and would then trigger
+    # a second run from that tag.
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v7
 
