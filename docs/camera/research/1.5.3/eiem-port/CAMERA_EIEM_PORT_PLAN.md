@@ -292,13 +292,18 @@ Windows 检查：`dev/pc-camera-motion-20260927` 用 MSVC 编译 Host/Actions/Ca
   `ToggleSelectedCharOutline`（站位控制器）落到逐渲染器的 `UnityEngine.Renderer.enableCharacterOutline`；
   管线侧由独立的 `CharacterOutline` shader pass 在前向不透明阶段多画一遍
   （`PrepareForwardOpaqueCharacterOutlineRendererList`、`characterOutlineOpaque*ECSList`、`s_CharacterOutlineName`），
-  这一遍是否执行由 `HGCharacterVolume.charOutlineQualityMode`（`AlwaysOn/Tier10/Tier20/AlwaysOff`）和管线级
+  是否执行由 `HGCharacterVolume.charOutlineQualityMode`（`AlwaysOn/Tier10/Tier20/AlwaysOff`）与管线级
   `enableCharacterOutline` 共同决定。
-- 实现：新开关 `vmd_outline`（相机页「角色描边」）。开播时遍历每个 dancer 模型下的 `SkinnedMeshRenderer` 与 `MeshRenderer`，
-  读取当前值后置 true 并记录；停播、队员离场、配置变更时逐个还原原值。组件数组与渲染器都 pin 在 slot 上随释放解除。
-  方法解析失败只写一行日志，不影响播放本身。
-- 边界：描边颜色与粗细没有 C# 属性（推测走 `_CharacterParamsN` 全局量或 `SetPerDrawData_CharacterParams` 的逐渲染器数据），
-  实机看到的颜色/宽度以引擎默认为准。如果开放世界相机的档位是 `AlwaysOff`，只置渲染器 flag 不会出图，
-  下一步需要临时覆盖 `charOutlineQualityMode`。
-- 验证：`camera_playback` 9/9；角色适配层 149 checks（新增 6 项：开播置位、原值恢复、停播还原）；
-  Camera 模块编译通过；管理器 C#/XAML 构建通过。已部署到测试目录待实机验证。
+- 实机核实（2026-11-25）：`enableCharacterOutline` 本来就是角色默认状态（开播前 116/187 已是 true），
+  拿它当「选中开关」没有可见变化；真正决定看不看得见的是**描边线宽**。角色材质上只有 `_OutlineWidth`
+  （女管 body/cloth 0.5–0.6，face 0.5），**没有 `_OutlineColor`** —— 颜色是 shader 固定的浅色，不是材质参数。
+  把线宽放大 6 倍后白色描边立刻可见，说明 pass 在开放世界相机里本来就是开着的，`charOutlineQualityMode` 无需改。
+- 实现：`vmd_outline` 开关 + `vmd_outline_width` 倍率（相机页「描边粗细（%）」，50–800%，默认 300%）。
+  开播时遍历每个 dancer 的 `SkinnedMeshRenderer` / `MeshRenderer`：置 `enableCharacterOutline=true`，
+  并用 **MaterialPropertyBlock** 把 `_OutlineWidth`（以及存在时的 `_Outline2Width` / `_outlineWidth`）
+  写成「材质原值 × 倍率」；停播、队员离场、配置变更时把原 property block 写回、flag 还原。
+  共享材质不动，方法解析失败只记一行日志。
+- 边界：`_OutlineColor`/`_Outline2Color` 在本作角色材质上不存在，颜色不可调；线宽单位由 shader 决定，
+  倍率只做相对缩放。渲染器上的组件数组与渲染器本身都 pin 在 slot 上随释放解除。
+- 验证：`camera_playback` 9/9；角色适配层 153 checks（含 `vmd_outline_width` 默认值/夹取）；
+  Camera 模块与管理器构建通过；实机 600% 可见白描边。

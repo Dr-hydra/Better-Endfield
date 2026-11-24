@@ -776,6 +776,7 @@ public sealed partial class MainWindow : Window
         extras.VmdPerActorAnchor = MmdPerActorAnchorToggle.IsOn;
         extras.VmdSquadFollow = MmdSquadFollowToggle.IsOn;
         extras.VmdOutline = MmdOutlineToggle.IsOn;
+        extras.VmdOutlineWidth = Math.Clamp(Value(MmdOutlineWidthNumberBox, 300.0) / 100.0, 0.5, 8.0);
         int cloth = MmdClothComboBox.SelectedIndex;
         extras.VmdClothMode = FreeCameraExtras.ClothModes[
             cloth >= 0 && cloth < FreeCameraExtras.ClothModes.Length ? cloth : 0];
@@ -839,6 +840,7 @@ public sealed partial class MainWindow : Window
         MmdPerActorAnchorToggle.IsOn = extras.VmdPerActorAnchor;
         MmdSquadFollowToggle.IsOn = extras.VmdSquadFollow;
         MmdOutlineToggle.IsOn = extras.VmdOutline;
+        MmdOutlineWidthNumberBox.Value = extras.VmdOutlineWidth * 100;
         MmdClothComboBox.SelectedIndex = Math.Max(0,
             Array.IndexOf(FreeCameraExtras.ClothModes, extras.VmdClothMode));
         MmdFaceToggle.IsOn = extras.VmdFaceEnabled;
@@ -1188,6 +1190,7 @@ public sealed partial class MainWindow : Window
         MmdOutlineToggle.Header = isZh ? "角色描边" : "Character Outline";
         MmdOutlineToggle.OffContent = isZh ? "关闭" : "Off";
         MmdOutlineToggle.OnContent = isZh ? "白色描边" : "White outline";
+        MmdOutlineWidthNumberBox.Header = isZh ? "描边粗细（%）" : "Outline Width (%)";
         MmdFaceToggle.Header = isZh ? "表情" : "Face";
         MmdClothComboBox.Header = isZh ? "衣物物理" : "Cloth Physics";
         string[] clothModes = isZh

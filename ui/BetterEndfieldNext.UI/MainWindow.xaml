@@ -1633,6 +1633,7 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                                 <ToggleSwitch
                                                     x:Name="MmdBodyToggle"
@@ -1688,12 +1689,22 @@
                                                     Toggled="CameraEnhancementToggle_Toggled" />
                                                 <ToggleSwitch
                                                     x:Name="MmdOutlineToggle"
-                                                    Grid.Row="3"
-                                                    Grid.Column="1"
+                                                    Grid.Row="5"
                                                     Header="角色描边"
                                                     OffContent="关闭"
                                                     OnContent="白色描边"
                                                     Toggled="CameraEnhancementToggle_Toggled" />
+                                                <NumberBox
+                                                    x:Name="MmdOutlineWidthNumberBox"
+                                                    Grid.Row="5"
+                                                    Grid.Column="1"
+                                                    Header="描边粗细（%）"
+                                                    Minimum="50"
+                                                    Maximum="800"
+                                                    SmallChange="10"
+                                                    SpinButtonPlacementMode="Compact"
+                                                    Value="300"
+                                                    ValueChanged="CameraEnhancementNumberBox_ValueChanged" />
                                                 <ToggleSwitch
                                                     x:Name="MmdPerActorAnchorToggle"
                                                     Grid.Row="4"

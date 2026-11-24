@@ -316,6 +316,11 @@ int main() {
     CHECK(!ParseConfiguration("").vmd_squad_follow&&!ParseConfiguration("").vmd_per_actor_anchor);
     auto follow=ParseConfiguration("vmd_squad_follow=true\nvmd_per_actor_anchor=true\n");
     CHECK(follow.vmd_squad_follow&&follow.vmd_per_actor_anchor);
+    // Outline width is a multiplier on each material's own line width.
+    CHECK(nearly(ParseConfiguration("").vmd_outline_width,3));
+    CHECK(nearly(ParseConfiguration("vmd_outline_width=5\n").vmd_outline_width,5));
+    CHECK(nearly(ParseConfiguration("vmd_outline_width=99\n").vmd_outline_width,8));
+    CHECK(nearly(ParseConfiguration("vmd_outline_width=0.1\n").vmd_outline_width,0.5));
     // Cloth mode: EIEM's playback service by default; unknown values keep it.
     CHECK(ParseConfiguration("").vmd_cloth_mode==1);
     CHECK(ParseConfiguration("vmd_cloth_mode=game\n").vmd_cloth_mode==0);
