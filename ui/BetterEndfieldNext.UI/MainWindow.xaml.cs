@@ -773,6 +773,8 @@ public sealed partial class MainWindow : Window
         extras.MmdEnabled = MmdEnabledToggle.IsOn;
         extras.VmdBodyEnabled = MmdBodyToggle.IsOn;
         extras.VmdTerrainEnabled = MmdTerrainToggle.IsOn;
+        extras.VmdPerActorAnchor = MmdPerActorAnchorToggle.IsOn;
+        extras.VmdSquadFollow = MmdSquadFollowToggle.IsOn;
         int cloth = MmdClothComboBox.SelectedIndex;
         extras.VmdClothMode = FreeCameraExtras.ClothModes[
             cloth >= 0 && cloth < FreeCameraExtras.ClothModes.Length ? cloth : 0];
@@ -781,7 +783,7 @@ public sealed partial class MainWindow : Window
         extras.MmdOverlayEnabled = MmdOverlayToggle.IsOn;
         extras.MmdOverlayVisible = MmdOverlayVisibleToggle.IsOn;
         extras.MmdLoop = MmdLoopToggle.IsOn;
-        extras.VmdMotionScale = Math.Clamp(Value(MmdMotionScaleNumberBox, 100.0) / 100.0, 0.05, 5.0);
+        extras.VmdMotionScale = Math.Clamp(Value(MmdMotionScaleNumberBox, 100.0) / 100.0, 0.0, 5.0);
         extras.MmdMusicGain = Math.Clamp(Value(MmdMusicGainNumberBox, 100.0) / 100.0, 0.0, 2.0);
         extras.MmdSeekSeconds = Math.Clamp(Value(MmdSeekNumberBox, 5.0), 0.5, 60.0);
         extras.MmdPlayHotkey = MmdPlayHotkeyBox.Text;
@@ -833,6 +835,8 @@ public sealed partial class MainWindow : Window
         MmdEnabledToggle.IsOn = extras.MmdEnabled;
         MmdBodyToggle.IsOn = extras.VmdBodyEnabled;
         MmdTerrainToggle.IsOn = extras.VmdTerrainEnabled;
+        MmdPerActorAnchorToggle.IsOn = extras.VmdPerActorAnchor;
+        MmdSquadFollowToggle.IsOn = extras.VmdSquadFollow;
         MmdClothComboBox.SelectedIndex = Math.Max(0,
             Array.IndexOf(FreeCameraExtras.ClothModes, extras.VmdClothMode));
         MmdFaceToggle.IsOn = extras.VmdFaceEnabled;
@@ -1173,6 +1177,12 @@ public sealed partial class MainWindow : Window
         MmdEnabledToggle.OnContent = isZh ? "用小键盘和悬浮窗控制" : "Controlled from the numpad and overlay";
         MmdBodyToggle.Header = isZh ? "身体动作" : "Body Motion";
         MmdTerrainToggle.Header = isZh ? "地形贴合（实验）" : "Terrain Follow (experimental)";
+        MmdPerActorAnchorToggle.Header = isZh ? "各自原地" : "Dance in Place";
+        MmdPerActorAnchorToggle.OffContent = isZh ? "保持队形" : "Keep formation";
+        MmdPerActorAnchorToggle.OnContent = isZh ? "原地跳" : "Stay put";
+        MmdSquadFollowToggle.Header = isZh ? "队友跟跳" : "Squad Follow";
+        MmdSquadFollowToggle.OffContent = isZh ? "只跳主控" : "Leader only";
+        MmdSquadFollowToggle.OnContent = isZh ? "小队一起跳" : "Whole squad";
         MmdFaceToggle.Header = isZh ? "表情" : "Face";
         MmdClothComboBox.Header = isZh ? "衣物物理" : "Cloth Physics";
         string[] clothModes = isZh

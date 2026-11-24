@@ -1632,6 +1632,7 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                                 <ToggleSwitch
                                                     x:Name="MmdBodyToggle"
@@ -1684,6 +1685,21 @@
                                                     Header="循环播放"
                                                     OffContent="播放一次"
                                                     OnContent="循环"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdPerActorAnchorToggle"
+                                                    Grid.Row="4"
+                                                    Header="各自原地"
+                                                    OffContent="保持队形"
+                                                    OnContent="原地跳"
+                                                    Toggled="CameraEnhancementToggle_Toggled" />
+                                                <ToggleSwitch
+                                                    x:Name="MmdSquadFollowToggle"
+                                                    Grid.Row="4"
+                                                    Grid.Column="1"
+                                                    Header="队友跟跳"
+                                                    OffContent="只跳主控"
+                                                    OnContent="小队一起跳"
                                                     Toggled="CameraEnhancementToggle_Toggled" />
                                         </Grid>
                                         <Border Style="{StaticResource SettingsRowStyle}">
@@ -1749,7 +1765,7 @@
                                                 <NumberBox
                                                     x:Name="MmdMotionScaleNumberBox"
                                                     Header="位移幅度（%）"
-                                                    Minimum="5"
+                                                    Minimum="0"
                                                     Maximum="500"
                                                     SmallChange="5"
                                                     SpinButtonPlacementMode="Compact"

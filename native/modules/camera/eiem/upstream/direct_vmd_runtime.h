@@ -267,8 +267,10 @@ static void DirectVmdRuntime_SetSpeed(float speed) {
 static void DirectVmdRuntime_SetMotionMultiplier(float multiplier) {
   if (!std::isfinite(multiplier))
     return;
+  // BE-PATCH(anchor): 0 is allowed so squad follow can drop the VMD
+  // displacement entirely and keep every dancer on the spot it stands on.
   s_directVmdMotionMultiplier.store(
-      (std::max)(0.05f, (std::min)(multiplier, 5.0f)),
+      (std::max)(0.0f, (std::min)(multiplier, 5.0f)),
       std::memory_order_release);
 }
 

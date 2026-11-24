@@ -195,6 +195,10 @@ Windows 检查：`dev/pc-camera-motion-20260927` 用 MSVC 编译 Host/Actions/Ca
   共享内存双向协议见 `mmd_overlay_protocol.h`；小键盘 `-` 显示/隐藏；已加入打包脚本。
 - [x] 作品库：`mmd_library.h`（原生）与 `Services/MmdLibraryService.cs`（管理器）读写同一格式；
   管理器相机页新增 MMD 区块：导入作品（选动作/镜头/表情/音乐，复制进库）、音乐偏移、循环、悬浮窗开关、键位。
+- [x] 队友跟跳（`vmd_squad_follow`）：单人作品也发给小队其余槽位，每个角色以自己的根位姿为舞台锚点
+  （`EiemBody::SetActorAnchor`，只写对应 slot 的 `g_beFixedAnchor*`），不再叠在操控角色身上；
+  「各自原地」（`vmd_per_actor_anchor`）把同一规则用于多人编舞作品。位移幅度下限由 5% 放到 0，
+  置 0 即完全忽略 VMD 的 center 位移，锚点决定从哪起跳、位移决定跳的时候挪不挪。全场景 NPC 广播不在本次范围。
 - 构建：Host/Actions/Camera/Music/MmdOverlay 用 MSVC 编译 0 错误；`camera_playback` 7 个测试全过；
   管理器 0 错误（`global.json` 临时改 9.0.308 后已恢复）。构建目录 `F:/zmd_bem/tmp/pcmotion/native`、`tests`。
 - 未提交 git，未实机测试。

@@ -232,6 +232,28 @@ int main() {
     CHECK(EiemFake::actors[0].face.empty()&&EiemFake::actors[1].face.empty());
     CM::requests.store(16);PumpCharacterMotion();
 
+    // Squad follow: one motion for everyone, each dancer keeps its own origin.
+    {auto config=Config();config->squad_follow=true;r.applied=config;std::atomic_store(&CM::config,r.applied);}
+    RequestCharacterDirectorLoad(Cast(1));PumpCharacterMotion();
+    CHECK(r.Loading()&&Dancing()==0);
+    CHECK(EiemFake::actors[1].entity==&member1.entity&&EiemFake::actors[1].motion=="C:/w/motion.vmd");
+    CHECK(EiemFake::actors[2].entity==&member2.entity&&EiemFake::actors[2].motion=="C:/w/motion.vmd");
+    CHECK(EiemFake::actor_anchor_valid[0]&&nearly(EiemFake::actor_anchor_position[0][0],3));
+    CHECK(EiemFake::actor_anchor_valid[1]&&nearly(EiemFake::actor_anchor_position[1][0],10));
+    CHECK(EiemFake::actor_anchor_valid[2]&&nearly(EiemFake::actor_anchor_position[2][0],20));
+    CHECK(!EiemFake::anchor_valid);
+    Ready();CHECK(Dancing()==3);
+    CM::requests.store(16);PumpCharacterMotion();CHECK(pins.empty());
+    // Per-actor anchor alone re-spots a real multi-dancer work but copies no part.
+    {auto config=Config();config->per_actor_anchor=true;r.applied=config;std::atomic_store(&CM::config,r.applied);}
+    RequestCharacterDirectorLoad(Cast(2));PumpCharacterMotion();
+    CHECK(Dancing()==0&&!EiemFake::anchor_valid);
+    CHECK(EiemFake::actors[1].motion=="C:/w/motion2.vmd");
+    CHECK(EiemFake::actor_anchor_valid[0]&&nearly(EiemFake::actor_anchor_position[0][0],3));
+    CHECK(EiemFake::actor_anchor_valid[1]&&nearly(EiemFake::actor_anchor_position[1][0],10));
+    Ready();CHECK(Dancing()==2);
+    CM::requests.store(16);PumpCharacterMotion();CHECK(pins.empty());
+
     // Configuration invalidation dominates a running session.
     r.applied=Config();std::atomic_store(&CM::config,r.applied);
     CM::requests.store(1);PumpCharacterMotion();Ready();CHECK(Dancing()==1);
@@ -263,8 +285,12 @@ int main() {
     // Opt-in flags are parsed by production CameraConfiguration.
     auto c=ParseConfiguration("enabled=true\nvmd_body_enabled=true\nvmd_terrain_enabled=true\nvmd_motion_scale=9\nvmd_motion_file=C:/dance.vmd\nvmd_motion_hotkey=F11\nhotkey_layout=2\n");
     CHECK(c.vmd_body_enabled&&c.vmd_terrain_enabled&&!c.vmd_face_enabled);CHECK(nearly(c.vmd_motion_scale,5));CHECK(c.vmd_motion_key==VK_F1+10);CHECK(c.vmd_motion_file=="C:/dance.vmd");
-    CHECK(nearly(ParseConfiguration("vmd_motion_scale=0\n").vmd_motion_scale,0.05));
+    CHECK(nearly(ParseConfiguration("vmd_motion_scale=0\n").vmd_motion_scale,0));
     CHECK(nearly(ParseConfiguration("").vmd_motion_scale,1));
+    // Squad follow and the per-actor origin are separate opt-ins.
+    CHECK(!ParseConfiguration("").vmd_squad_follow&&!ParseConfiguration("").vmd_per_actor_anchor);
+    auto follow=ParseConfiguration("vmd_squad_follow=true\nvmd_per_actor_anchor=true\n");
+    CHECK(follow.vmd_squad_follow&&follow.vmd_per_actor_anchor);
     // Cloth mode: EIEM's playback service by default; unknown values keep it.
     CHECK(ParseConfiguration("").vmd_cloth_mode==1);
     CHECK(ParseConfiguration("vmd_cloth_mode=game\n").vmd_cloth_mode==0);

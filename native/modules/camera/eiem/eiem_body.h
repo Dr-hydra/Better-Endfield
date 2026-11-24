@@ -66,6 +66,11 @@ void SetTarget(int actor, void* entity, void* animator, void* movement);
 // single-character placement (first frame lands on the character).
 void SetSharedAnchor(bool valid, const float position[3], const float rotation[4]);
 
+// The same setting for one actor only. Squad follow ("the teammates dance the
+// action where they stand") uses this so each slot keeps its own root pose as
+// the stage origin instead of inheriting actor 0's.
+void SetActorAnchor(int actor, bool valid, const float position[3], const float rotation[4]);
+
 // Enter/leave EIEM's DirectVmd backend for one actor. Start creates the ghost
 // rig on the next BipedIK solve of the target; Stop restores the Animator.
 bool Start(int actor, const char* reason);

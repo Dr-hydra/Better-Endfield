@@ -8,6 +8,12 @@
 // of the current squad that are in the field, in squad slot order. They share
 // the controlled character's position and facing as the stage origin, so the
 // formation authored in multi-dancer VMDs is kept.
+//
+// Squad follow (vmd_squad_follow): a single-dancer work is handed to the whole
+// squad as well, and every dancer keeps its own root pose as the stage origin,
+// so the teammates play the action where they already stand instead of stacking
+// on the leader. vmd_per_actor_anchor applies the same origin rule to a
+// multi-dancer work.
 double MmdDirectorSeconds();
 bool MmdDirectorPlaying();
 namespace Mmd {std::filesystem::path ModuleDirectory();}
@@ -16,6 +22,12 @@ constexpr char kOwner[] = "betterendfieldnext.camera.character";
 constexpr int kMaxActors = EiemBody::kMaxActors;
 struct Config {
     bool enabled=false, face=false, terrain=false, loop=false;
+    // Stage origin for multi-actor playback. false keeps the formation authored
+    // in a multi-dancer VMD around the leader; true gives every actor its own
+    // root pose, so a single action plays where each character already stands.
+    bool per_actor_anchor=false;
+    // "Follow me": hand a single-dancer work to the remaining squad slots too.
+    bool squad_follow=false;
     float motion_scale=1;
     EiemBody::ClothMode cloth=EiemBody::ClothMode::Stable;
     std::string file;
@@ -256,18 +268,44 @@ struct Runtime final {
         if(!movement&&index==0)Log("Character VMD: MovementComponent unavailable; terrain follow disabled.");
         return true;
     }
-    bool SharedAnchor() {
+    bool ReadRootPose(int index,float (&p)[3],float (&q)[4]) {
         Vector3 position{};Quaternion rotation{};
-        if(!GetValue(Contract("unity.transform.position.get"),actors[0].root,position)||
-            !Unbox(Invoke(Contract("unity.transform.rotation.get"),actors[0].root,nullptr),rotation))return false;
-        const float p[3]{position.x,position.y,position.z},q[4]{rotation.x,rotation.y,rotation.z,rotation.w};
+        if(!GetValue(Contract("unity.transform.position.get"),actors[index].root,position)||
+            !Unbox(Invoke(Contract("unity.transform.rotation.get"),actors[index].root,nullptr),rotation))return false;
+        p[0]=position.x;p[1]=position.y;p[2]=position.z;
+        q[0]=rotation.x;q[1]=rotation.y;q[2]=rotation.z;q[3]=rotation.w;
         for(float v:p)if(!std::isfinite(v))return false;
         for(float v:q)if(!std::isfinite(v))return false;
+        return true;
+    }
+    // Every actor shares the leader's origin, so the formation authored in a
+    // multi-dancer VMD survives.
+    bool SharedAnchor() {
+        float p[3]{},q[4]{};
+        if(!ReadRootPose(0,p,q))return false;
         EiemBody::SetSharedAnchor(true,p,q);
         return true;
     }
-    bool BeginLoad(const std::vector<Part>& parts) {
-        if(parts.empty()||parts[0].motion.empty())return false;
+    // Every actor keeps the origin it already stands on, so one action can be
+    // played by the whole squad without stacking them on the leader.
+    bool ActorAnchors(int count) {
+        for(int i=0;i<count;++i) {
+            float p[3]{},q[4]{};
+            if(!ReadRootPose(i,p,q))return false;
+            EiemBody::SetActorAnchor(i,true,p,q);
+        }
+        return true;
+    }
+    bool BeginLoad(const std::vector<Part>& input) {
+        if(input.empty()||input[0].motion.empty())return false;
+        // Squad follow: a single-dancer work is handed to the remaining slots as
+        // well, so the squad path below binds them. Each keeps its own origin
+        // (see ActorAnchors), which is what makes them dance where they stand.
+        std::vector<Part> parts=input;
+        if(applied->squad_follow&&parts.size()==1) {
+            const Part lead=parts[0];
+            while(parts.size()<size_t(kMaxActors))parts.push_back(lead);
+        }
         if(!Resolve()||!CooperativeActions()||!Eiem())return false;
         void* leader=Character();
         if(!leader||!Bind(0,leader)){Log("Character VMD: enter the playable world first.");Release(0,true,"bind failed");return false;}
@@ -292,7 +330,15 @@ struct Runtime final {
         options.face=applied->face;options.terrain=applied->terrain;options.motion_scale=applied->motion_scale;
         options.cloth=applied->cloth;
         EiemBody::SetOptions(options);
-        if(bound>1&&!SharedAnchor()){Log("Character VMD: could not read the stage origin; squad playback cancelled.");return false;}
+        if(bound>1) {
+            // Squad follow always keeps each dancer on its own spot: sharing the
+            // leader's origin only makes sense for a multi-dancer VMD.
+            const bool anchored=(applied->per_actor_anchor||applied->squad_follow)?ActorAnchors(bound):SharedAnchor();
+            if(!anchored) {
+                Log("Character VMD: could not read a stage origin; squad playback cancelled.");
+                return false;
+            }
+        }
         if(bound==1)EiemBody::SetSharedAnchor(false,nullptr,nullptr);
         for(int i=0;i<bound;++i) {
             const Part& part=parts[size_t(cast[size_t(i)])];
@@ -403,6 +449,14 @@ void PublishCharacterConfiguration(const CameraConfiguration& value) {
     next->enabled=value.enabled&&value.vmd_body_enabled;
     next->face=value.vmd_face_enabled;next->terrain=value.vmd_terrain_enabled;next->motion_scale=value.vmd_motion_scale;
     next->cloth=static_cast<EiemBody::ClothMode>(std::clamp(value.vmd_cloth_mode,0,2));
+    next->per_actor_anchor=value.vmd_per_actor_anchor;
+    next->squad_follow=value.vmd_squad_follow;
+    // Configuration only shows up in the log when it changes, so a silent
+    // "nothing happened" is distinguishable from "the toggle never arrived".
+    const auto previous=CharacterMotion::runtime.applied;
+    if(!previous||next->squad_follow!=previous->squad_follow||next->per_actor_anchor!=previous->per_actor_anchor)
+        Log(std::string("Character VMD: squad follow ")+(next->squad_follow?"on":"off")+
+            ", per-actor anchor "+(next->per_actor_anchor?"on":"off")+".");
     if(next->enabled && !g_original_tail_late_tick
 #if defined(__ANDROID__)
         && !betterendfieldnext::HasAndroidFrameBridge()

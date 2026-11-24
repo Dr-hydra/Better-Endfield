@@ -41,6 +41,8 @@ public sealed class FreeCameraExtras
     public bool VmdMotionLoop { get; set; }
     public double VmdMotionWeight { get; set; } = 1.0;
     public bool VmdTerrainEnabled { get; set; }
+    public bool VmdPerActorAnchor { get; set; }
+    public bool VmdSquadFollow { get; set; }
     public string VmdClothMode { get; set; } = "stable";
     public double VmdMotionScale { get; set; } = 1.0;
     public string VmdMotionHotkey { get; set; } = "NONE";
@@ -117,6 +119,8 @@ public sealed class FreeCameraExtras
         Line("vmd_motion_loop", Boolean(VmdMotionLoop));
         Line("vmd_motion_weight", Number(VmdMotionWeight));
         Line("vmd_terrain_enabled", Boolean(VmdTerrainEnabled));
+        Line("vmd_per_actor_anchor", Boolean(VmdPerActorAnchor));
+        Line("vmd_squad_follow", Boolean(VmdSquadFollow));
         Line("vmd_cloth_mode", VmdClothMode);
         Line("vmd_motion_scale", Number(VmdMotionScale));
         Line("vmd_motion_hotkey", VmdMotionHotkey);
@@ -199,9 +203,11 @@ public sealed class FreeCameraExtras
         extras.VmdMotionLoop = Boolean("vmd_motion_loop", false);
         extras.VmdMotionWeight = System.Math.Clamp(Number("vmd_motion_weight", 1), 0, 1);
         extras.VmdTerrainEnabled = Boolean("vmd_terrain_enabled", false);
+        extras.VmdPerActorAnchor = Boolean("vmd_per_actor_anchor", false);
+        extras.VmdSquadFollow = Boolean("vmd_squad_follow", false);
         string cloth = Text("vmd_cloth_mode", "stable").ToLowerInvariant();
         extras.VmdClothMode = System.Array.IndexOf(ClothModes, cloth) >= 0 ? cloth : "stable";
-        extras.VmdMotionScale = System.Math.Clamp(Number("vmd_motion_scale", 1), 0.05, 5);
+        extras.VmdMotionScale = System.Math.Clamp(Number("vmd_motion_scale", 1), 0, 5);
         extras.VmdMotionHotkey = Hotkey("vmd_motion_hotkey", extras.VmdMotionHotkey);
         extras.VmdMotionPauseHotkey = Hotkey("vmd_motion_pause_hotkey", extras.VmdMotionPauseHotkey);
         extras.VmdMotionStopHotkey = Hotkey("vmd_motion_stop_hotkey", extras.VmdMotionStopHotkey);

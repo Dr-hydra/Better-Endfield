@@ -25,6 +25,8 @@ inline BetterEndfieldNext::EiemBody::Options options;
 inline Actor actors[kMaxActors];
 inline bool anchor_valid = false;
 inline float anchor_position[3]{};
+inline bool actor_anchor_valid[kMaxActors]{};
+inline float actor_anchor_position[kMaxActors][3]{};
 inline bool camera_ok = false;
 inline BetterEndfieldNext::EiemBody::CameraReference camera;
 inline double clock_seconds = -1;
@@ -55,6 +57,11 @@ void SetTarget(int actor,void* entity,void* animator,void* movement) {
 void SetSharedAnchor(bool valid,const float position[3],const float[4]) {
     EiemFake::anchor_valid=valid;
     if(valid)for(int i=0;i<3;++i)EiemFake::anchor_position[i]=position[i];
+}
+void SetActorAnchor(int actor,bool valid,const float position[3],const float[4]) {
+    if(actor<0||actor>=kMaxActors)return;
+    EiemFake::actor_anchor_valid[actor]=valid;
+    if(valid)for(int i=0;i<3;++i)EiemFake::actor_anchor_position[actor][i]=position[i];
 }
 bool Start(int actor,const char*) {
     auto& a=EiemFake::actors[actor];++a.starts;a.active=EiemFake::start_result;return EiemFake::start_result;

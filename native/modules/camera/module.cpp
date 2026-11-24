@@ -89,6 +89,8 @@ struct CameraConfiguration {
     std::string vmd_motion_file;
     bool vmd_body_enabled=false, vmd_eyes_enabled=false, vmd_face_enabled=false, vmd_motion_loop=false;
     bool vmd_terrain_enabled=false; // EIEM grounder terrain follow
+    bool vmd_per_actor_anchor=false; // each dancer keeps its own spot instead of the leader's
+    bool vmd_squad_follow=false;     // a single-dancer work also drives the squad
     int vmd_cloth_mode=1;           // EiemBody::ClothMode: 0 game, 1 stable, 2 freeze
     float vmd_motion_scale=1;       // EIEM displacement multiplier on top of leg-length scaling
     float vmd_motion_weight=1;
@@ -1408,6 +1410,8 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
         else if (key == "vmd_face_enabled") config.vmd_face_enabled = ParseBoolean(value);
         else if (key == "vmd_motion_loop") config.vmd_motion_loop = ParseBoolean(value);
         else if (key == "vmd_terrain_enabled") config.vmd_terrain_enabled = ParseBoolean(value);
+        else if (key == "vmd_per_actor_anchor") config.vmd_per_actor_anchor = ParseBoolean(value);
+        else if (key == "vmd_squad_follow") config.vmd_squad_follow = ParseBoolean(value);
         else if (key == "vmd_cloth_mode") {
             const std::string mode = LowerAscii(Unquote(value));
             config.vmd_cloth_mode = mode == "game" ? 0 : mode == "freeze" ? 2 : 1;
@@ -1474,7 +1478,7 @@ CameraConfiguration ParseConfiguration(const char* raw_configuration) {
     config.mmd_music_gain = std::clamp(config.mmd_music_gain, 0.0f, 2.0f);
     config.mmd_audio_offset = std::clamp(config.mmd_audio_offset, -600.0f, 600.0f);
     config.vmd_motion_weight = std::clamp(config.vmd_motion_weight,0.0f,1.0f);
-    config.vmd_motion_scale = std::isfinite(config.vmd_motion_scale) ? std::clamp(config.vmd_motion_scale,0.05f,5.0f) : 1.0f;
+    config.vmd_motion_scale = std::isfinite(config.vmd_motion_scale) ? std::clamp(config.vmd_motion_scale,0.0f,5.0f) : 1.0f;
 #if defined(__ANDROID__)
     config.movement_speed = std::clamp(config.movement_speed, 0.2f, 60.0f);
 #else

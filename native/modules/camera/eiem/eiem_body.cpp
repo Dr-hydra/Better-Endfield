@@ -387,6 +387,11 @@ void SetSharedAnchor(bool valid, const float position[3], const float rotation[4
     ForEachReady([&](const Api& slot) { slot.set_shared_anchor(valid, position, rotation); });
 }
 
+void SetActorAnchor(int actor, bool valid, const float position[3], const float rotation[4]) {
+    if (!ValidActor(actor)) return;
+    g_slots[actor]->set_shared_anchor(valid, position, rotation);
+}
+
 bool Start(int actor, const char* reason) {
     if (!ValidActor(actor)) return false;
     ResetSmcOwners();

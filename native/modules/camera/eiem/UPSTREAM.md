@@ -35,10 +35,11 @@ resolution, worker loop) are re-implemented in `eiem_slot.inc`.
 | `vmd_parser.h` | `LoadVmd` opens the path as UTF-8 via `_wfopen_s` | library paths may contain CJK characters |
 | `smc_face.h` | `morphMappingNames` has no fixed-offset fallback | a missing field disables the name table instead of reading 0x38 |
 | `smc_face.h` | no permanent eye look-at disable when an SMC is first confirmed | the ghost rig saves/disables/restores it for the playback owner |
-| `ghost_rig.h` | `g_beFixedAnchor*`: optional shared stage origin, no first-frame placement | squad playback keeps the formation authored in multi-dancer VMDs |
+| `ghost_rig.h` | `g_beFixedAnchor*`: optional shared stage origin, no first-frame placement | squad playback keeps the formation authored in multi-dancer VMDs; squad follow sets one per actor instead |
 | `cloth.h` | main-thread check uses `g_beMainThreadId` instead of the game window | no window handle in the slot |
 | `cloth.h` | includes `compat/cloth_be.h` instead of `cloth/core/cloth_collision.h`; service gated by the cloth mode; freeze mode and one-time collider report in the tick loop | custom models replace meshes, so the outfit-specific enhancement is not used |
 | `smc_face.h` | mouth aliases 「ワ」→あ, 「口横広げ」→い; grin morphs 「にやり」「にやり２」→ `mouth_happy_s/m_ctrl` | face VMDs made for models without あいうえお still move the mouth |
+| `direct_vmd_runtime.h` | `SetMotionMultiplier` accepts 0 (upstream floor was 0.05) | squad follow zeroes the VMD displacement so every dancer stays on its own spot |
 
 `compat/cloth_be.h` (not an upstream file) stubs the cloth enhancement in its
 disabled state, so the playback gate stays idle, and adds the cloth mode
@@ -61,7 +62,9 @@ disabled state, so the playback gate stays idle, and adds the cloth mode
   transform write probes.
 - Squad playback (Better Endfield addition, squad access modelled on
   Endfield-Poser `game/squad.h`: `GameInstance.get_player` → `GamePlayer.squadManager`
-  → `SquadManager.GetMemberBySlot`): up to four slots, one shared clock and origin.
+  → `SquadManager.GetMemberBySlot`): up to four slots, one shared clock.
+  The stage origin is either shared (multi-dancer VMD formation) or per actor
+  (`SetActorAnchor`: every dancer keeps the spot it already stands on).
 
 ## Updating
 
