@@ -463,10 +463,21 @@ manually — enable the desired character rules in the module app, force-stop th
 game, and launch it again. Scoping the module to unrelated apps is harmless but
 pointless: they fail the Unity check and are left alone.
 
-The debug build writes a short native diagnostic log to
-`/data/user/0/<game package>/cache/betterendfield-diagnostics.log`.
+The native library writes a bounded diagnostic log to
+`/data/user/0/<game package>/cache/betterendfieldnext-diagnostics.log` and a
+short resource-update record to `betterendfieldnext-resources.log` beside it.
 The native library is linked with 16 KiB ELF LOAD-segment alignment and the APK
 is also zip-aligned for Android 16 page-size compatibility.
+
+The About page exports these logs for troubleshooting. `导出日志` collects the
+module's own status record, every package in the current framework scope, and
+`logcat -s BetterEndfieldNext`, then writes one UTF-8 report to the module cache
+and opens the system share sheet. Reading the game-side files needs superuser
+access; without it the report still carries the module state and records why the
+rest is missing. On ROMs that hide other packages under `/data/user/0` inside an
+application mount namespace, the export reads through `/proc/1/root` so the
+injected files stay reachable. Each rotating log contributes its newest 1 MiB,
+and the report is capped at 4 MiB.
 
 ## LSPosed scope troubleshooting
 

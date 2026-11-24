@@ -674,6 +674,17 @@ final class Text {
         put("」？", "\"?");
         put("启用「", "Enable \"");
         put("无法打开创意工坊", "Unable to open the workshop");
+        put("诊断日志", "Diagnostics");
+        put("导出模块与游戏运行日志，用于反馈问题。读取游戏侧日志需要授予 root 权限。",
+                "Export module and game logs for troubleshooting. Reading game logs requires root access.");
+        put("导出日志", "Export logs");
+        put("正在导出…", "Exporting…");
+        put("如弹出 root 授权，请选择允许", "Allow the root prompt if it appears");
+        put("已生成日志，选择应用发送", "Log created. Choose an app to send it.");
+        put("导出失败", "Export failed");
+        put("分享诊断日志", "Share diagnostics");
+        put("日志已保存到\n", "Log saved to\n");
+        put("无法创建日志目录", "Cannot create the log directory");
         put("范围 0.05–20", "Range 0.05–20");
         put("模型缩放应为 0.05–20；保留上次有效值",
                 "Model scale must be between 0.05 and 20; keeping the last valid value");

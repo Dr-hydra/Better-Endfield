@@ -17,6 +17,10 @@
         <provider android:name=".OverlaySettingsProvider"
             android:authorities="dev.betterendfield.next.overlay.settings"
             android:exported="true" android:grantUriPermissions="false" />
+        <!-- About page grants one-shot read URIs for exported diagnostics. -->
+        <provider android:name=".DiagnosticsProvider"
+            android:authorities="dev.betterendfield.next.diagnostics"
+            android:exported="false" android:grantUriPermissions="true" />
         <receiver android:name=".ModulePackageReplacedReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />

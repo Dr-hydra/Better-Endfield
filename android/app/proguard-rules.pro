@@ -1,5 +1,7 @@
 # Framework entry is named by META-INF/xposed/java_init.list.
 -keep class dev.betterendfield.next.XposedEntry { *; }
+# Diagnostics provider is named by the manifest and grants read-only URIs.
+-keep class dev.betterendfield.next.DiagnosticsProvider { *; }
 # Native registration and native-to-Java audio callbacks use these exact names.
 -keep class dev.betterendfield.next.NativeCommandBridge { *; }
 -keep class dev.betterendfield.next.BemInstaller {

@@ -82,11 +82,11 @@ $privateExit = $null
 $gameOverlayExit = $null
 $ownerOverlayExit = $null
 if ($IncludePrivateRuntimeLog) {
-    $taskPrivateCommand = 'su -c "cat /data/user/0/' + $Package + '/cache/betterendfield-diagnostics.log"'
+    $taskPrivateCommand = 'su -c "cat /data/user/0/' + $Package + '/cache/betterendfieldnext-diagnostics.log"'
     $privateExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', $taskPrivateCommand) -Path (Join-Path $OutputDirectory 'game-native-diagnostics.log')
-    $taskOverlayCommand = 'su -c "cat /data/user/0/' + $Package + '/cache/betterendfield-overlay-settings.log"'
+    $taskOverlayCommand = 'su -c "cat /data/user/0/' + $Package + '/cache/betterendfieldnext-overlay-settings.log"'
     $gameOverlayExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', $taskOverlayCommand) -Path (Join-Path $OutputDirectory 'game-overlay-settings.log')
-    $ownerOverlayExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', 'su -c "cat /data/user/0/dev.betterendfield.next/cache/betterendfield-overlay-settings.log"') -Path (Join-Path $OutputDirectory 'owner-overlay-settings.log')
+    $ownerOverlayExit = Save-TaskAdbOutput -Arguments @('-s', $Serial, 'shell', 'su -c "cat /data/user/0/dev.betterendfield.next/cache/betterendfieldnext-overlay-settings.log"') -Path (Join-Path $OutputDirectory 'owner-overlay-settings.log')
 }
 
 [ordered]@{

@@ -19,6 +19,7 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -42,6 +43,8 @@ final class AboutPage extends LinearLayout {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final TextView updateResult;
     private final Button checkUpdates, openRelease;
+    private final TextView exportResult;
+    private final Button exportLogs;
     private volatile boolean closed;
     private String releaseUrl = RELEASES;
 
@@ -93,6 +96,13 @@ final class AboutPage extends LinearLayout {
         updates.add(updateResult);
         openRelease = button(Text.of("打开下载页"), () -> open(releaseUrl));
         openRelease.setVisibility(GONE); updates.add(openRelease);
+
+        SectionCard diagnostics = card(Text.of("诊断日志"));
+        diagnostics.add(text(Text.of("导出模块与游戏运行日志，用于反馈问题。读取游戏侧日志需要授予 root 权限。"), 14));
+        exportLogs = button(Text.of("导出日志"), this::exportDiagnostics);
+        diagnostics.add(exportLogs);
+        exportResult = text("", 14); exportResult.setVisibility(GONE);
+        diagnostics.add(exportResult);
 
         SectionCard project = card(Text.of("项目"));
         project.add(button(Text.of("GitHub 仓库"), () -> open(REPOSITORY)));
@@ -156,6 +166,43 @@ final class AboutPage extends LinearLayout {
                 checkUpdates.setText(Text.of("检查更新")); checkUpdates.setEnabled(true); openRelease.setVisibility(VISIBLE);
             });
         });
+    }
+    private void exportDiagnostics() {
+        if (closed) return;
+        exportLogs.setEnabled(false); exportLogs.setText(Text.of("正在导出…"));
+        exportResult.setText(Text.of("如弹出 root 授权，请选择允许"));
+        exportResult.setVisibility(VISIBLE);
+        worker.execute(() -> {
+            File exported = null;
+            String message;
+            try {
+                exported = DiagnosticsExport.export(activity);
+                message = Text.of("已生成日志，选择应用发送");
+            } catch (Exception failure) {
+                String detail = failure.getMessage();
+                message = Text.of("导出失败") + (detail == null ? "" : " · " + detail);
+            }
+            final File file = exported;
+            final String result = message;
+            main.post(() -> {
+                if (closed || activity.isDestroyed()) return;
+                exportLogs.setText(Text.of("导出日志")); exportLogs.setEnabled(true);
+                exportResult.setText(result); exportResult.setVisibility(VISIBLE);
+                if (file != null) shareDiagnostics(file);
+            });
+        });
+    }
+    private void shareDiagnostics(File file) {
+        try {
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("text/plain");
+            send.putExtra(Intent.EXTRA_STREAM, DiagnosticsExport.shareUri(file));
+            send.putExtra(Intent.EXTRA_SUBJECT, file.getName());
+            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            activity.startActivity(Intent.createChooser(send, Text.of("分享诊断日志")));
+        } catch (RuntimeException unavailable) {
+            exportResult.setText(Text.of("日志已保存到\n") + file.getAbsolutePath());
+        }
     }
     void close() { closed = true; main.removeCallbacksAndMessages(null); worker.shutdownNow(); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }

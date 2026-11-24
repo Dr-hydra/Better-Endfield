@@ -84,6 +84,21 @@ final class FrameworkSettings {
 
     static synchronized boolean isConnected() { return remoteService != null; }
 
+    /**
+     * Current module scope. The framework owns this list, so it covers the
+     * declared scope.list entries and anything the user added in the manager.
+     */
+    static synchronized java.util.List<String> scope() {
+        if (remoteService == null) return java.util.Collections.emptyList();
+        try {
+            java.util.List<String> scope = remoteService.getScope();
+            return scope == null ? java.util.Collections.emptyList()
+                    : new java.util.ArrayList<>(scope);
+        } catch (RuntimeException unavailable) {
+            return java.util.Collections.emptyList();
+        }
+    }
+
     static void awaitConnection() throws java.io.IOException {
         if (!FrameworkServiceWait.await(FrameworkSettings.class, () -> remoteService != null,
                 10_000, BemInstaller::checkpoint))
