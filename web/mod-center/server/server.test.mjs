@@ -328,3 +328,88 @@ test('pagination is bounded and private source files are not served', async () =
     for (const route of ['.env', 'server/server.mjs', '%2e%2e/server/server.mjs']) assert.equal((await app.call(route, { anonymous: true })).status, 404);
   } finally { await app.close(); }
 });
+test('administrators can delete any work and purge its hosted files immediately', async () => {
+  const app = await fixture({ fileUploadGithubIds: '123', adminGithubIds: '456' });
+  try {
+    const image = (await app.call('api/uploads?kind=image', { method: 'POST', raw: png, headers: uploadHeaders('gallery.png') })).data;
+    const file = (await app.call('api/uploads?kind=file', { method: 'POST', raw: Buffer.from('mod-binary'), headers: uploadHeaders('mod.zip') })).data;
+    const created = (await app.call('api/resources', { method: 'POST', body: { ...minimum, url: '', file_id: file.id, image_ids: [image.id] } })).data;
+    await app.call(`api/resources/${created.id}/comments`, { method: 'POST', body: { body: 'to be removed' } });
+    await app.call(`api/resources/${created.id}/likes`, { method: 'PUT' });
+    const detail = (await app.call(`api/resources/${created.id}`, { who: app.other })).data;
+    assert.equal(detail.canBanAuthor, true);
+    assert.equal(detail.authorBanned, false);
+    const deleted = await app.call(`api/resources/${created.id}`, { method: 'DELETE', who: app.other });
+    assert.equal(deleted.status, 200);
+    assert.equal((await app.call(`api/resources/${created.id}`)).status, 404);
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM releases').get().n, 0);
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM comments').get().n, 0);
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM likes').get().n, 0);
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM uploads').get().n, 0);
+    assert.equal((await app.call(`media/${image.id}`, { anonymous: true })).status, 404);
+    assert.equal((await app.call(`media/${file.id}`, { anonymous: true })).status, 404);
+  } finally { await app.close(); }
+});
+
+test('administrators can ban and unban users, revoking sessions and blocking re-login', async () => {
+  const sent = [];
+  const app = await fixture({
+    adminGithubIds: '456',
+    githubId: 'test-client',
+    githubSecret: 'test-secret',
+    smtpFrom: 'no-reply@example.com',
+    sendEmail: async message => { sent.push(message); },
+    oauthFetch: async url => url.includes('access_token')
+      ? Response.json({ access_token: 'tok' })
+      : Response.json({ id: 123, login: 'creator', avatar_url: '' }),
+  });
+  try {
+    app.db.prepare('UPDATE users SET email=? WHERE id=?').run('creator@example.com', 'author');
+    const created = (await app.call('api/resources', { method: 'POST', body: minimum })).data;
+    await app.call(`api/resources/${created.id}/comments`, { method: 'POST', body: { body: 'bad comment' } });
+    assert.equal((await app.call('api/admin/users')).status, 403);
+    assert.equal((await app.call('api/users/other/ban', { method: 'PUT', body: { banned: true } })).status, 403);
+    assert.equal((await app.call('api/users/other/ban', { method: 'PUT', who: app.other, body: { banned: true } })).status, 403);
+
+    const banned = await app.call('api/users/author/ban', {
+      method: 'PUT',
+      who: app.other,
+      body: { banned: true, reason: '恶意刷屏', hideWorks: true, deleteComments: true },
+    });
+    assert.equal(banned.status, 200);
+    assert.equal(banned.data.banned, true);
+    assert.equal(banned.data.ban_reason, '恶意刷屏');
+
+    assert.equal((await app.call('api/session')).data.user, null);
+    assert.equal((await app.call('api/resources', { method: 'POST', body: minimum })).status, 401);
+    assert.equal((await app.call('api/resources', { anonymous: true })).data.total, 0);
+    assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM comments').get().n, 0);
+    const workRow = app.db.prepare('SELECT admin_hidden,hide_reason FROM resources WHERE id=?').get(created.id);
+    assert.equal(workRow.admin_hidden, 1);
+    assert.equal(workRow.hide_reason, '恶意刷屏');
+
+    const emailBlocked = await app.call('auth/email/request', { method: 'POST', body: { email: 'creator@example.com' }, anonymous: true });
+    assert.equal(emailBlocked.status, 403);
+    assert.equal(sent.length, 0);
+
+    const begin = await app.call('auth/github', { anonymous: true });
+    const state = new URL(begin.headers.get('location')).searchParams.get('state');
+    const cookie = begin.headers.get('set-cookie').split(';')[0];
+    const oauthBlocked = await app.call(`auth/github/callback?code=ok&state=${state}`, { anonymous: true, headers: { Cookie: cookie } });
+    assert.equal(oauthBlocked.headers.get('location'), '/endfield/#/publish?login=banned');
+
+    const list = await app.call('api/admin/users?banned=1', { who: app.other });
+    assert.equal(list.status, 200);
+    assert.equal(list.data.bannedTotal, 1);
+    assert.equal(list.data.items[0].id, 'author');
+    assert.equal('email' in list.data.items[0], false);
+
+    const unbanned = await app.call('api/users/author/ban', { method: 'PUT', who: app.other, body: { banned: false } });
+    assert.equal(unbanned.status, 200);
+    assert.equal(unbanned.data.banned, false);
+    assert.equal(app.db.prepare('SELECT admin_hidden FROM resources WHERE id=?').get(created.id).admin_hidden, 1);
+
+    const emailAllowed = await app.call('auth/email/request', { method: 'POST', body: { email: 'creator@example.com' }, anonymous: true });
+    assert.equal(emailAllowed.status, 202);
+  } finally { await app.close(); }
+});

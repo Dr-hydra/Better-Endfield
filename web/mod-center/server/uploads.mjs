@@ -130,7 +130,12 @@ export function createUploads({ db, directory, prefix, canUploadFiles, visibilit
     const rows = db.prepare('SELECT id FROM uploads u WHERE created_at<? AND NOT EXISTS(SELECT 1 FROM resource_images WHERE upload_id=u.id) AND NOT EXISTS(SELECT 1 FROM releases WHERE file_id=u.id)').all(Date.now() - 86400000);
     for (const row of rows) { if (!referenced(row.id)) { db.prepare('DELETE FROM uploads WHERE id=?').run(row.id); await unlink(filenameOf(row.id)).catch(() => {}); } }
   }
-  return { receive, serve, remove, cleanup, view, getOwned, limits,
+  async function purgeUnused(uploadIds) {
+    for (const id of new Set((uploadIds || []).filter(Boolean))) {
+      if (!referenced(id)) { db.prepare('DELETE FROM uploads WHERE id=?').run(id); await unlink(filenameOf(id)).catch(() => {}); }
+    }
+  }
+  return { receive, serve, remove, cleanup, purgeUnused, view, getOwned, limits,
     gallery: id => db.prepare('SELECT u.* FROM resource_images i JOIN uploads u ON i.upload_id=u.id WHERE i.resource_id=? ORDER BY i.position').all(id).map(view),
     file: id => id ? view(db.prepare('SELECT * FROM uploads WHERE id=?').get(id)) : null,
     setGallery: (id, imageIds) => { db.prepare('DELETE FROM resource_images WHERE resource_id=?').run(id); imageIds.forEach((uploadId, index) => db.prepare('INSERT INTO resource_images VALUES (?,?,?)').run(id, uploadId, index)); },

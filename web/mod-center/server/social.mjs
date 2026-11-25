@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-export function createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility }) {
+export function createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility, moderation }) {
   db.exec(`CREATE TABLE IF NOT EXISTS likes (resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, created_at INTEGER NOT NULL, PRIMARY KEY(resource_id,user_id));
     CREATE TABLE IF NOT EXISTS comments (id TEXT PRIMARY KEY, resource_id TEXT NOT NULL REFERENCES resources(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, body TEXT NOT NULL, created_at INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS comment_resource ON comments(resource_id,created_at DESC);`);
@@ -25,10 +25,12 @@ export function createSocial({ db, session, authorize, rate, json, text, bodyOf,
       const user = session(req);
       const page = Math.max(1, Math.min(10000, Number(url.searchParams.get('page')) || 1)) | 0;
       const total = stats(id).comments;
-      const rows = db.prepare('SELECT c.*,u.login,u.avatar,u.profile_url FROM comments c JOIN users u ON u.id=c.user_id WHERE c.resource_id=? ORDER BY c.created_at DESC,c.id DESC LIMIT 20 OFFSET ?').all(id, (page - 1) * 20);
+      const rows = db.prepare('SELECT c.*,u.login,u.avatar,u.profile_url,u.github_id AS author_github_id,u.banned_at AS author_banned_at FROM comments c JOIN users u ON u.id=c.user_id WHERE c.resource_id=? ORDER BY c.created_at DESC,c.id DESC LIMIT 20 OFFSET ?').all(id, (page - 1) * 20);
+      const viewerIsAdmin = Boolean(user && canAdmin(user));
       json(res, 200, { items: rows.map(row => ({ id: row.id, body: row.body, created_at: row.created_at,
         author: { id: row.user_id, login: row.login, avatar: row.avatar, profile_url: row.profile_url },
-        canDelete: Boolean(user && (user.id === row.user_id || canAdmin(user))) })), total, page, pages: Math.max(1, Math.ceil(total / 20)) }); return true;
+        canDelete: Boolean(user && (user.id === row.user_id || canAdmin(user))),
+        ...(viewerIsAdmin ? { authorBanned: Boolean(row.author_banned_at), canBan: moderation.canBanTarget(user, { id: row.user_id, github_id: row.author_github_id }) } : {}) })), total, page, pages: Math.max(1, Math.ceil(total / 20)) }); return true;
     }
     if (operation === 'comments' && !commentId && req.method === 'POST') {
       const user = authorize(req); const body = text((await bodyOf(req)).body, 2000, '评论', true);

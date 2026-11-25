@@ -9,6 +9,7 @@ import nodemailer from 'nodemailer';
 import { createUploads, uploadLimits } from './uploads.mjs';
 import { createSocial } from './social.mjs';
 import { createVisibility, visibilityOf } from './visibility.mjs';
+import { createModeration } from './moderation.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const types = JSON.parse(readFileSync(path.join(root, 'shared/types.json'), 'utf8'));
@@ -135,6 +136,7 @@ export function createApp(options = {}) {
     const supplied = String(req.headers['x-csrf-token'] || '');
     const suppliedBytes = Buffer.from(supplied), expectedBytes = Buffer.from(user.csrf);
     if (suppliedBytes.length !== expectedBytes.length || !timingSafeEqual(suppliedBytes, expectedBytes)) fail(403, '登录状态已变化，请刷新页面后重试。');
+    moderation.requireNotBanned(user);
     return user;
   };
   const rateBuckets = new Map();
@@ -159,15 +161,18 @@ export function createApp(options = {}) {
     db.exec('BEGIN IMMEDIATE');
     try { const result = action(); db.exec('COMMIT'); return result; } catch (error) { db.exec('ROLLBACK'); throw error; }
   };
+  const moderation = createModeration({ db, canAdmin, text, fail, rate, transaction });
   const uploads = createUploads({ db, directory: options.uploadDirectory || process.env.UPLOAD_DIRECTORY || path.join(path.dirname(databasePath === ':memory:' ? path.join(root, 'data/catalog.sqlite') : databasePath), 'uploads'), prefix, canUploadFiles, visibility, limits: options.uploadLimits || uploadLimits });
-  const social = createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility });
+  const social = createSocial({ db, session, authorize, rate, json, text, bodyOf, canAdmin, visibility, moderation });
   const sessionView = user => ({ user: user ? userView(user) : null, csrf: user?.csrf || '', githubEnabled, emailEnabled, email: user?.email || '', isAdmin: canAdmin(user), canUploadFiles: canUploadFiles(user), uploadLimits: uploads.limits });
   const releaseView = row => ({ id: row.id, number: row.number, url: row.url, version: row.version, notes: row.notes, created_at: row.created_at, file: uploads.file(row.file_id) });
-  const resourceView = (row, history = false, userId = null) => {
+  const resourceView = (row, history = false, viewerOrId = null) => {
+    const viewer = viewerOrId && typeof viewerOrId === 'object' ? viewerOrId : null;
+    const userId = viewer ? viewer.id : viewerOrId;
     const author = db.prepare('SELECT * FROM users WHERE id=?').get(row.owner_id);
     const latest = db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC LIMIT 1').get(row.id);
     const images = uploads.gallery(row.id);
-    return { id: row.id, name: row.name, type: row.type, description: row.description, cover: images[0]?.url || row.cover, cover_link: row.cover, images, visibility: visibilityOf(row), author_hidden: Boolean(row.author_hidden), admin_hidden: Boolean(row.admin_hidden), hide_reason: row.hide_reason, ...social.stats(row.id, userId), created_at: row.created_at, updated_at: row.updated_at, author: userView(author), latest: releaseView(latest), ...(history ? { releases: db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC').all(row.id).map(releaseView) } : {}) };
+    return { id: row.id, name: row.name, type: row.type, description: row.description, cover: images[0]?.url || row.cover, cover_link: row.cover, images, visibility: visibilityOf(row), author_hidden: Boolean(row.author_hidden), admin_hidden: Boolean(row.admin_hidden), hide_reason: row.hide_reason, ...social.stats(row.id, userId), created_at: row.created_at, updated_at: row.updated_at, author: userView(author), ...(canAdmin(viewer) ? { authorBanned: moderation.isBanned(author), authorBanReason: author.ban_reason || '', canBanAuthor: moderation.canBanTarget(viewer, author) } : {}), latest: releaseView(latest), ...(history ? { releases: db.prepare('SELECT * FROM releases WHERE resource_id=? ORDER BY number DESC').all(row.id).map(releaseView) } : {}) };
   };
   const prepareDraft = (body, user) => {
     const draft = validateDraft(body);
@@ -205,7 +210,13 @@ export function createApp(options = {}) {
       const route = url.pathname.slice(prefix.length);
       if (route === 'api/health' && req.method === 'GET') return json(res, 200, { ok: true });
       if (route === 'api/session' && req.method === 'GET') {
-        return json(res, 200, sessionView(session(req)));
+        const current = session(req);
+        if (moderation.isBanned(current)) {
+          db.prepare('DELETE FROM sessions WHERE token_hash=?').run(digest(cookies(req).be_session));
+          res.setHeader('Set-Cookie', cookie('be_session', '', 0));
+          return json(res, 200, sessionView(null));
+        }
+        return json(res, 200, sessionView(current));
       }
       if (route === 'api/profile' && req.method === 'PUT') {
         const user = authorize(req);
@@ -258,7 +269,8 @@ export function createApp(options = {}) {
           const response = await oauthFetch('https://api.github.com/user', { signal: AbortSignal.timeout(15000), headers: { Authorization: `Bearer ${access.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'BetterEndfieldNext-ModCenter' } });
           const profile = await response.json();
           if (!response.ok || !Number.isSafeInteger(profile.id) || profile.id <= 0 || typeof profile.login !== 'string') throw new Error('profile');
-          const known = db.prepare('SELECT id FROM users WHERE github_id=?').get(String(profile.id));
+          const known = db.prepare('SELECT id,banned_at FROM users WHERE github_id=?').get(String(profile.id));
+          if (moderation.isBanned(known)) return redirect(res, `${prefix}#/publish?login=banned`, { 'Set-Cookie': [cookie('be_session', '', 0), cookie('be_oauth', '', 0)] });
           const id = known?.id || randomUUID();
           const login = text(profile.login, 100, 'GitHub 用户名', true);
           const avatar = /^https:\/\/avatars\.githubusercontent\.com\//.test(profile.avatar_url || '') ? profile.avatar_url : '';
@@ -276,6 +288,7 @@ export function createApp(options = {}) {
         const binding = body.purpose === 'bind';
         const user = binding ? authorize(req) : null;
         if (user?.email && user.email !== email) fail(409, '账号已绑定邮箱。');
+        if (!binding) moderation.requireNotBanned(db.prepare('SELECT * FROM users WHERE email=?').get(email));
         const clientIp = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress).slice(0, 128);
         rate(`email-ip:${clientIp}`, 5, 900000);
         rate(`email:${digest(email)}`, 3, 900000);
@@ -321,7 +334,7 @@ export function createApp(options = {}) {
             db.prepare('UPDATE users SET email=? WHERE id=?').run(challenge.email, bindingUser.id);
             return bindingUser.id;
           }
-          if (existing) return existing.id;
+          if (existing) { moderation.requireNotBanned(existing); return existing.id; }
           const userId = randomUUID();
           db.prepare('INSERT INTO users (id,github_id,login,avatar,profile_url,email) VALUES (?,?,?,?,?,?)').run(userId, null, `creator-${userId.slice(0, 8)}`, '', '', challenge.email);
           return userId;
@@ -355,7 +368,7 @@ export function createApp(options = {}) {
         const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
         const total = db.prepare(`SELECT COUNT(*) AS total FROM resources r JOIN users u ON u.id=r.owner_id ${clause}`).get(...params).total;
         const sort = url.searchParams.get('sort') === 'newest' ? 'r.created_at' : 'r.updated_at';
-        const items = db.prepare(`SELECT r.* FROM resources r JOIN users u ON u.id=r.owner_id ${clause} ORDER BY ${sort} DESC,r.id LIMIT 24 OFFSET ?`).all(...params, (page - 1) * 24).map(row => resourceView(row, false, viewer?.id));
+        const items = db.prepare(`SELECT r.* FROM resources r JOIN users u ON u.id=r.owner_id ${clause} ORDER BY ${sort} DESC,r.id LIMIT 24 OFFSET ?`).all(...params, (page - 1) * 24).map(row => resourceView(row, false, viewer));
         const counts = Object.fromEntries(types.map(item => [item.id, 0]));
         const rows = mine ? db.prepare('SELECT type,COUNT(*) AS n FROM resources WHERE owner_id=? GROUP BY type').all(user.id) : db.prepare(`SELECT type,COUNT(*) AS n FROM resources ${manage ? '' : 'WHERE author_hidden=0 AND admin_hidden=0'} GROUP BY type`).all();
         for (const row of rows) counts[row.type] = row.n;
@@ -377,7 +390,16 @@ export function createApp(options = {}) {
         if (typeof body.hidden !== 'boolean') fail(400, '作品展示状态不正确。');
         const reason = canAdmin(user) ? text(body.reason, 500, '隐藏原因') : '';
         visibility.change(row, user, body.hidden, reason);
-        return json(res, 200, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(row.id), true, user.id));
+        return json(res, 200, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(row.id), true, user));
+      }
+      if (route === 'api/admin/users' && req.method === 'GET') {
+        return json(res, 200, moderation.listUsers({ viewer: session(req), query: text(url.searchParams.get('q'), 120, '搜索内容'), banned: url.searchParams.get('banned') || '', page: Math.max(1, Math.min(100000, Number(url.searchParams.get('page')) || 1)) | 0 }));
+      }
+      const banRoute = /^api\/users\/([A-Za-z0-9_-]{1,64})\/ban$/.exec(route);
+      if (banRoute && req.method === 'PUT') {
+        const actor = authorize(req);
+        const body = await bodyOf(req);
+        return json(res, 200, moderation.setBan({ actor, targetId: banRoute[1], banned: body?.banned, reason: body?.reason, hideWorks: Boolean(body?.hideWorks), deleteComments: Boolean(body?.deleteComments) }));
       }
       const resourceRoute = /^api\/resources\/([a-f0-9-]{36})(\/releases)?$/.exec(route);
       if (resourceRoute) {
@@ -386,7 +408,7 @@ export function createApp(options = {}) {
           const row = db.prepare('SELECT * FROM resources WHERE id=?').get(id);
           if (!row) fail(404, '作品不存在或已被删除。');
           const viewer = session(req); visibility.requireReadable(row, viewer);
-          return json(res, 200, resourceView(row, true, viewer?.id));
+          return json(res, 200, resourceView(row, true, viewer));
         }
         if (resourceRoute[2] && req.method === 'POST') {
           const user = authorize(req); rate(`write:${user.id}`, 60, 3600000); const row = owned(id, user);
@@ -407,7 +429,17 @@ export function createApp(options = {}) {
           return json(res, 200, resourceView(db.prepare('SELECT * FROM resources WHERE id=?').get(id), true, user.id));
         }
         if (!resourceRoute[2] && req.method === 'DELETE') {
-          const user = authorize(req); owned(id, user); db.prepare('DELETE FROM resources WHERE id=?').run(id);
+          const user = authorize(req);
+          const row = db.prepare('SELECT * FROM resources WHERE id=?').get(id);
+          if (!row) fail(404, '作品不存在或已被删除。');
+          if (row.owner_id !== user.id && !canAdmin(user)) fail(403, '只有发布者或管理员可以删除这份作品。');
+          const relatedUploadIds = transaction(() => {
+            const imageIds = db.prepare('SELECT upload_id FROM resource_images WHERE resource_id=?').all(id).map(item => item.upload_id);
+            const fileIds = db.prepare('SELECT file_id FROM releases WHERE resource_id=? AND file_id IS NOT NULL').all(id).map(item => item.file_id);
+            db.prepare('DELETE FROM resources WHERE id=?').run(id);
+            return [...imageIds, ...fileIds];
+          });
+          await uploads.purgeUnused(relatedUploadIds);
           return json(res, 200, { ok: true });
         }
       }

@@ -341,3 +341,21 @@
 }
 @media (max-width: 410px) { .resource-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .resource-card, .mod-center .button { transition: none; } }
+.manage-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+.manage-tabs { display: flex; gap: 8px; }
+.manage-bar .manage-visibility-filter { margin-bottom: 0; }
+.detail-author-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.admin-inline-action { background: transparent; border: 1px solid var(--line); color: var(--red); padding: 4px 10px; font-size: 11px; cursor: pointer; font-family: inherit; }
+.admin-inline-action:hover { border-color: var(--red); }
+.ban-dialog { max-width: 470px; }
+.ban-form { display: grid; gap: 14px; margin-top: 16px; }
+.ban-checkbox { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; }
+.ban-checkbox input { width: auto; min-height: 0; }
+.ban-actions { display: flex; justify-content: end; gap: 12px; margin-top: 8px; }
+.admin-user-list { display: grid; gap: 12px; margin-top: 18px; }
+.admin-user-row { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.admin-user-row.is-banned { border-color: color-mix(in srgb, var(--red) 45%, var(--line)); }
+.admin-user-info { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.admin-user-info img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); flex-shrink: 0; }
+.admin-user-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-user-meta { margin: 5px 0 0; font-size: 11px; color: var(--muted); }

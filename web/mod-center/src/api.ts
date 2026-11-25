@@ -1,7 +1,7 @@
 export interface User { id: string; login: string; avatar: string; profile_url: string }
 export interface Upload { id: string; url: string; filename: string; size: number }
 export interface SocialStats { likes: number; comments: number; liked: boolean }
-export interface Comment { id: string; body: string; created_at: number; author: User; canDelete: boolean }
+export interface Comment { id: string; body: string; created_at: number; author: User; canDelete: boolean; authorBanned?: boolean; canBan?: boolean }
 export interface CommentPage { items: Comment[]; total: number; page: number; pages: number }
 export interface Release { id: string; number: number; url: string; version: string; notes: string; created_at: number; file: Upload | null }
 export interface Resource {
@@ -9,7 +9,14 @@ export interface Resource {
   created_at: number; updated_at: number; author: User; latest: Release;
   releases?: Release[]; images: Upload[]; cover_link: string; likes: number; comments: number; liked: boolean;
   visibility: 'public' | 'author-hidden' | 'admin-hidden'; author_hidden: boolean; admin_hidden: boolean; hide_reason: string;
+  authorBanned?: boolean; authorBanReason?: string; canBanAuthor?: boolean;
 }
+export interface AdminUser {
+  id: string; login: string; avatar: string; profile_url: string; github_id: string;
+  is_admin: boolean; banned: boolean; banned_at: number | null; ban_reason: string;
+  works_count: number; comments_count: number;
+}
+export interface AdminUserPage { items: AdminUser[]; total: number; bannedTotal: number; page: number; pages: number }
 export interface Session { user: User | null; csrf: string; githubEnabled: boolean; emailEnabled: boolean; email: string; isAdmin: boolean; canUploadFiles: boolean; uploadLimits?: { imageBytes: number; fileBytes: number; imagesPerWork: number } }
 export interface Catalog { items: Resource[]; counts: Record<string, number>; total: number; page: number; pages: number }
 export interface Draft { name: string; type: string; url: string; version: string; cover: string; description: string; notes: string; file_id: string; image_ids: string[] }

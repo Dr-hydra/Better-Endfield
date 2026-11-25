@@ -6,6 +6,15 @@ const messages: Record<string, string> = {
   "作品已被管理员隐藏，只有管理员可以恢复。": "This work is hidden by an administrator. Only an administrator can restore it.",
   "只有作者或管理员可以更改作品展示状态。": "Only the author or an administrator can change work visibility.",
   "只有管理员可以查看作品管理列表。": "Only administrators can view the work management list.",
+  "只有管理员可以查看用户管理列表。": "Only administrators can view the user management list.",
+  "只有管理员可以封禁或解封用户。": "Only administrators can ban or unban users.",
+  "已封禁该账号。": "Account banned.",
+  "已解封该账号。": "Account unbanned.",
+  "不能封禁管理员账号。": "Administrator accounts cannot be banned.",
+  "用户不存在。": "User not found.",
+  "账号封禁状态不正确。": "The account ban status value is invalid.",
+  "账号已被封禁，无法执行此操作。": "This account has been banned and cannot perform this action.",
+  "该账号已被封禁，无法登录。": "This account has been banned and cannot sign in.",
   "作品展示状态不正确。": "The work visibility value is invalid.",
   "当前账号没有作品文件上传权限。": "Your account cannot upload work files.",
   "上传文件不存在或不属于当前账号。": "This upload does not exist or belongs to another account.",
@@ -55,6 +64,7 @@ const messages: Record<string, string> = {
   "表单内容过长。": "The form is too large.",
   "作品不存在或已被删除。": "This work does not exist or has been deleted.",
   "只有发布者可以修改这份作品。": "Only the author can change this work.",
+  "只有发布者或管理员可以删除这份作品。": "Only the author or an administrator can delete this work.",
   "这个版本已发布，请填写新版本名或留空。": "This version has already been published. Use a new version name or leave it blank.",
   "页面不存在。": "Page not found.",
   "接口不存在。": "Endpoint not found.",
@@ -67,13 +77,15 @@ const fields: Record<string, string> = {
   "封面链接": "Cover link", "作品介绍": "Description", "更新说明": "Update notes",
   "搜索内容": "Search query", "GitHub 用户名": "GitHub username", "邮箱": "Email", "验证码": "Code",
   "评论": "Comment", "上传文件": "Upload",
-  "隐藏原因": "Hide reason",
+  "隐藏原因": "Hide reason", "封禁原因": "Ban reason",
 };
 
 // Keep the original message in state so an open notice also follows language changes.
 export function localizeMessage(message: string, lang: Language): string {
   if (lang === "zh") return message;
   if (messages[message]) return messages[message];
+  const bannedReason = /^账号已被封禁（原因：(.+)）。$/.exec(message);
+  if (bannedReason) return `This account has been banned (reason: ${bannedReason[1]}).`;
   // Upload messages embed numbers that come from the server limits, so match the
   // shape instead of the literal text.
   const sizeLimit = /^(图片|作品文件)不能超过 (\d+) MB。$/.exec(message);
