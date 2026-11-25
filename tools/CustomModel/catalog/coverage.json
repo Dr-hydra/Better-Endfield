@@ -47,6 +47,12 @@
       "process_ids": [
         30208
       ]
+    },
+    {
+      "run": "1-7-2-mimino-sweetpie",
+      "process_ids": [
+        13768
+      ]
     }
   ],
   "characters": [
@@ -797,6 +803,24 @@
           "reason": "same IB identity for multiple native parts"
         }
       ]
+    },
+    {
+      "character_id": "chr_0040_sweetpie",
+      "name": "小刻",
+      "components": 12,
+      "mapping_status": "source-resource-identities-pending",
+      "excluded": [],
+      "unsupported_source_layouts": [
+        "S_actor_sweetpie_cloth_01_lod0",
+        "S_actor_sweetpie_cloth_02_lod0",
+        "S_actor_sweetpie_cloth_03_lod0",
+        "S_actor_sweetpie_cloth_04_lod0",
+        "S_actor_sweetpie_eyebrow_01_lod0"
+      ],
+      "observations": {
+        "chr_0040_sweetpie_postmodel": 12,
+        "chr_0040_sweetpie_uimodel": 12
+      }
     }
   ]
 }

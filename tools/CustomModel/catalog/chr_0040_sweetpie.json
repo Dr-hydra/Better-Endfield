@@ -1,0 +1,2462 @@
+{
+  "schema": 1,
+  "kind": "bem-character-catalog",
+  "character_id": "chr_0040_sweetpie",
+  "name": "小刻",
+  "platform": "windows-x64",
+  "profile_id": "chr_0040_sweetpie-pc",
+  "revision": "20261125-1.7.2-native-sweep1",
+  "verified": true,
+  "world_resource": "chr_0040_sweetpie_postmodel",
+  "ui_resource": "chr_0040_sweetpie_uimodel",
+  "source_snapshot": {
+    "manifest_version": "2954fa80-23c1-1579-2b22-4ecfd6d70418"
+  },
+  "components": {
+    "0": {
+      "mesh_name": "S_actor_sweetpie_body_01_lod0",
+      "original_index_count": 22911,
+      "bone_names": [
+        "Bip001_R_Clavicle",
+        "Bip001_L_Clavicle",
+        "Bip001_Spine1",
+        "Bip001_Spine2",
+        "L_breast_01_jnt",
+        "R_breast_01_jnt",
+        "Bip001_Spine",
+        "Bip001_Neck",
+        "face_Head",
+        "throat_M_a_03_jnt",
+        "throat_M_a_02_jnt",
+        "throat_M_a_01_jnt",
+        "faceMdJawDnJoint",
+        "Bip001_L_Forearm_SP_twist_1",
+        "Bip001_L_Forearm_SP_twist_2",
+        "Bip001_L_Forearm_SP_twist_0",
+        "Bip001_L_UpperArm_SP_twist_1",
+        "Bip001_L_UpperArm_SP_twist_2",
+        "Bip001_L_UpperArm_SP_twist_0",
+        "Bip001_L_Forearm_corrective_ty_plus",
+        "Bip001_L_Forearm_corrective_ty_minus",
+        "Bip001_L_UpperArm_corrective_tz_plus",
+        "Bip001_L_UpperArm_corrective_ty_minus",
+        "Bip001_L_UpperArm_corrective_ty_plus",
+        "Bip001_L_UpperArm_corrective_tz_minus",
+        "faceLfCheekOtDnJoint",
+        "Bip001_L_Finger12",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger22",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger32",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger42",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger02",
+        "Bip001_L_Finger01",
+        "Bip001_R_Forearm_SP_twist_1",
+        "Bip001_R_Forearm_SP_twist_2",
+        "Bip001_R_Forearm_SP_twist_0",
+        "Bip001_R_Hand",
+        "Bip001_R_Finger12",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger22",
+        "Bip001_R_Finger21",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger32",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger42",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger02",
+        "Bip001_R_Finger01",
+        "Bip001_R_UpperArm_SP_twist_1",
+        "Bip001_R_UpperArm_SP_twist_2",
+        "Bip001_R_UpperArm_SP_twist_0",
+        "Bip001_R_Forearm_corrective_ty_plus",
+        "Bip001_R_Forearm_corrective_ty_minus",
+        "Bip001_R_UpperArm_corrective_tz_plus",
+        "Bip001_R_UpperArm_corrective_ty_minus",
+        "Bip001_R_UpperArm_corrective_ty_plus",
+        "Bip001_R_UpperArm_corrective_tz_minus",
+        "faceRtCheekOtDnJoint",
+        "Bip001_R_Thigh_corrective_ty_minus",
+        "Bip001_L_Thigh_SP_twist_0",
+        "Bip001_R_Thigh_SP_twist_0",
+        "pelvis_sec_jnt",
+        "Bip001_R_Thigh_SP_twist_1_bend_jnt",
+        "crotch_M_base_a_01_jnt",
+        "Bip001_R_Thigh_corrective_ty_plus",
+        "Bip001_R_Thigh_corrective_tz_minus",
+        "Bip001_R_Thigh_SP_twist_2_bend_jnt",
+        "Bip001_L_Finger4",
+        "Bip001_R_Finger4",
+        "Bip001_L_Calf_SP_twist_0_bend_jnt",
+        "Bip001_L_Calf_SP_twist_1_bend_jnt",
+        "Bip001_L_Calf_SP_twist_2",
+        "Bip001_L_Calf_corrective_ty_plus",
+        "Bip001_L_Thigh_SP_twist_2_bend_jnt",
+        "Bip001_L_Thigh_SP_twist_1_bend_jnt",
+        "Bip001_L_Calf_corrective_ty_minus",
+        "Bip001_L_Thigh_corrective_ty_minus",
+        "Bip001_L_Thigh_corrective_ty_plus",
+        "Bip001_L_Thigh_corrective_tz_minus"
+      ],
+      "materials": [
+        "M_actor_sweetpie_body_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_body_01_D",
+          "T_actor_sweetpie_body_01_N",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_femaleskincolor03_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_body_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_sweetpie_body_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor03_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 4777,
+      "submeshes": [
+        {
+          "index_count": 22911,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 4777,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-7a148a267f75439bd7936ae7f4134c8f:-5105643695293294613",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:-7185713749654174086",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_body_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:8442467377551435765",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_body_01_lod0"
+          }
+        }
+      }
+    },
+    "1": {
+      "mesh_name": "S_actor_sweetpie_cloth_01_lod0",
+      "original_index_count": 99687,
+      "bone_names": [
+        "Bip001_L_Forearm_SP_twist_1",
+        "Bip001_L_Forearm_SP_twist_2",
+        "Bip001_L_Hand",
+        "Bip001_L_Hand_corrective_ty_minus",
+        "Bip001_L_Hand_corrective_ty_plus",
+        "Bip001_L_Finger0",
+        "Bip001_L_Finger1",
+        "Bip001_L_Finger2",
+        "Bip001_L_Finger3",
+        "Bip001_L_Finger4",
+        "Bip001_L_Finger01",
+        "Bip001_L_Finger41",
+        "Bip001_L_Finger31",
+        "Bip001_L_Finger02",
+        "Bip001_L_Finger11",
+        "Bip001_L_Finger21",
+        "Bip001_L_Finger42",
+        "Bip001_R_Forearm_SP_twist_1",
+        "Bip001_R_Forearm_SP_twist_2",
+        "Bip001_R_Hand_corrective_ty_minus",
+        "Bip001_R_Hand",
+        "Bip001_R_Hand_corrective_ty_plus",
+        "Bip001_R_Finger0",
+        "Bip001_R_Finger2",
+        "Bip001_R_Finger1",
+        "Bip001_R_Finger3",
+        "Bip001_R_Finger4",
+        "Bip001_R_Finger01",
+        "Bip001_R_Finger41",
+        "Bip001_R_Finger31",
+        "Bip001_R_Finger02",
+        "Bip001_R_Finger11",
+        "Bip001_R_Finger21",
+        "Bip001_R_Finger42",
+        "Bip001_L_Thigh_corrective_ty_plus",
+        "Bip001_L_Thigh_SP_twist_0",
+        "pelvis_sec_jnt",
+        "Bip001_R_Clavicle",
+        "Bip001_Spine2",
+        "Bip001_R_UpperArm_SP_twist_0",
+        "Bip001_L_Clavicle",
+        "Bip001_Neck",
+        "Bip001_R_Thigh_SP_twist_1_bend_jnt",
+        "Bip001_R_Thigh_SP_twist_0",
+        "Bip001_R_Thigh_SP_twist_2_bend_jnt",
+        "Bip001_Spine1",
+        "Bip001_Spine",
+        "Bip001_L_Calf_SP_twist_0_bend_jnt",
+        "Bip001_L_Calf_SP_twist_1_bend_jnt",
+        "Bip001_L_Calf_SP_twist_2",
+        "Bip001_R_Forearm_corrective_ty_minus",
+        "cloth_R_sleeve_d_01_jnt",
+        "cloth_R_sleeve_c_01_jnt",
+        "cloth_R_sleeve_b_01_jnt",
+        "cloth_R_sleeve_b_02_jnt",
+        "cloth_R_sleeve_a_01_jnt",
+        "Bip001_R_UpperArm_SP_twist_1",
+        "Bip001_R_UpperArm_SP_twist_2",
+        "Bip001_R_Forearm_SP_twist_0",
+        "Bip001_R_Forearm_corrective_ty_plus",
+        "Bip001_R_UpperArm_corrective_ty_minus",
+        "Bip001_R_UpperArm_corrective_ty_plus",
+        "cloth_R_sleeve_c_02_jnt",
+        "cloth_R_sleeve_d_02_jnt",
+        "cloth_R_sleeve_a_02_jnt",
+        "cloth_R_sleeve_b_03_jnt",
+        "cloth_R_sleeve_c_03_jnt",
+        "cloth_R_sleeve_d_03_jnt",
+        "cloth_R_sleeve_a_03_jnt",
+        "Bip001_L_UpperArm_corrective_tz_plus",
+        "Bip001_L_UpperArm_SP_twist_0",
+        "Bip001_L_UpperArm_corrective_ty_minus",
+        "Bip001_R_Toe0",
+        "Bip001_R_Foot",
+        "Bip001_R_Foot_corrective_ty_plus",
+        "Bip001_R_Calf_SP_twist_2",
+        "Bip001_R_Foot_corrective_ty_minus",
+        "R_breast_01_jnt",
+        "L_breast_01_jnt",
+        "cloth_L_jacket_a_01_jnt",
+        "cloth_L_jacket_b_01_jnt",
+        "Bip001_L_Forearm_corrective_ty_minus",
+        "cloth_L_sleeve_d_01_jnt",
+        "cloth_L_sleeve_c_01_jnt",
+        "cloth_L_sleeve_b_01_jnt",
+        "cloth_L_sleeve_b_02_jnt",
+        "cloth_L_sleeve_a_01_jnt",
+        "Bip001_L_UpperArm_SP_twist_1",
+        "Bip001_L_UpperArm_SP_twist_2",
+        "Bip001_L_Forearm_SP_twist_0",
+        "Bip001_L_Forearm_corrective_ty_plus",
+        "Bip001_L_UpperArm_corrective_ty_plus",
+        "cloth_L_sleeve_c_02_jnt",
+        "cloth_L_sleeve_d_02_jnt",
+        "cloth_L_sleeve_a_02_jnt",
+        "cloth_L_sleeve_b_03_jnt",
+        "cloth_L_sleeve_c_03_jnt",
+        "cloth_L_sleeve_d_03_jnt",
+        "cloth_L_sleeve_a_03_jnt",
+        "Bip001_R_UpperArm_corrective_tz_plus",
+        "Bip001_L_Foot",
+        "Bip001_L_Toe0",
+        "Bip001_L_Foot_corrective_ty_plus",
+        "Bip001_L_Foot_corrective_ty_minus",
+        "cloth_R_jacket_b_01_jnt",
+        "cloth_R_jacket_a_01_jnt",
+        "Bip001_L_Thigh_SP_twist_1_bend_jnt",
+        "Bip001_L_Thigh_SP_twist_2_bend_jnt",
+        "Bip001_L_Thigh_corrective_tz_minus",
+        "Bip001_R_Calf_corrective_ty_plus",
+        "Bip001_R_Thigh_corrective_ty_plus",
+        "Bip001_L_Thigh_corrective_ty_minus",
+        "Bip001_R_Thigh_corrective_ty_minus",
+        "cloth_L_jacket_c_01_jnt",
+        "cloth_L_jacket_c_02_jnt",
+        "cloth_L_jacket_b_02_jnt",
+        "cloth_L_jacket_a_02_jnt",
+        "cloth_R_jacket_b_02_jnt",
+        "cloth_R_jacket_a_02_jnt",
+        "cloth_R_jacket_c_01_jnt",
+        "cloth_R_jacket_c_02_jnt",
+        "cloth_L_jacket_a_03_jnt",
+        "cloth_L_jacket_b_03_jnt",
+        "cloth_L_jacket_a_04_jnt",
+        "cloth_L_jacket_b_04_jnt",
+        "cloth_L_jacket_c_03_jnt",
+        "cloth_L_jacket_c_04_jnt",
+        "cloth_R_jacket_a_03_jnt",
+        "cloth_R_jacket_a_04_jnt",
+        "cloth_R_jacket_b_03_jnt",
+        "cloth_R_jacket_b_04_jnt",
+        "cloth_R_jacket_c_04_jnt",
+        "cloth_R_jacket_c_03_jnt",
+        "Bip001_R_Calf_SP_twist_0_bend_jnt",
+        "Bip001_R_Calf_SP_twist_1_bend_jnt",
+        "Bip001_R_Calf_corrective_ty_minus",
+        "crotch_M_base_a_01_jnt",
+        "Bip001_R_Thigh_corrective_tz_minus",
+        "acc_L_belt_a_01_jnt",
+        "crotch_M_base_a_02_jnt"
+      ],
+      "materials": [
+        "M_actor_sweetpie_cloth_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_cloth_01_D",
+          "T_actor_sweetpie_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_sweetpie_cloth_01_E",
+          "T_actor_sweetpie_cloth_01_P",
+          "T_actor_common_cloth_02_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_sweetpie_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_sweetpie_cloth_01_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_cloth_01_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_02_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 32373,
+      "submeshes": [
+        {
+          "index_count": 99687,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 32373,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-4fbf9f4a751d15ad839f87515e1aedce:-3215815845894220878",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:2582695354262947450",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_cloth_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:-2713924751068436491",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_cloth_01_lod0"
+          }
+        }
+      }
+    },
+    "2": {
+      "mesh_name": "S_actor_sweetpie_cloth_02_lod0",
+      "original_index_count": 1188,
+      "bone_names": [
+        "cloth_L_jacket_a_02_jnt",
+        "cloth_L_jacket_b_02_jnt",
+        "cloth_L_jacket_a_03_jnt",
+        "cloth_L_jacket_b_03_jnt",
+        "cloth_L_jacket_a_04_jnt",
+        "cloth_L_jacket_b_04_jnt",
+        "cloth_L_jacket_a_01_jnt",
+        "cloth_L_jacket_b_01_jnt",
+        "cloth_L_jacket_c_01_jnt",
+        "cloth_L_jacket_c_02_jnt",
+        "cloth_L_jacket_c_03_jnt",
+        "cloth_L_jacket_c_04_jnt",
+        "L_breast_01_jnt",
+        "cloth_R_jacket_a_02_jnt",
+        "cloth_R_jacket_a_03_jnt",
+        "cloth_R_jacket_b_02_jnt",
+        "cloth_R_jacket_b_03_jnt",
+        "cloth_R_jacket_a_04_jnt",
+        "cloth_R_jacket_b_04_jnt",
+        "cloth_R_jacket_a_01_jnt",
+        "cloth_R_jacket_b_01_jnt",
+        "cloth_R_jacket_c_01_jnt",
+        "cloth_R_jacket_c_02_jnt",
+        "cloth_R_jacket_c_03_jnt",
+        "cloth_R_jacket_c_04_jnt",
+        "R_breast_01_jnt"
+      ],
+      "materials": [
+        "M_actor_sweetpie_cloth_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_cloth_01_D",
+          "T_actor_sweetpie_cloth_01_N",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_sweetpie_cloth_01_E",
+          "T_actor_sweetpie_matcap_01_D",
+          "T_actor_sweetpie_cloth_01_P",
+          "T_actor_aurora_cloth_03_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_cloth_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_sweetpie_cloth_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_sweetpie_cloth_01_E"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_sweetpie_matcap_01_D"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_cloth_01_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_aurora_cloth_03_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 284,
+      "submeshes": [
+        {
+          "index_count": 1188,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 284,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-549b85a338c8cbded42acbb21e39c1ed:-3850535227084987235",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:-8743743035745237382",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_cloth_02_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:6809794805507811317",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_cloth_02_lod0"
+          }
+        }
+      }
+    },
+    "3": {
+      "mesh_name": "S_actor_sweetpie_cloth_03_lod0",
+      "original_index_count": 42483,
+      "bone_names": [
+        "cloth_L_jacket_c_03_jnt",
+        "cloth_L_jacket_c_04_jnt",
+        "cloth_L_jacket_c_02_jnt",
+        "cloth_L_jacket_b_03_jnt",
+        "cloth_L_jacket_b_04_jnt",
+        "cloth_L_jacket_b_02_jnt",
+        "cloth_L_jacket_c_01_jnt",
+        "Gadget_R_a_jnt",
+        "Bip001_L_Clavicle",
+        "Bip001_Spine2",
+        "Bip001_L_UpperArm_SP_twist_0",
+        "Shield_L_jnt",
+        "Gadget_R_b_jnt",
+        "Bip001_Neck",
+        "Necklace_M_a_01_jnt",
+        "Necklace_M_a_02_jnt",
+        "Necklace_M_a_03_jnt",
+        "Bip001_R_Clavicle",
+        "R_breast_01_jnt",
+        "Bip001_R_UpperArm_SP_twist_0",
+        "cloth_L_sleeve_d_03_jnt",
+        "cloth_L_sleeve_d_02_jnt",
+        "cloth_L_sleeve_a_02_jnt",
+        "cloth_L_sleeve_a_03_jnt",
+        "cloth_R_jacket_c_02_jnt",
+        "cloth_R_jacket_c_03_jnt",
+        "cloth_R_jacket_c_04_jnt",
+        "cloth_R_jacket_b_04_jnt",
+        "cloth_R_jacket_b_03_jnt",
+        "cloth_R_jacket_b_02_jnt",
+        "cloth_R_ribbon_a_03_jnt",
+        "cloth_R_ribbon_a_02_jnt",
+        "cloth_R_ribbon_a_01_jnt",
+        "cloth_R_jacket_c_01_jnt",
+        "Bip001_Head",
+        "cloth_L_sleeve_b_02_jnt",
+        "cloth_L_sleeve_b_03_jnt",
+        "Gadget_L_b_jnt",
+        "Gadget_L_a_jnt",
+        "Bip001_Spine1",
+        "Bip001_Spine",
+        "Shield_R_jnt",
+        "cloth_R_sleeve_d_03_jnt",
+        "cloth_R_sleeve_d_02_jnt",
+        "cloth_R_sleeve_b_03_jnt",
+        "cloth_R_sleeve_b_02_jnt",
+        "Gadget_L_d_jnt",
+        "Gadget_L_c_jnt",
+        "Bip001_L_Thigh_SP_twist_2_bend_jnt",
+        "Bip001_L_Thigh_SP_twist_0",
+        "Bip001_L_Thigh_SP_twist_1_bend_jnt",
+        "cloth_R_ribbon_a_05_jnt",
+        "cloth_R_ribbon_a_04_jnt",
+        "cloth_R_jacket_b_01_jnt",
+        "L_breast_01_jnt",
+        "Bip001_L_Thigh_corrective_ty_plus",
+        "pelvis_sec_jnt",
+        "Bip001_Pelvis",
+        "Bip001_R_Thigh_corrective_ty_plus",
+        "Bip001_R_Thigh_SP_twist_0",
+        "Bip001_L_Thigh_corrective_ty_minus",
+        "Bip001_R_Thigh_corrective_ty_minus"
+      ],
+      "materials": [
+        "M_actor_sweetpie_cloth_03"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_cloth_02_D",
+          "T_actor_sweetpie_cloth_02_N",
+          "T_actor_sweetpie_cloth_02_M",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_sweetpie_cloth_02_E",
+          "T_actor_sweetpie_cloth_02_P",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_cloth_02_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_sweetpie_cloth_02_N"
+          },
+          {
+            "property": "_ClearCoatMask",
+            "name": "T_actor_sweetpie_cloth_02_M"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_sweetpie_cloth_02_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_cloth_02_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 18234,
+      "submeshes": [
+        {
+          "index_count": 42483,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 18234,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-abef5a36b0b18586feb0c251da7848ca:5036978524310794563",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:7643117927380616826",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_cloth_03_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:1978616054389729269",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_cloth_03_lod0"
+          }
+        }
+      }
+    },
+    "4": {
+      "mesh_name": "S_actor_sweetpie_cloth_04_lod0",
+      "original_index_count": 138,
+      "bone_names": [
+        "Bip001_Spine2",
+        "cloth_R_jacket_c_01_jnt",
+        "Bip001_R_Clavicle",
+        "cloth_R_ribbon_a_01_jnt",
+        "Bip001_L_Thigh_SP_twist_0",
+        "Bip001_L_Thigh_SP_twist_1_bend_jnt",
+        "Shield_L_jnt"
+      ],
+      "materials": [
+        "M_actor_sweetpie_cloth_04"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_cloth_02_D",
+          "T_actor_sweetpie_cloth_02_N",
+          "T_actor_sweetpie_cloth_02_M",
+          "T_actor_common_cloth_04_RD",
+          "T_actor_sweetpie_cloth_02_E",
+          "T_actor_sweetpie_cloth_02_P",
+          "T_actor_common_cloth_04_RS"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_cloth_02_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_sweetpie_cloth_02_N"
+          },
+          {
+            "property": "_ClearCoatMask",
+            "name": "T_actor_sweetpie_cloth_02_M"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_cloth_04_RD"
+          },
+          {
+            "property": "_EmissionMap",
+            "name": "T_actor_sweetpie_cloth_02_E"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_cloth_02_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_common_cloth_04_RS"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        20,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          5,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 70,
+      "submeshes": [
+        {
+          "index_count": 138,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 70,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-66513e22a37034c5f3e23cae908d712e:-5192868764658131360",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:4882662688633849466",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_cloth_04_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:-4900918827145304075",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_cloth_04_lod0"
+          }
+        }
+      }
+    },
+    "5": {
+      "mesh_name": "S_actor_sweetpie_eyebrow_01_lod0",
+      "original_index_count": 1512,
+      "bone_names": [
+        "eyeLf07Joint",
+        "eyeLf08Joint",
+        "eyeLf06Joint",
+        "eyeLf05Joint",
+        "eyeLineLf01Joint",
+        "eyeLineLf03Joint",
+        "eyeLineLf02Joint",
+        "browLineLfUp01Joint",
+        "browLineLfUp02Joint",
+        "browLineLfUp03Joint",
+        "eyeLf03EyelashJoint",
+        "eyeLf04EyelashJoint",
+        "eyeLf02EyelashJoint",
+        "eyeLf05EyelashJoint",
+        "eyeLf01EyelashJoint",
+        "eyeLf01Joint",
+        "eyeLfEyelash_a_01_jnt",
+        "eyeLfEyelash_b_01_jnt",
+        "browLineLf02Joint",
+        "browLineLf03Joint",
+        "browLineLf01Joint",
+        "browLf02Joint",
+        "browLf03Joint",
+        "browLf04Joint",
+        "browLf01Joint",
+        "browLf05Joint",
+        "eyeRt07Joint",
+        "eyeRt08Joint",
+        "eyeRt06Joint",
+        "eyeRt05Joint",
+        "eyeLineRt01Joint",
+        "eyeLineRt03Joint",
+        "eyeLineRt02Joint",
+        "browLineRtUp01Joint",
+        "browLineRtUp02Joint",
+        "browLineRtUp03Joint",
+        "eyeRt03EyelashJoint",
+        "eyeRt04EyelashJoint",
+        "eyeRt02EyelashJoint",
+        "eyeRt05EyelashJoint",
+        "eyeRt01EyelashJoint",
+        "eyeRt01Joint",
+        "eyeRtEyelash_a_01_jnt",
+        "eyeRtEyelash_b_01_jnt",
+        "browLineRt02Joint",
+        "browLineRt03Joint",
+        "browLineRt01Joint",
+        "browRt02Joint",
+        "browRt03Joint",
+        "browRt04Joint",
+        "browRt01Joint",
+        "browRt05Joint"
+      ],
+      "materials": [
+        "M_actor_sweetpie_eyebrow_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_face_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_common_femaleskincolor03_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_face_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor03_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        40,
+        8,
+        32
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          3,
+          0
+        ],
+        [
+          2,
+          0,
+          4,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          0,
+          4,
+          2
+        ],
+        [
+          13,
+          10,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [],
+      "layout_verified": true,
+      "source_layout_supported": false,
+      "vertex_count": 1124,
+      "submeshes": [
+        {
+          "index_count": 1512,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 1124,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-284210adf60cda76b7daf21ef48e646e:-8999883755152462876",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:2620597943861577338",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_eyebrow_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:-8048638647954642955",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_eyebrow_01_lod0"
+          }
+        }
+      }
+    },
+    "6": {
+      "mesh_name": "S_actor_sweetpie_eyeshadow_01_lod0",
+      "original_index_count": 96,
+      "bone_names": [
+        "eyeLf01Joint",
+        "eyeLf02Joint",
+        "eyeLf08Joint",
+        "eyeLf03Joint",
+        "eyeLf03IrissdJoint",
+        "eyeLf04Joint",
+        "eyeLf05Joint",
+        "eyeLf06Joint",
+        "eyeRt01Joint",
+        "eyeRt02Joint",
+        "eyeRt08Joint",
+        "eyeRt03Joint",
+        "eyeRt03IrissdJoint",
+        "eyeRt04Joint",
+        "eyeRt05Joint",
+        "eyeRt06Joint"
+      ],
+      "materials": [
+        "M_eyewhiteshadow_common_02",
+        "M_eyeshadow_common_04"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_eyeshadow_01_M"
+        ],
+        [
+          "T_actor_common_eyeshadow_02_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_01_M"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_eyeshadow_02_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 36,
+      "submeshes": [
+        {
+          "index_count": 96,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 36,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-284210adf60cda76b7daf21ef48e646e:-9025700775330108444",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:-555144879804316038",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_eyeshadow_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:6872387995245078517",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_eyeshadow_01_lod0"
+          }
+        }
+      }
+    },
+    "7": {
+      "mesh_name": "S_actor_sweetpie_face_01_lod0",
+      "original_index_count": 10860,
+      "bone_names": [
+        "lineJoint",
+        "lipL1Joint",
+        "lipLdn2Joint",
+        "lipLdn3Joint",
+        "lipMdnJoint",
+        "lipLdn8Joint",
+        "lipRdn2Joint",
+        "lipR1Joint",
+        "lipRdn3Joint",
+        "lipRdn8Joint",
+        "lipLdn7Joint",
+        "lipRdn7Joint",
+        "lipLdn6Joint",
+        "lipRdn6Joint",
+        "lipLdn5Joint",
+        "lipRdn5Joint",
+        "lipLdn4Joint",
+        "lipRdn4Joint",
+        "line_toothJoint",
+        "faceMdToothUpJoint",
+        "faceMdToothDnJoint",
+        "lipRup8Joint",
+        "lipMupJoint",
+        "lipRup7Joint",
+        "lipRup4Joint",
+        "lipRup5Joint",
+        "lipRup3Joint",
+        "lipRup6Joint",
+        "lipRup2Joint",
+        "lipLup8Joint",
+        "lipLup7Joint",
+        "lipLup4Joint",
+        "lipLup5Joint",
+        "lipLup3Joint",
+        "lipLup6Joint",
+        "lipLup2Joint",
+        "TongueMd02Joint",
+        "TongueMd03Joint",
+        "TongueMd04Joint",
+        "TongueMd01Joint",
+        "face_Head",
+        "NoseMd01Joint",
+        "eyeRt01Joint",
+        "eyeRt02Joint",
+        "eyeRt03Joint",
+        "eyeRt04Joint",
+        "eyeRt05Joint",
+        "eyeRt06Joint",
+        "eyeRt07Joint",
+        "eyeRt08Joint",
+        "Bip001_Neck",
+        "faceLfCheekOtDnJoint",
+        "faceMdJawDnJoint",
+        "faceRtCheekOtDnJoint",
+        "eyeLidLf01Joint",
+        "eyeLidRt01Joint",
+        "faceRtCheekOtJoint",
+        "faceRtCheekOtUpJoint",
+        "faceRtCheekOtInJoint",
+        "browLineRt01Joint",
+        "browLineRt02Joint",
+        "browLineRt03Joint",
+        "faceLfCheekOtJoint",
+        "faceLfCheekOtUpJoint",
+        "eyeLf01Joint",
+        "eyeLf08Joint",
+        "eyeLf02Joint",
+        "eyeLf03Joint",
+        "eyeLf04Joint",
+        "eyeLf05Joint",
+        "eyeLf06Joint",
+        "eyeLf07Joint",
+        "faceLfCheekOtInJoint",
+        "browLineLf01Joint",
+        "browLineLf02Joint",
+        "browLineLf03Joint",
+        "nasolabialLf03Joint",
+        "nasolabialLf02Joint",
+        "nasolabialLf01Joint",
+        "nasolabialRt03Joint",
+        "nasolabialRt02Joint",
+        "nasolabialRt01Joint"
+      ],
+      "materials": [
+        "M_actor_sweetpie_face_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_face_01_D",
+          "T_actor_sweetpie_face_01_N",
+          "T_actor_common_face_01_RD",
+          "T_actor_common_female_emotion_atlas_01_D",
+          "T_actor_common_face_01_hl_M",
+          "T_actor_common_female_face_02_ST",
+          "T_actor_common_female_face_01_SDF",
+          "T_actor_common_female_face_03_cm_M",
+          "T_actor_common_femaleskincolor03_lut_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_face_01_D"
+          },
+          {
+            "property": "_BumpMap",
+            "name": "T_actor_sweetpie_face_01_N"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_face_01_RD"
+          },
+          {
+            "property": "_EmotionMap",
+            "name": "T_actor_common_female_emotion_atlas_01_D"
+          },
+          {
+            "property": "_HighlightMap",
+            "name": "T_actor_common_face_01_hl_M"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_common_female_face_02_ST"
+          },
+          {
+            "property": "_SDFLightmap",
+            "name": "T_actor_common_female_face_01_SDF"
+          },
+          {
+            "property": "_SDFMask",
+            "name": "T_actor_common_female_face_03_cm_M"
+          },
+          {
+            "property": "_ShadowLutTex",
+            "name": "T_actor_common_femaleskincolor03_lut_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 2170,
+      "submeshes": [
+        {
+          "index_count": 10860,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 2170,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-fe50f68e09d13a589a4b175e868a15b0:-376349876554869005",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:7158430458114737786",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_face_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:330470316874328053",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_face_01_lod0"
+          }
+        }
+      }
+    },
+    "8": {
+      "mesh_name": "S_actor_sweetpie_hair_01_lod0",
+      "original_index_count": 43242,
+      "bone_names": [
+        "Bip001_Head",
+        "bangs_L_b_01_jnt",
+        "bangs_L_b_02_jnt",
+        "hair_L_f_02_jnt",
+        "hair_L_f_03_jnt",
+        "hair_L_f_04_jnt",
+        "hair_L_f_01_jnt",
+        "hair_L_c_01_jnt",
+        "hair_L_d_01_jnt",
+        "hair_L_d_02_jnt",
+        "hair_L_d_03_jnt",
+        "bangs_L_c_01_jnt",
+        "bangs_L_c_02_jnt",
+        "hair_M_h_03_jnt",
+        "hair_M_h_02_jnt",
+        "hair_M_h_01_jnt",
+        "hair_R_f_01_jnt",
+        "hair_R_f_02_jnt",
+        "hair_R_f_03_jnt",
+        "hair_R_g_05_jnt",
+        "hair_R_g_04_jnt",
+        "hair_R_g_03_jnt",
+        "hair_R_g_02_jnt",
+        "hair_R_g_01_jnt",
+        "hair_L_g_02_jnt",
+        "hair_L_g_03_jnt",
+        "hair_L_g_01_jnt",
+        "hair_L_g_04_jnt",
+        "hair_L_g_05_jnt",
+        "hair_L_f_05_jnt",
+        "hair_R_f_04_jnt",
+        "hair_R_f_05_jnt",
+        "hair_L_c_02_jnt",
+        "hair_L_c_03_jnt",
+        "hair_R_c_02_jnt",
+        "hair_R_c_03_jnt",
+        "hair_R_c_01_jnt",
+        "hair_L_c_04_jnt",
+        "hair_L_c_05_jnt",
+        "hair_L_c_06_jnt",
+        "hair_R_c_04_jnt",
+        "hair_R_c_05_jnt",
+        "hair_R_c_06_jnt",
+        "hair_L_a_02_jnt",
+        "hair_L_a_04_jnt",
+        "hair_L_a_03_jnt",
+        "hair_L_a_01_jnt",
+        "hair_R_a_02_jnt",
+        "hair_R_a_04_jnt",
+        "hair_R_a_03_jnt",
+        "hair_R_a_01_jnt",
+        "bangs_L_d_01_jnt",
+        "hair_R_d_01_jnt",
+        "hair_R_d_02_jnt",
+        "hair_R_e_03_jnt",
+        "hair_R_e_02_jnt",
+        "hair_R_e_01_jnt",
+        "ear_R_animal_a_01_jnt",
+        "ear_R_animal_a_02_jnt",
+        "hair_R_d_03_jnt",
+        "hair_L_e_03_jnt",
+        "hair_L_e_02_jnt",
+        "hair_L_e_01_jnt",
+        "hair_L_i_04_jnt",
+        "hair_L_i_02_jnt",
+        "hair_L_i_03_jnt",
+        "hair_L_i_01_jnt",
+        "tail_03_jnt",
+        "tail_04_jnt",
+        "tail_05_jnt",
+        "tail_02_jnt",
+        "tail_01_jnt",
+        "Bip001_Spine",
+        "pelvis_sec_jnt",
+        "ear_L_animal_a_01_jnt",
+        "ear_L_animal_a_02_jnt",
+        "ear_L_animal_a_03_jnt",
+        "ear_R_animal_a_03_jnt"
+      ],
+      "materials": [
+        "M_actor_sweetpie_hair_01",
+        "M_actor_sweetpie_hairt_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_hair_01_D",
+          "T_actor_sweetpie_hair_01_sw_M",
+          "T_actor_common_hairline_02_M",
+          "T_actor_sweetpie_hair_01_P",
+          "T_actor_sweetpie_hair_01_ST",
+          "T_actor_sweetpie_hair_01_RS",
+          "T_actor_sweetpie_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ],
+        [
+          "T_actor_sweetpie_hair_01_D",
+          "T_actor_sweetpie_hair_01_sw_M",
+          "T_actor_common_hairline_02_M",
+          "T_actor_sweetpie_hair_01_P",
+          "T_actor_sweetpie_hair_01_ST",
+          "T_actor_sweetpie_hair_01_RS",
+          "T_actor_sweetpie_hair_01_HN",
+          "T_actor_common_hairst_01_ST"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_hair_01_D"
+          },
+          {
+            "property": "_HairBrowMask",
+            "name": "T_actor_sweetpie_hair_01_sw_M"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_02_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_sweetpie_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_sweetpie_hair_01_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_sweetpie_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ],
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_hair_01_D"
+          },
+          {
+            "property": "_HairBrowMask",
+            "name": "T_actor_sweetpie_hair_01_sw_M"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_02_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_hair_01_P"
+          },
+          {
+            "property": "_OutlineMask",
+            "name": "T_actor_sweetpie_hair_01_ST"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_sweetpie_hair_01_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_sweetpie_hair_01_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 11781,
+      "submeshes": [
+        {
+          "index_count": 43242,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 11781,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-37777d17ef7c1e59232b564a28fde0c8:-5410903885166573583",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:-8146329393196562822",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_hair_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:4796786783031650293",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_hair_01_lod0"
+          }
+        }
+      }
+    },
+    "9": {
+      "mesh_name": "S_actor_sweetpie_hair_02_lod0",
+      "original_index_count": 8355,
+      "bone_names": [
+        "ear_L_animal_a_01_jnt",
+        "ear_L_animal_a_02_jnt",
+        "ear_L_animal_a_03_jnt",
+        "Bip001_Head",
+        "tail_03_jnt",
+        "tail_04_jnt",
+        "tail_05_jnt",
+        "tail_02_jnt",
+        "tail_01_jnt",
+        "pelvis_sec_jnt",
+        "Bip001_Spine",
+        "ear_R_animal_a_01_jnt",
+        "ear_R_animal_a_02_jnt",
+        "ear_R_animal_a_03_jnt"
+      ],
+      "materials": [
+        "M_actor_sweetpie_hair_02"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_hair_02_D",
+          "T_actor_common_hair_01_RD",
+          "T_actor_common_hairline_03_M",
+          "T_actor_sweetpie_hair_02_P",
+          "T_actor_aglina_hair_01_RS",
+          "T_actor_sweetpie_hair_02_HN",
+          "T_actor_common_hairst_01_ST"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_hair_02_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_hair_01_RD"
+          },
+          {
+            "property": "_LineMap",
+            "name": "T_actor_common_hairline_03_M"
+          },
+          {
+            "property": "_MetallicGlossMap",
+            "name": "T_actor_sweetpie_hair_02_P"
+          },
+          {
+            "property": "_SpecRampMap",
+            "name": "T_actor_aglina_hair_01_RS"
+          },
+          {
+            "property": "_SplitNormalMap",
+            "name": "T_actor_sweetpie_hair_02_HN"
+          },
+          {
+            "property": "_StrokeMap",
+            "name": "T_actor_common_hairst_01_ST"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        12,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            },
+            {
+              "name": "COLOR",
+              "index": 0,
+              "format": "R8G8B8A8_SNORM",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 2405,
+      "submeshes": [
+        {
+          "index_count": 8355,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 2405,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-008924ae46cd34373638f7bd4df04ded:3384289440183056096",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:8568849137888724602",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_hair_02_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:-5273885914846599179",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_hair_02_lod0"
+          }
+        }
+      }
+    },
+    "10": {
+      "mesh_name": "S_actor_sweetpie_hairshadow_01_lod0",
+      "original_index_count": 180,
+      "bone_names": [
+        "Bip001_Head",
+        "bangs_L_b_02_jnt",
+        "bangs_L_b_01_jnt",
+        "bangs_L_c_01_jnt",
+        "bangs_L_c_02_jnt",
+        "bangs_L_d_01_jnt"
+      ],
+      "materials": [
+        "M_hairshadow_common_06"
+      ],
+      "material_textures": [
+        [
+          "T_actor_common_hairshadow_01_M"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_common_hairshadow_01_M"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 69,
+      "submeshes": [
+        {
+          "index_count": 180,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 69,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-284210adf60cda76b7daf21ef48e646e:2648741398673239012",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:1400448703624709754",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_hairshadow_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:-6618477225979746315",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_hairshadow_01_lod0"
+          }
+        }
+      }
+    },
+    "11": {
+      "mesh_name": "S_actor_sweetpie_iris_01_lod0",
+      "original_index_count": 1452,
+      "bone_names": [
+        "faceRtHighlightJoint_a",
+        "faceRtIrisJoint",
+        "faceLfIrisJoint",
+        "faceRtHighlightJoint",
+        "faceLfHighlightJoint",
+        "faceLfHighlightJoint_a",
+        "faceRtPupilJoint",
+        "faceLfPupilJoint"
+      ],
+      "materials": [
+        "M_actor_sweetpie_iris_01"
+      ],
+      "material_textures": [
+        [
+          "T_actor_sweetpie_iris_01_D",
+          "T_actor_common_body_01_RD",
+          "T_actor_sweetpie_matcap_01_D"
+        ]
+      ],
+      "material_texture_properties": [
+        [
+          {
+            "property": "_BaseMap",
+            "name": "T_actor_sweetpie_iris_01_D"
+          },
+          {
+            "property": "_DiffRampMap",
+            "name": "T_actor_common_body_01_RD"
+          },
+          {
+            "property": "_MatcapTex",
+            "name": "T_actor_sweetpie_matcap_01_D"
+          }
+        ]
+      ],
+      "strides": [
+        16,
+        8,
+        12
+      ],
+      "attributes": [
+        [
+          0,
+          0,
+          3,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          4,
+          0,
+          2,
+          1
+        ],
+        [
+          12,
+          4,
+          4,
+          2
+        ],
+        [
+          13,
+          6,
+          4,
+          2
+        ]
+      ],
+      "source_streams": [
+        {
+          "semantics": [
+            {
+              "name": "POSITION",
+              "index": 0,
+              "format": "R32G32B32_FLOAT",
+              "stride": 12
+            },
+            {
+              "name": "ENCODEDDATA",
+              "index": 0,
+              "format": "R32_UINT",
+              "stride": 4
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "TEXCOORD",
+              "index": 0,
+              "format": "R32G32_FLOAT",
+              "stride": 8
+            }
+          ]
+        },
+        {
+          "semantics": [
+            {
+              "name": "BLENDWEIGHTS",
+              "index": 0,
+              "format": "R16G16B16A16_UNORM",
+              "stride": 8
+            },
+            {
+              "name": "BLENDINDICES",
+              "index": 0,
+              "format": "R8G8B8A8_UINT",
+              "stride": 4
+            }
+          ]
+        }
+      ],
+      "layout_verified": true,
+      "source_layout_supported": true,
+      "vertex_count": 300,
+      "submeshes": [
+        {
+          "index_count": 1452,
+          "first_byte": 0,
+          "base_vertex": 0,
+          "first_vertex": 0,
+          "vertex_count": 300,
+          "topology": "Triangles"
+        }
+      ],
+      "evidence": {
+        "mesh_id": "cab-284210adf60cda76b7daf21ef48e646e:5270188155880680420",
+        "world_ui": "offline-equivalent",
+        "observations": {
+          "chr_0040_sweetpie_postmodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-c24b9df1addb1148e2bfb13cd62b9ef0:1458527083828938362",
+            "path": "chr_0040_sweetpie_postmodel/Mesh_all/lod0/S_actor_sweetpie_iris_01_lod0"
+          },
+          "chr_0040_sweetpie_uimodel": {
+            "kind": "direct",
+            "run": "1-7-2-mimino-sweetpie",
+            "file": "1-7-2-mimino-sweetpie.13768.13506359.jsonl",
+            "process_id": 13768,
+            "renderer_id": "cab-6b0d010a7e81a49fcf56904cf555ea23:30125654923012085",
+            "path": "chr_0040_sweetpie_uimodel/Mesh_all/lod0/S_actor_sweetpie_iris_01_lod0"
+          }
+        }
+      }
+    }
+  },
+  "entries": {},
+  "textures": {},
+  "preserved_globals": {},
+  "mapping_status": "source-resource-identities-pending",
+  "excluded_components": [],
+  "evidence": [
+    "CUSTOM_MODEL_RUNTIME_SWEEP_20260919.md"
+  ],
+  "note": "Runtime observation plus offline identity join; excluded components stay outside the shared BEM contract. Source resource mappings remain separate.",
+  "game": {
+    "windows-x64": "1.7.2",
+    "android-arm64": "1.7.2",
+    "hotfix": 0
+  }
+}
