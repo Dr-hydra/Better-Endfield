@@ -5,6 +5,7 @@ import json
 import re
 import shutil
 import tempfile
+import uuid
 import zipfile
 from pathlib import Path, PurePosixPath
 
@@ -93,6 +94,12 @@ def stage(output, platform, package_type, version, files, source, preview_archiv
         else: root.rename(target)
     return target
 
+def mark_bundled(target):
+    version=target.name
+    for child in list(target.parent.iterdir()):
+        if child!=target and child.is_dir():shutil.rmtree(child)
+    (target.parent/'.bundled').write_text(f'{version}\n{uuid.uuid4().hex}\n',encoding='utf-8')
+
 def core_files(platform, outputs):
     def output(key, fallback): return Path(outputs.get(key,REPO/fallback))
     preset=output('character_presets','resources/generated/model/character-presets.json')
@@ -127,6 +134,7 @@ def main():
     ap.add_argument('--preview-archive',action='append',type=Path,default=[])
     ap.add_argument('--preview-report',type=Path,help='Complete BuildPreviewResources.py report; fails closed on missing characters')
     ap.add_argument('--archives',type=Path,help='Optionally write a distributable ZIP alongside staged resources')
+    ap.add_argument('--bundled',action='store_true',help='Mark this core pack as the single bundled baseline in output')
     args=ap.parse_args()
     from workspace_config import load_workspace
     ws=load_workspace(args.workspace_config,REPO)
@@ -166,6 +174,9 @@ def main():
                 manifestVersion=preview_report['manifestVersion'],geometryScope=preview_report['scope'],
                 textureEncoding='BC7 authored mips' if args.platform=='windows' else 'offline ASTC 6x6 transcoding from Windows textures')
     target=stage(args.output,args.platform,args.type,version,files,provenance,archives)
+    if args.bundled:
+        if args.type!='core':raise ValueError('--bundled only applies to core resource packs')
+        mark_bundled(target)
     if args.archives:
         args.archives.mkdir(parents=True,exist_ok=True)
         dest=args.archives/('BE-'+args.type.title()+'-'+args.platform.title()+'-'+version+'.zip')

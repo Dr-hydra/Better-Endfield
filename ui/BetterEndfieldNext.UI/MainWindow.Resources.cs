@@ -18,14 +18,6 @@ public sealed partial class MainWindow
         CancelResourceUpdateButton.Content = zh ? "取消下载" : "Cancel download";
     }
 
-    private string? ResourceGameVersion()
-    {
-        // Automatic upgrades never guess across game baselines. A newly installed
-        // baseline can be selected through manual import, including rollback.
-        var core = GameResourceStore.Resolve("core");
-        return core is not null && core.Manifest.TryGetProperty("gameVersion", out var value) ? value.GetString() : null;
-    }
-
     private async Task RunResourceUpdateAsync(bool preview, bool resume)
     {
         if (_resourceUpdateCancellation is not null) return;
@@ -36,7 +28,7 @@ public sealed partial class MainWindow
         ResourceUpdateStatus.Text = zh ? "正在下载并校验资源…" : "Downloading and validating resources…";
         try
         {
-            string status = await Task.Run(() => DistributionService.UpdateResourcesAsync(ResourceGameVersion(), preview, resume, cancellation.Token));
+            string status = await Task.Run(() => DistributionService.UpdateResourcesAsync(preview, resume, cancellation.Token));
             ResourceUpdateStatus.Text = (zh ? "资源检查完成；已更新的基础资源需重启程序及游戏后生效。\n" : "Resource check complete; restart the app and game to load updated core resources.\n") + status;
         }
         catch (OperationCanceledException) { ResourceUpdateStatus.Text = zh ? "已取消，原资源保持可用。" : "Cancelled; existing resources remain available."; }

@@ -24,9 +24,36 @@ inline std::filesystem::path CoreFile(const std::filesystem::path& moduleDirecto
         const auto resources=moduleDirectory.parent_path()/"resources";
         const auto directory=resources/"core/windows";
         if(!std::filesystem::is_directory(directory))return {};
+        auto trim=[](std::string& s) {
+            while(!s.empty() && (s.back()=='\r' || s.back()=='\n' || s.back()==' ' || s.back()=='\t'))s.pop_back();
+        };
+        bool hasBundled=false;std::string bundledVersion,bundledToken;
+        if(std::filesystem::is_regular_file(directory/".bundled")) {
+            hasBundled=true;
+            std::ifstream marker(directory/".bundled");
+            if(!std::getline(marker,bundledVersion))return {};
+            trim(bundledVersion);
+            std::array<unsigned,4> parsed{};
+            if(!Version(bundledVersion,parsed))return {};
+            if(std::getline(marker,bundledToken))trim(bundledToken);
+        }
         std::string selected;
         if(std::filesystem::is_regular_file(resources/"state.json")) {
-            std::ifstream input(resources/"state.json");const auto state=nlohmann::json::parse(input);selected=state.value("core.windows",std::string{});
+            try {
+                std::ifstream input(resources/"state.json");const auto state=nlohmann::json::parse(input);
+                if(hasBundled) {
+                    const bool matched=bundledToken.empty()
+                        ? state.value("bundled.core.windows",std::string{})==bundledVersion
+                        : state.value("bundled.token.windows",std::string{})==bundledToken;
+                    selected=matched?state.value("core.windows",bundledVersion):bundledVersion;
+                } else {
+                    selected=state.value("core.windows",std::string{});
+                }
+            } catch(const std::exception&) {
+                if(hasBundled)selected=bundledVersion; else return {};
+            }
+        } else if(hasBundled) {
+            selected=bundledVersion;
         }
         std::vector<std::pair<std::array<unsigned,4>,std::filesystem::path>> candidates;
         for(const auto& entry:std::filesystem::directory_iterator(directory)) {

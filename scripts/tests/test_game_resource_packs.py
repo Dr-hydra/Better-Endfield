@@ -32,6 +32,14 @@ class ResourcePackTests(unittest.TestCase):
     def test_four_numeric_components_required(self):
         for value in ('1.6.3','1x6x3x1','1.6.3.-1','v1.6.3.1'):
             with self.subTest(version=value),self.assertRaises(ValueError):self.stage(value)
+    def test_mark_bundled_prunes_stale_core_siblings(self):
+        old=self.stage('1.6.3.1');current=self.stage('1.6.3.2')
+        packs.mark_bundled(current)
+        self.assertFalse(old.exists())
+        self.assertTrue(current.exists())
+        lines=(current.parent/'.bundled').read_text(encoding='utf-8').splitlines()
+        self.assertEqual(lines[0],'1.6.3.2')
+        self.assertTrue(len(lines)>=2 and len(lines[1])==32)
     def preview(self,fmt):
         archive=self.root/'preview.zip'
         pack=dict(schema=1,kind='native-head-preview-prototype',character='chr_test',snapshot={'manifestVersion':'fixture'},

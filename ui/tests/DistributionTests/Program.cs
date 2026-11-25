@@ -23,6 +23,18 @@ string Archive(string version="91.2.3.1",string platform="windows",string conten
 async Task Reject(string path,string message){try{await DistributionService.ImportAsync(path,CancellationToken.None);throw new Exception("Unexpected acceptance: "+message);}catch(InvalidDataException){Check(true,message);}}
 try
 {
+    using(var doc=JsonDocument.Parse(JsonSerializer.Serialize(new{resources=new object[]{
+        new{packageType="core",platform="windows",version="1.6.3.3",gameVersion="1.6.3",resourceApi=1},
+        new{packageType="core",platform="windows",version="1.7.2.2",gameVersion="1.7.2",resourceApi=1},
+        new{packageType="preview",platform="android",version="1.6.4.3",gameVersion="1.6.4",resourceApi=1},
+        new{packageType="preview",platform="windows",version="1.6.3.3",gameVersion="1.6.3",resourceApi=1}}})))
+    {
+        Check(DistributionService.SelectLatestCandidate(doc.RootElement,"core")?.GetProperty("version").GetString()=="1.7.2.2","select latest core regardless of baseline");
+        Check(DistributionService.SelectLatestCandidate(doc.RootElement,"preview")?.GetProperty("version").GetString()=="1.6.3.3","select latest preview across game versions");
+        var snap=new GameResourceStore.Snapshot(temp,"1.6.3.3",doc.RootElement);
+        Check(DistributionService.IsUpToDate(snap,"1.6.3.3"),"cross-baseline installed preview does not re-download");
+        Check(!DistributionService.IsUpToDate(snap,"1.7.2.1"),"newer preview version triggers upgrade");
+    }
     await Reject(Archive(traversal:true),"reject archive traversal");
     await Reject(Archive(platform:"android"),"reject wrong platform");
     await Reject(Archive(wrongLength:true),"reject truncated inventory");

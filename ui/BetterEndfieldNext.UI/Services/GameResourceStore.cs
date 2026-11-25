@@ -4,6 +4,8 @@ namespace BetterEndfieldNext.UI.Services;
 
 // Game data is deliberately outside the executable. A snapshot is immutable for
 // the duration of a consumer; imported versions never overwrite an active tree.
+// Upgrading or reinstalling the application package unconditionally resets core
+// resources to the package-bundled baseline via the .bundled marker.
 internal static class GameResourceStore
 {
     internal sealed record Snapshot(string Root, string Version, JsonElement Manifest)
@@ -26,6 +28,19 @@ internal static class GameResourceStore
         }
     }
 
+    internal static (string Version, string? Token)? ReadBundledMarker(string coreDirectory)
+    {
+        string path = Path.Combine(coreDirectory, ".bundled");
+        if (!System.IO.File.Exists(path)) return null;
+        string[] lines = System.IO.File.ReadAllLines(path);
+        if (lines.Length == 0) throw new InvalidDataException("Empty bundled marker.");
+        string version = lines[0].Trim();
+        if (ParseVersion(version) is null) throw new InvalidDataException("Invalid bundled core version.");
+        string? token = lines.Length > 1 ? lines[1].Trim() : null;
+        if (string.IsNullOrEmpty(token)) token = null;
+        return (version, token);
+    }
+
     // Single-file publishing extracts managed assemblies into a temporary tree.
     // External resource packs belong beside the installed executable.
     internal static string ResolveRoot(string? processPath, string assemblyDirectory) =>
@@ -38,14 +53,41 @@ internal static class GameResourceStore
         if (!Directory.Exists(directory)) return null;
         string? selected = null;
         string state = Path.Combine(baseRoot, "state.json");
+        (string Version, string? Token)? bundled = null;
+        if (type == "core")
+        {
+            try { bundled = ReadBundledMarker(directory); }
+            catch (Exception ex) when (ex is IOException or InvalidDataException) { return null; }
+        }
         if (System.IO.File.Exists(state))
         {
             try
             {
                 using var doc = JsonDocument.Parse(System.IO.File.ReadAllText(state));
-                if (doc.RootElement.TryGetProperty(type + ".windows", out var value)) selected = value.GetString();
+                var rootElement = doc.RootElement;
+                if (bundled is { } marker)
+                {
+                    bool matched = marker.Token is not null
+                        ? rootElement.TryGetProperty("bundled.token.windows", out var tok) && tok.GetString() == marker.Token
+                        : rootElement.TryGetProperty("bundled.core.windows", out var ver) && ver.GetString() == marker.Version;
+                    selected = matched && rootElement.TryGetProperty(type + ".windows", out var value)
+                        ? value.GetString()
+                        : marker.Version;
+                }
+                else if (rootElement.TryGetProperty(type + ".windows", out var value))
+                {
+                    selected = value.GetString();
+                }
             }
-            catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException) { return null; }
+            catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException)
+            {
+                if (bundled is { } marker) selected = marker.Version;
+                else return null;
+            }
+        }
+        else if (bundled is { } marker)
+        {
+            selected = marker.Version;
         }
         var candidates = Directory.GetDirectories(directory)
             .Select(p => (Path: p, Version: ParseVersion(Path.GetFileName(p))))

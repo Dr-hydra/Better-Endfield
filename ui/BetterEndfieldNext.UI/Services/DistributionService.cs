@@ -49,15 +49,66 @@ internal static class DistributionService
         return _cached;
     }
 
-    private static JsonObject State() => File.Exists(Path.Combine(GameResourceStore.Root, "state.json"))
-        ? JsonNode.Parse(File.ReadAllText(Path.Combine(GameResourceStore.Root, "state.json")))!.AsObject() : new();
-
-    private static void Activate(string type, string version, bool automatic)
+    private static JsonObject State()
     {
-        var state = State(); state[type + ".windows"] = version; state["auto." + type + ".windows"] = automatic;
+        string statePath = Path.Combine(GameResourceStore.Root, "state.json");
+        if (!File.Exists(statePath)) return new();
+        try { return JsonNode.Parse(File.ReadAllText(statePath))?.AsObject() ?? new(); }
+        catch (JsonException) { return new(); }
+    }
+
+    private static void SaveState(JsonObject state)
+    {
+        Directory.CreateDirectory(GameResourceStore.Root);
         string temp = Path.Combine(GameResourceStore.Root, Guid.NewGuid() + ".state.tmp");
         try { File.WriteAllText(temp, state.ToJsonString()); File.Move(temp, Path.Combine(GameResourceStore.Root, "state.json"), true); }
         finally { if (File.Exists(temp)) File.Delete(temp); }
+    }
+
+    private static void SyncBundledCoreState()
+    {
+        (string Version, string? Token)? bundled;
+        try { bundled = GameResourceStore.ReadBundledMarker(Path.Combine(GameResourceStore.Root, "core", "windows")); }
+        catch (Exception ex) when (ex is IOException or InvalidDataException) { return; }
+        if (bundled is not { } marker) return;
+        var state = State();
+        bool matched = marker.Token is not null
+            ? state["bundled.token.windows"]?.GetValue<string>() == marker.Token
+            : state["bundled.core.windows"]?.GetValue<string>() == marker.Version;
+        if (matched) return;
+        state["core.windows"] = marker.Version;
+        state["auto.core.windows"] = true;
+        state["bundled.core.windows"] = marker.Version;
+        if (marker.Token is not null) state["bundled.token.windows"] = marker.Token;
+        else state.Remove("bundled.token.windows");
+        SaveState(state);
+    }
+
+    public static async Task SyncBundledCoreAsync(CancellationToken token)
+    {
+        await Gate.WaitAsync(token);
+        try { SyncBundledCoreState(); }
+        finally { Gate.Release(); }
+    }
+
+    private static void Activate(string type, string version, bool automatic)
+    {
+        var state = State();
+        state[type + ".windows"] = version;
+        state["auto." + type + ".windows"] = automatic;
+        if (type == "core")
+        {
+            try
+            {
+                if (GameResourceStore.ReadBundledMarker(Path.Combine(GameResourceStore.Root, "core", "windows")) is { } marker)
+                {
+                    state["bundled.core.windows"] = marker.Version;
+                    if (marker.Token is not null) state["bundled.token.windows"] = marker.Token;
+                }
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException) { }
+        }
+        SaveState(state);
     }
 
     private static string SafePath(string root, string name)
@@ -136,15 +187,36 @@ internal static class DistributionService
     public static async Task<string> ImportAsync(string archive, CancellationToken token)
     {
         await Gate.WaitAsync(token);
-        try { return await InstallCoreAsync(archive, false, null, token); }
+        try
+        {
+            SyncBundledCoreState();
+            return await InstallCoreAsync(archive, false, null, token);
+        }
         finally { Gate.Release(); }
     }
 
-    public static async Task<string> UpdateResourcesAsync(string? gameVersion, bool includePreview, bool resumeAutomatic, CancellationToken token)
+    internal static JsonElement? SelectLatestCandidate(JsonElement index, string type)
+    {
+        var candidates = index.GetProperty("resources").EnumerateArray().Where(e =>
+            e.GetProperty("packageType").GetString() == type &&
+            e.GetProperty("platform").GetString() == "windows" &&
+            e.GetProperty("resourceApi").GetInt32() == 1 &&
+            Version.TryParse(e.GetProperty("version").GetString(), out _))
+            .OrderByDescending(e => Version.Parse(e.GetProperty("version").GetString()!));
+        foreach (var candidate in candidates) return candidate;
+        return null;
+    }
+
+    internal static bool IsUpToDate(GameResourceStore.Snapshot? current, string latestVersion) =>
+        current is not null && Version.TryParse(current.Version, out var cur) &&
+        Version.TryParse(latestVersion, out var target) && cur >= target;
+
+    public static async Task<string> UpdateResourcesAsync(bool includePreview, bool resumeAutomatic, CancellationToken token)
     {
         await Gate.WaitAsync(token);
         try
         {
+            SyncBundledCoreState();
             var index = await IndexAsync(token) ?? throw new IOException("Resource release is not available yet.");
             var messages = new List<string>();
             foreach (string type in new[] { "core", "preview" })
@@ -154,18 +226,11 @@ internal static class DistributionService
                 var state = State(); string key = type + ".windows";
                 if (state[key] is not null && state["auto." + key]?.GetValue<bool>() != true && !resumeAutomatic)
                 { messages.Add(type + " (pinned)"); continue; }
-                string? baseline = gameVersion;
-                if (baseline is null && current is not null && current.Manifest.TryGetProperty("gameVersion", out var gv)) baseline = gv.GetString();
-                if (string.IsNullOrWhiteSpace(baseline)) { messages.Add(type + " (game version unknown)"); continue; }
-                var candidates = index.GetProperty("resources").EnumerateArray().Where(e =>
-                    e.GetProperty("packageType").GetString() == type && e.GetProperty("platform").GetString() == "windows" &&
-                    e.GetProperty("gameVersion").GetString() == baseline && e.GetProperty("resourceApi").GetInt32() == 1 &&
-                    Version.TryParse(e.GetProperty("version").GetString(), out _))
-                    .OrderByDescending(e => Version.Parse(e.GetProperty("version").GetString()!)).ToArray();
-                if (candidates.Length == 0) { messages.Add(type + " (no compatible release)"); continue; }
-                var candidate = candidates[0]; string version = candidate.GetProperty("version").GetString()!;
-                if (current is not null && current.Manifest.GetProperty("gameVersion").GetString() == baseline && Version.Parse(current.Version) >= Version.Parse(version))
-                { if (resumeAutomatic) Activate(type, current.Version, true); messages.Add(type + " " + current.Version); continue; }
+                if (SelectLatestCandidate(index, type) is not { } candidate)
+                { messages.Add(type + " (no compatible release)"); continue; }
+                string version = candidate.GetProperty("version").GetString()!;
+                if (IsUpToDate(current, version))
+                { if (resumeAutomatic) Activate(type, current!.Version, true); messages.Add(type + " " + current!.Version); continue; }
                 string asset = candidate.GetProperty("asset").GetString()!, url = candidate.GetProperty("url").GetString()!;
                 if (Path.GetFileName(asset) != asset || url != DownloadRoot + asset) throw new InvalidDataException("Untrusted resource URL.");
                 long expectedBytes = candidate.GetProperty("bytes").GetInt64();

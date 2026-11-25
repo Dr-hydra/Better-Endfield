@@ -50,6 +50,7 @@ public final class OverlaySettingsProvider extends ContentProvider {
             if("read_resource".equals(method)) {
                 String path=extras==null?null:extras.getString("path");
                 if(path==null || path.length()>1024)throw new java.io.IOException("Invalid resource request");
+                GameResourceStore.ensureBundledCore(app);
                 GameResourceStore.Snapshot snapshot=GameResourceStore.resolve(app,"core");
                 if(snapshot==null)throw new java.io.IOException("Missing Android core resource pack");
                 java.io.File file=snapshot.file(path);

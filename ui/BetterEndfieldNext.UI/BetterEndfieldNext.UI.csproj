@@ -95,9 +95,9 @@
     <BECoreConfigArg Condition="'$(BEWorkspaceConfig)' != ''">--workspace-config &quot;$(BEWorkspaceConfig)&quot;</BECoreConfigArg>
   </PropertyGroup>
   <Target Name="StageExternalCoreForBuild" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
-    <Exec Command="python &quot;$(BEWorkspaceRoot)scripts\BuildResourcePacks.py&quot; $(BECoreConfigArg) --character-presets &quot;$(BECharacterPresetsPath)&quot; --voice-index &quot;$(BEVoiceCatalogIndexPath)&quot; --combat-dictionary &quot;$(BECombatDictionaryPath)&quot; --platform windows --type core --output &quot;$(TargetDir)resources&quot;" />
+    <Exec Command="python &quot;$(BEWorkspaceRoot)scripts\BuildResourcePacks.py&quot; $(BECoreConfigArg) --character-presets &quot;$(BECharacterPresetsPath)&quot; --voice-index &quot;$(BEVoiceCatalogIndexPath)&quot; --combat-dictionary &quot;$(BECombatDictionaryPath)&quot; --platform windows --type core --bundled --output &quot;$(TargetDir)resources&quot;" />
   </Target>
   <Target Name="StageExternalCoreForPublish" AfterTargets="Publish">
-    <Exec Command="python &quot;$(BEWorkspaceRoot)scripts\BuildResourcePacks.py&quot; $(BECoreConfigArg) --character-presets &quot;$(BECharacterPresetsPath)&quot; --voice-index &quot;$(BEVoiceCatalogIndexPath)&quot; --combat-dictionary &quot;$(BECombatDictionaryPath)&quot; --platform windows --type core --output &quot;$(PublishDir)resources&quot;" />
+    <Exec Command="python &quot;$(BEWorkspaceRoot)scripts\BuildResourcePacks.py&quot; $(BECoreConfigArg) --character-presets &quot;$(BECharacterPresetsPath)&quot; --voice-index &quot;$(BEVoiceCatalogIndexPath)&quot; --combat-dictionary &quot;$(BECombatDictionaryPath)&quot; --platform windows --type core --bundled --output &quot;$(PublishDir)resources&quot;" />
   </Target>
 </Project>

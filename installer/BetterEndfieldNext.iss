@@ -66,6 +66,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [InstallDelete]
+; Core resources always come unconditionally from this installer package. Remove
+; any older or cached core directories before extracting the bundled copy.
+Type: filesandordirs; Name: "{app}\resources\core"
 ; PyInstaller onedir payloads are replaced as a directory. Leaving files from
 ; an older Python/runtime inside it breaks otherwise valid upgrades.
 Type: filesandordirs; Name: "{app}\tools\BemConverter\_internal"

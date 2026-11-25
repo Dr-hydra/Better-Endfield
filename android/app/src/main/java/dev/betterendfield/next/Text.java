@@ -21,7 +21,12 @@ final class Text {
     private static final Map<String, String> ENGLISH = new HashMap<>(1024);
 
     static {
-        put("检查软件版本并自动更新未固定的资源，预览包首次按需下载","Check software and update unpinned resources; preview resources are an optional first download");
+        put("检查软件版本并自动更新未固定的资源（更新安装包时自动重置为内置基础资源），预览包首次按需下载","Check software and update unpinned resources (resets core resources to bundled version on APK updates); preview resources are an optional first download");
+        put("未下载预览资源","Preview resources are not downloaded");
+        put("基础资源随安装包内置并强制使用，仅支持导入预览资源包","Core resources are bundled with the app package; only preview packs can be imported");
+        put("导入预览包 / 回退","Import / roll back preview");
+        put("恢复预览自动更新","Resume preview auto-update");
+        put("预览资源检查完成，重新打开预览即可生效。","Preview resource check complete; reopen preview to apply updates.");
         put("更新基础资源","Update core resources");
         put("下载预览资源","Download preview resources");
         put("未下载预览资源。请前往「关于」页点击「下载预览资源」，下载完成后重新打开预览。",

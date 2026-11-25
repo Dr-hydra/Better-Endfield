@@ -216,7 +216,7 @@ Copy-Item -LiteralPath (Join-Path $nativeStage "loaders") -Destination $publishD
 Copy-Item -LiteralPath (Join-Path $nativeStage "payloads") -Destination $publishDir -Recurse -Force
 Copy-Item -LiteralPath (Join-Path $nativeStage "tools") -Destination $publishDir -Recurse -Force
 
-$resourceArgs = @((Join-Path $PSScriptRoot 'BuildResourcePacks.py'), '--platform', 'windows', '--type', 'core', '--output', (Join-Path $publishDir 'resources'))
+$resourceArgs = @((Join-Path $PSScriptRoot 'BuildResourcePacks.py'), '--platform', 'windows', '--type', 'core', '--bundled', '--output', (Join-Path $publishDir 'resources'))
 foreach ($legacyData in @('model-character-names.json','model-character-names-en.json','actions/pose_aglina.bin','actions/pose_liino.bin','combat-semantics.besem','buff-sources.bemap')) {
     $legacyFile = Join-Path (Join-Path $publishDir 'modules') $legacyData
     if (Test-Path -LiteralPath $legacyFile -PathType Leaf) { Remove-Item -LiteralPath $legacyFile -Force }

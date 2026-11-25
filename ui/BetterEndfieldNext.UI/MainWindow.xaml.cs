@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -286,6 +286,7 @@ public sealed partial class MainWindow : Window
             AutoCheckUpdatesToggle.IsOn = _appSettings.AutoCheckUpdates;
             UpdateAboutUpdateHint();
             _initializing = false;
+            try { await Task.Run(() => DistributionService.SyncBundledCoreAsync(CancellationToken.None)); } catch { }
             if (_appSettings.AutoCheckUpdates)
             {
                 _ = CheckUpdatesOnStartupAsync();
@@ -2564,8 +2565,8 @@ public sealed partial class MainWindow : Window
         if (AutoCheckUpdatesToggle.IsOn)
         {
             AboutUpdateSectionHint.Text = isZh
-                ? "启动时检查软件版本并自动更新未固定的资源，预览包首次按需下载。"
-                : "Checks software and updates unpinned resources on startup; preview resources are an optional first download.";
+                ? "启动时检查软件版本并自动更新未固定的资源（软件更新时会重置为安装包内置的基础资源），预览包首次按需下载。"
+                : "Checks software and updates unpinned resources (resets core resources to bundled version on software updates); preview is an optional first download.";
         }
         else
         {
@@ -2594,7 +2595,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            _ = Task.Run(async () => { try { await DistributionService.UpdateResourcesAsync(ResourceGameVersion(), false, false, CancellationToken.None); } catch { } });
+            _ = Task.Run(async () => { try { await DistributionService.UpdateResourcesAsync(false, false, CancellationToken.None); } catch { } });
             UpdateCheckResult result = await UpdateService.CheckAsync(CancellationToken.None);
             if (result.IsUpdateAvailable && !string.IsNullOrWhiteSpace(result.LatestVersion))
             {

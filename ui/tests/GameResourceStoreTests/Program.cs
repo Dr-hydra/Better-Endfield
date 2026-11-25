@@ -52,5 +52,15 @@ try
     Check(GameResourceStore.Resolve("core", root)!.Version == "1.6.3.2", "pinned rollback");
     File.WriteAllText(Path.Combine(root, "state.json"), "{\"core.windows\":\"0.0.0.1\"}");
     Check(GameResourceStore.Resolve("core", root) is null, "missing pinned version does not silently upgrade");
+
+    // App update (.bundled marker token mismatch) unconditionally resets to bundled baseline,
+    // while matching token preserves post-update core selection.
+    File.WriteAllText(Path.Combine(root, "core/windows/.bundled"), "1.6.3.2\ntokenA\n");
+    File.WriteAllText(Path.Combine(root, "state.json"), "{\"core.windows\":\"1.6.3.10\"}");
+    Check(GameResourceStore.Resolve("core", root)!.Version == "1.6.3.2", "app update overrides stale state.json");
+    File.WriteAllText(Path.Combine(root, "state.json"), "{\"core.windows\":\"1.6.3.10\",\"bundled.token.windows\":\"tokenA\"}");
+    Check(GameResourceStore.Resolve("core", root)!.Version == "1.6.3.10", "matching bundled token honors post-update selection");
+    File.WriteAllText(Path.Combine(root, "core/windows/.bundled"), "1.6.3.2\ntokenB\n");
+    Check(GameResourceStore.Resolve("core", root)!.Version == "1.6.3.2", "subsequent app update token unconditionally resets core");
 }
 finally { Directory.Delete(root, true); }

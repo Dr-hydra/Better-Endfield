@@ -58,13 +58,6 @@ final class DistributionUpdater {
         cancelled.set(false);
         try {
             JSONObject index=index();if(index==null)throw new IOException(Text.of("资源发布尚未就绪"));
-            phase="game-version";
-            String game;
-            try { game=context.getPackageManager().getPackageInfo("com.hypergryph.endfield",0).versionName; }
-            catch (android.content.pm.PackageManager.NameNotFoundException unavailable) {
-                throw new IOException(Text.of("无法读取已安装的游戏版本，请确认游戏已安装并更新管理器。"), unavailable);
-            }
-            if(game==null || !game.matches("[0-9]+([.][0-9]+){2}"))throw new IOException(Text.of("无法识别游戏版本"));
             List<String> result=new ArrayList<>();
             for(String type:List.of("core","preview")) {
                 checkCancelled();GameResourceStore.Snapshot current=GameResourceStore.resolve(context,type);
@@ -74,11 +67,11 @@ final class DistributionUpdater {
                 JSONObject best=null;JSONArray candidates=index.getJSONArray("resources");
                 for(int i=0;i<candidates.length();i++) {
                     JSONObject e=candidates.getJSONObject(i);
-                    if(!type.equals(e.getString("packageType")) || !"android".equals(e.getString("platform")) || !game.equals(e.getString("gameVersion")) || e.optInt("resourceApi")!=1 || !GameResourceStore.version(e.getString("version")))continue;
+                    if(!type.equals(e.getString("packageType")) || !"android".equals(e.getString("platform")) || e.optInt("resourceApi")!=1 || !GameResourceStore.version(e.getString("version")))continue;
                     if(best==null || GameResourceStore.compare(e.getString("version"),best.getString("version"))>0)best=e;
                 }
                 if(best==null){result.add(type+" "+Text.of("暂无兼容资源"));continue;}
-                if(current!=null && game.equals(current.manifest().getString("gameVersion")) && GameResourceStore.compare(current.version(),best.getString("version"))>=0){if(resume)resume(context,type,current);result.add(type+" "+current.version());continue;}
+                if(current!=null && GameResourceStore.compare(current.version(),best.getString("version"))>=0){if(resume)resume(context,type,current);result.add(type+" "+current.version());continue;}
                 String asset=best.getString("asset"),url=best.getString("url");
                 if(!asset.equals(new File(asset).getName()) || !url.equals(ROOT+asset))throw new IOException("Untrusted resource URL");
                 long expected=best.getLong("bytes");if(expected<=0)throw new IOException("Invalid download length");
