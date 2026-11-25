@@ -55,6 +55,20 @@ class StringPool:
     def __init__(self, root: Path):
         self.root = root
         self.chunks = {}
+        self.ranges = []
+        self.count = 0
+
+    def _load_next(self):
+        path = self.root/f'StringPool{len(self.chunks)}.byte'
+        try:
+            count, raw = read_chunk(path)
+        except FileNotFoundError as error:
+            raise ValueError(f'String index outside pool: {self.count}') from error
+        if len(raw) < 4 or struct.unpack_from('<I', raw)[0] != count:
+            raise ValueError(f'Invalid StringPool count: {path}')
+        self.ranges.append((self.count, self.count+count))
+        self.chunks[len(self.chunks)] = (count, raw)
+        self.count += count
 
     def get(self, index: int):
         if index == -2:
@@ -63,11 +77,13 @@ class StringPool:
             return ''
         if index < 0:
             raise ValueError(f'Invalid string index {index}')
-        chunk, local = divmod(index, 10000)
-        if chunk not in self.chunks:
-            self.chunks[chunk] = read_chunk(self.root/f'StringPool{chunk}.byte')
+        while index >= self.count:
+            self._load_next()
+        chunk = next(i for i, (start, end) in enumerate(self.ranges) if start <= index < end)
+        start, _ = self.ranges[chunk]
+        local = index-start
         count, raw = self.chunks[chunk]
-        if local >= count or struct.unpack_from('<I', raw)[0] != count:
+        if local >= count:
             raise ValueError(f'String index {index} outside pool')
         offset = 4+count*4+struct.unpack_from('<I', raw, 4+local*4)[0]
         size = struct.unpack_from('<I', raw, offset)[0]

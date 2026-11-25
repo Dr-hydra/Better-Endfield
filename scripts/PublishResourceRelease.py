@@ -148,6 +148,7 @@ def main():
     ap.add_argument('--output',type=Path,required=True)
     ap.add_argument('--software-index',type=Path)
     ap.add_argument('--publish',action='store_true')
+    ap.add_argument('--skip-index-backup',action='store_true',help='Replace distribution-index.json without updating distribution-index.previous.json')
     ap.add_argument('--prune-assets',action='store_true',help='Delete published archives superseded by a newer version of the same class, keeping one per class; irreversible')
     args=ap.parse_args()
     api=None
@@ -234,7 +235,7 @@ def main():
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(index,ensure_ascii=False,indent=2)+chr(10),encoding='utf-8')
     if args.publish:
-        if 'distribution-index.json' in existing:
+        if 'distribution-index.json' in existing and not args.skip_index_backup:
             # Keep the last usable entry recoverable if replacing the main
             # GitHub asset is interrupted between deletion and upload.
             with tempfile.TemporaryDirectory(prefix='be-index-backup-') as temporary:

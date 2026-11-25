@@ -1,10 +1,23 @@
 import struct
 import unittest
 import sys
+from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from memorypack_refs import Reader
-from string_pool import decompress_lz4
+from string_pool import StringPool, decompress_lz4
+
+
+def pool_chunk(values):
+    offsets = []
+    payload = bytearray()
+    for value in values:
+        offsets.append(len(payload))
+        encoded = value.encode('utf-8')
+        payload.extend(struct.pack('<I', len(encoded)))
+        payload.extend(encoded)
+    raw = struct.pack('<I', len(values))+struct.pack('<'+'I'*len(values), *offsets)+payload
+    return len(values), raw
 
 
 class Pool:
@@ -15,6 +28,15 @@ class Pool:
 
 
 class MemoryPackReferenceTests(unittest.TestCase):
+    def test_string_pool_uses_each_chunk_declared_count(self):
+        chunks = [pool_chunk(['a', 'b', 'c']), pool_chunk(['d', 'e'])]
+        def read(path):
+            return chunks[int(path.stem.removeprefix('StringPool'))]
+        with patch('string_pool.read_chunk', side_effect=read):
+            pool = StringPool(Path('unused'))
+            self.assertEqual([pool.get(i) for i in range(5)], ['a', 'b', 'c', 'd', 'e'])
+            self.assertEqual(len(pool.chunks), 2)
+
     def test_only_string_fields_are_pool_references(self):
         pool = Pool()
         schema = {'Root': {'wrapper':'Root', 'fields':[['number','System.Int32'],['id','System.String']]}}

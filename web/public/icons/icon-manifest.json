@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-16T10:58:58.833901+00:00",
-  "source": "G:\\Better Endfield\\cache\\combat-icons",
+  "generatedAt": "2026-11-25T05:36:22.975815+00:00",
+  "source": "F:\\Better Endfield\\cache\\combat-icons",
   "copied": {
     "skills": 104,
     "items": 353,
@@ -8,8 +8,34 @@
     "characters": 34
   },
   "missing": {
-    "skills": [],
-    "items": [],
+    "skills": [
+      "icon_combo_skill_minghe_01",
+      "icon_combo_skill_sweetpie_01",
+      "icon_skill_minghe_01",
+      "icon_skill_sweetpie_01",
+      "icon_ultimate_skill_minghe_01",
+      "icon_ultimate_skill_sweetpie_01"
+    ],
+    "items": [
+      "item_equip_t4_parts_wuling00_body_07",
+      "item_equip_t4_parts_wuling00_edc_07",
+      "item_equip_t4_parts_wuling00_hand_07",
+      "item_equip_t4_parts_wuling02_body_05",
+      "item_equip_t4_parts_wuling02_body_06",
+      "item_equip_t4_parts_wuling02_edc_03",
+      "item_equip_t4_parts_wuling02_hand_05",
+      "item_equip_t4_parts_wuling02_hand_06",
+      "item_equip_t4_suit_atb01_body_06",
+      "item_equip_t4_suit_atb01_body_07",
+      "item_equip_t4_suit_atb01_edc_07",
+      "item_equip_t4_suit_atb01_edc_08",
+      "item_equip_t4_suit_atb01_hand_04",
+      "item_equip_t4_suit_atb01_hand_05",
+      "item_equip_t4_suit_usp02_hand_06",
+      "wpn_lance_0017",
+      "wpn_lance_0018",
+      "wpn_sword_0025"
+    ],
     "suits": []
   }
 }

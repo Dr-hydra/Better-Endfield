@@ -130,6 +130,91 @@ def write_csv(path: Path, fieldnames: list[str], rows: Iterable[dict[str, Any]])
     write_if_changed(path, stream.getvalue().encode("utf-8-sig"))
 
 
+def _variant_rank(
+    candidate: tuple[Path, dict[str, Any], str, str, str],
+    available_assets: set[str],
+) -> tuple[int, int, int, int, str, str]:
+    path, data, character_id, _rig_family, codename = candidate
+    uimodel_path = (
+        "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/"
+        f"{character_id}_uimodel.prefab"
+    ).casefold()
+    has_uimodel = uimodel_path in available_assets
+    has_postmodel = any(
+        (
+            "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/"
+            f"{part_name}.prefab"
+        ).casefold()
+        in available_assets
+        for part_name in data.get("partNameIdList", [])
+    )
+    id_codename = character_id.split("_", 2)[-1].casefold()
+    exact_codename = bool(codename) and id_codename == codename.casefold()
+    numeric_suffix = bool(re.search(r"\d+$", id_codename))
+    return (
+        0 if has_uimodel else 1,
+        0 if has_postmodel else 1,
+        0 if exact_codename else 1,
+        1 if numeric_suffix else 0,
+        character_id.casefold(),
+        path.name.casefold(),
+    )
+
+
+def select_canonical_prefab_records(
+    prefab_info_dir: Path,
+    available_assets: Iterable[str],
+    excluded: set[str] | None = None,
+) -> tuple[list[tuple[Path, dict[str, Any], str, str, str]], list[dict[str, Any]]]:
+    """Deduplicate variant PrefabInfo records sharing the same rig/codename."""
+    excluded_ids = excluded or set()
+    available_set = {path.casefold() for path in available_assets}
+    grouped: dict[tuple[str, str], list[tuple[Path, dict[str, Any], str, str, str]]] = defaultdict(list)
+
+    for path in sorted(prefab_info_dir.glob("npc_chr_*.json")):
+        match = PLAYABLE_CHARACTER_FILE.match(path.name)
+        if not match:
+            continue
+        data = load_json(path)
+        character_id = data.get("correspondingCharId") or match.group(1)
+        if character_id in excluded_ids:
+            continue
+        animation_config = data.get("cpuAnimationTempletName", "")
+        animation_parts = animation_config.split("/")
+        rig_family = animation_parts[-2] if len(animation_parts) >= 2 else ""
+        # The character ID and art/animation codename can differ (for example,
+        # purrche uses purrchena). PrefabInfo supplies the actual folder name.
+        codename = animation_parts[-1] or character_id.split("_", 2)[-1]
+        group_key = (
+            (rig_family.casefold(), codename.casefold())
+            if animation_parts[-1]
+            else ("id", character_id.casefold())
+        )
+        grouped[group_key].append((path, data, character_id, rig_family, codename))
+
+    selected: list[tuple[Path, dict[str, Any], str, str, str]] = []
+    deduplicated: list[dict[str, Any]] = []
+    for candidates in grouped.values():
+        ranked = sorted(
+            candidates,
+            key=lambda item: _variant_rank(item, available_set),
+        )
+        canonical = ranked[0]
+        selected.append(canonical)
+        for duplicate in ranked[1:]:
+            deduplicated.append(
+                {
+                    "characterId": duplicate[2],
+                    "keptCharacterId": canonical[2],
+                    "rigFamily": duplicate[3],
+                    "codename": duplicate[4],
+                }
+            )
+    selected.sort(key=lambda item: item[2].casefold())
+    deduplicated.sort(key=lambda item: item["characterId"].casefold())
+    return selected, deduplicated
+
+
 def main() -> int:
     args = parse_args()
     manifest_path = args.manifest.resolve()
@@ -158,21 +243,12 @@ def main() -> int:
         clip_json_roots
     )
 
+    canonical_records, deduplicated_variants = select_canonical_prefab_records(
+        prefab_info_dir, assets_by_path, excluded
+    )
     character_records: list[dict[str, Any]] = []
-    for path in sorted(prefab_info_dir.glob("npc_chr_*.json")):
-        match = PLAYABLE_CHARACTER_FILE.match(path.name)
-        if not match:
-            continue
-        data = load_json(path)
-        character_id = data.get("correspondingCharId") or match.group(1)
-        if character_id in excluded:
-            continue
+    for path, data, character_id, rig_family, codename in canonical_records:
         animation_config = data.get("cpuAnimationTempletName", "")
-        animation_parts = animation_config.split("/")
-        rig_family = animation_parts[-2] if len(animation_parts) >= 2 else ""
-        # The character ID and art/animation codename can differ (for example,
-        # purrche uses purrchena). PrefabInfo supplies the actual folder name.
-        codename = animation_parts[-1] or character_id.split("_", 2)[-1]
         art_root = f"assets/beyond/arts/entity/actor/{rig_family.casefold()}/{codename}"
         animation_prefix = f"{art_root}/animations/"
         model_prefix = f"{art_root}/models/"
@@ -337,6 +413,7 @@ def main() -> int:
             "usableLoopRule": "loopRule, excluding additive and entry_pose clips",
             "neutralLoopRule": "loopRule and clip name ending in _dialog_state_walk_loop",
             "excludedCharacters": sorted(excluded),
+            "deduplicatedVariants": deduplicated_variants,
         },
         "summary": {
             "characterCount": len(character_records),

@@ -333,6 +333,36 @@ class ResourceWorkspaceTests(unittest.TestCase):
             self.assertNotIn("icon_a", calls[-1][calls[-1].index("--asset-name") + 1])
             self.assertEqual((cache / "icon_a.png").stat().st_mtime_ns, stamp)
 
+    def test_scan_character_assets_deduplicates_shared_codename_variants(self):
+        prefabs = self.root / "prefabs"
+        for cid, part in (
+            ("chr_0037_minghe", "chr_0037_minghe_postmodel"),
+            ("chr_0037_minghe02", "chr_0037_minghe02_postmodel"),
+            ("chr_0037_minghe03", "chr_0037_minghe03_postmodel"),
+            ("chr_0038_purrche", "chr_0038_purrche_postmodel"),
+        ):
+            codename = "purrchena" if cid == "chr_0038_purrche" else "minghe"
+            rig = "Female" if cid == "chr_0038_purrche" else "Tallmale"
+            write_if_changed(
+                prefabs / f"npc_{cid}.json",
+                json.dumps({
+                    "id": f"npc_{cid}",
+                    "correspondingCharId": None,
+                    "cpuAnimationTempletName": f"NPC/AnimationConfig/Humanoid/{rig}/{codename}",
+                    "partNameIdList": [part],
+                }),
+            )
+        available = {
+            "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe_postmodel.prefab",
+            "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe02_postmodel.prefab",
+            "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0037_minghe03_postmodel.prefab",
+            "assets/beyond/dynamicassets/gameplay/actors/postmodels/characters/chr_0038_purrche_postmodel.prefab",
+            "assets/beyond/dynamicassets/gameplay/prefabs/uimodels/chr_0037_minghe_uimodel.prefab",
+        }
+        selected, deduped = scanner.select_canonical_prefab_records(prefabs, available)
+        self.assertEqual([item[2] for item in selected], ["chr_0037_minghe", "chr_0038_purrche"])
+        self.assertEqual([item["characterId"] for item in deduped], ["chr_0037_minghe02", "chr_0037_minghe03"])
+
 
 if __name__ == "__main__":
     unittest.main()

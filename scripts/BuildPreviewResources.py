@@ -47,10 +47,12 @@ def main():
         reader=target/'NativeAssetReader.exe'
     manifest=json.loads(args.manifest.read_text(encoding='utf-8-sig'))
     available={a['path'].lower() for a in manifest['Assets']}
-    chars=sorted(p.stem.removeprefix('npc_') for p in args.prefabs.glob('npc_chr_*.json'))
+    all_chars=sorted(p.stem.removeprefix('npc_') for p in args.prefabs.glob('npc_chr_*.json'))
     excluded=set(args.exclude_character)
-    if not excluded<=set(chars):raise ValueError('Unknown excluded character')
-    chars=[c for c in chars if c not in excluded]
+    if not excluded<=set(all_chars):raise ValueError('Unknown excluded character')
+    import ScanCharacterAssets as scanner
+    selected_records,_deduped=scanner.select_canonical_prefab_records(args.prefabs,available,excluded)
+    chars=sorted(item[2] for item in selected_records)
     if args.character:
         if not set(args.character)<=set(chars):raise ValueError('Unknown playable character')
         chars=sorted(set(args.character))
