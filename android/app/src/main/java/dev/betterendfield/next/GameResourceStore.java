@@ -60,7 +60,7 @@ final class GameResourceStore {
         File coreAndroid=new File(root(context),"core/android");
         File stampFile=new File(coreAndroid,".bundled-stamp");
         if(stampFile.isFile()) {
-            String savedStamp=Files.readString(stampFile.toPath(),StandardCharsets.UTF_8).trim();
+            String savedStamp=new String(Files.readAllBytes(stampFile.toPath()),StandardCharsets.UTF_8).trim();
             if(currentStamp.equals(savedStamp)) {
                 Snapshot current=resolve(context,"core");
                 if(current!=null && verifySnapshotFiles(current))return;

@@ -47,7 +47,7 @@ final class DistributionUpdater {
             JSONObject active=state(context);active.put("auto."+type+".android",true);
             File root=GameResourceStore.root(context);root.mkdirs();File tmp=new File(root,UUID.randomUUID()+".state.tmp");
             try {
-                Files.writeString(tmp.toPath(),active.toString());
+                Files.write(tmp.toPath(),active.toString().getBytes(StandardCharsets.UTF_8));
                 Files.move(tmp.toPath(),new File(root,"state.json").toPath(),StandardCopyOption.REPLACE_EXISTING,StandardCopyOption.ATOMIC_MOVE);
             }finally{tmp.delete();}
         }
