@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,6 +26,16 @@ inline bool ValidVisualPath(const std::string& path) {
     return true;
 }
 
+inline constexpr char kMaterialRenderStateCapability[] = "material-render-state-v1";
+inline constexpr size_t kMaxMaterialPassOverrides = 16;
+
+inline bool ValidMaterialPassName(const std::string& name) {
+    if (name.empty() || name.size() > 96 || name.front() == ' ' || name.back() == ' ') return false;
+    for (unsigned char c : name)
+        if (c < 0x20 || c > 0x7e) return false;
+    return true;
+}
+
 struct BemMaterialOverrides {
     std::vector<std::pair<std::string, float>> floats;
     std::vector<std::pair<std::string, std::array<float, 4>>> colors;
@@ -32,8 +43,11 @@ struct BemMaterialOverrides {
     std::vector<std::string> disable_keywords;
     std::vector<std::string> enable_keywords;
 
+    std::optional<int32_t> render_queue;
+    std::vector<std::pair<std::string, bool>> shader_passes;
+
     bool empty() const {
-        return floats.empty() && colors.empty() && vectors.empty() &&
+        return !render_queue && shader_passes.empty() && floats.empty() && colors.empty() && vectors.empty() &&
                disable_keywords.empty() && enable_keywords.empty();
     }
 };

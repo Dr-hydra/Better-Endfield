@@ -13,7 +13,7 @@ BEM（Better Endfield Next Model）是《终末地》角色模型替换包，扩
 | 1.2 | 贴图槽 `texture_slots`、按资源区分的骨骼名别名、32 字节非压缩蒙皮，以及更高的资源上限 | 按使用加 `texture-slots`、`resource-bone-aliases` |
 | 1.3 | 连续形态参数 `parameters` + 位置增量 `mesh_deformations` | `body-parameters`、`mesh-position-deltas` |
 | 1.4 | 显式资源／平台目标、静态 MeshRenderer 网格，见扩展规范 | `multi-resource-targets`；使用静态目标时加 `static-meshes` |
-| 1.5 | 材质属性与关键字覆盖、根骨骼位移、动态时钟驱动器，见第 12、13 节 | 按使用加 `material-overrides-v1`、`root-offset-v1`、`dynamic-drivers-v1` |
+| 1.5 | 材质属性与关键字覆盖、根骨骼位移、动态时钟驱动器，见第 12、13 节 | 按使用加 `material-overrides-v1`、`root-offset-v1`、`dynamic-drivers-v1`。覆盖渲染状态时加 `material-render-state-v1` |
 
 - 写入器按内容选择**能表达该包的最低版本**：不需要新特性的包仍写成旧版本，让旧运行时可读。不能把高版本内容写进低版本头部，读取器会拒绝。
 - 读取器按头部版本执行对应的上限和语义；当前运行时接受 1.0–1.5。ZIP 容器（第 14 节）不依赖头部版本，各版本通用。
@@ -414,6 +414,25 @@ BEM 1.5 新增 `root-offset-v1` 能力，允许模型声明对骨骼根节点的
   - 位移模长限制：$\sqrt{x^2 + y^2 + z^2} \le 0.2$ 米。
   - 在「关闭模型校验」模式下放宽至 1.0 米，并自动饱和截断。
 
+### 12.1 逐绘制段渲染状态（material-render-state-v1）
+
+在 draw 的 `material_overrides` 中使用 `render_queue` 或 `shader_passes` 时，清单的 `required_capabilities` 同时声明 `material-overrides-v1` 和 `material-render-state-v1`。加载此类包需要识别该能力的 BEM 1.5 运行时。
+
+- `render_queue` 接受 `-1` 或 `0–5000` 的整数。`-1` 恢复 Shader 默认队列。省略字段时沿用借用材质的队列。
+- `shader_passes` 把最多 16 个 Pass 名映射到布尔值。`true` 启用，`false` 关闭。名称必须与 Shader 的 Pass 名一致，由 1–96 个可打印 ASCII 字符组成，首尾禁止空格。省略的 Pass 沿用材质的状态。
+
+以下是一个 draw 的材质配置片段。
+
+```json
+{
+  "material_overrides": {
+    "render_queue": 3000,
+    "shader_passes": { "DepthOnly": false }
+  }
+}
+```
+
+运行时将渲染状态应用到该绘制段的材质副本，并在游戏材质替换缓存重建时重放。效果取决于原生 Shader 及游戏实际使用的 Pass。Windows 已验证包可加载与切换。Android 尚无实机验证。
 
 ## 13. BEM 1.5 动态时钟驱动器与材质调制扩展（dynamic-drivers-v1）
 

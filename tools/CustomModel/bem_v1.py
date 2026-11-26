@@ -18,7 +18,7 @@ ENTRY = struct.Struct('<IIQQQ')
 LIMIT = 512 * 1024 * 1024
 ID = re.compile(r'^[A-Za-z0-9][A-Za-z0-9_.-]{0,95}$')
 CAPABILITIES = ['native-materials', 'palette-u8', 'indices-u32', 'fixed-appearances']
-SUPPORTED_CAPABILITIES = CAPABILITIES + ['texture-astc', 'material-overrides-v1', 'root-offset-v1',
+SUPPORTED_CAPABILITIES = CAPABILITIES + ['texture-astc', 'material-overrides-v1', 'material-render-state-v1', 'root-offset-v1',
                                          'dynamic-drivers-v1']
 
 

@@ -59,6 +59,22 @@ class Bem15Tests(unittest.TestCase):
         with self.assertRaises(ValueError):
             bem.write_package(self.root / 'invalid.bem', m, self.b.payloads)
 
+    def test_draw_render_state_requires_capability_and_strict_types(self):
+        manifest = copy.deepcopy(self.b.m)
+        overrides = manifest['meshes'][0]['draws'][0]['material_overrides']
+        overrides.update(render_queue=-1, shader_passes={'DepthOnly': False, 'Forward': True})
+        bem.write_package(self.path, manifest, self.b.payloads)
+        self.assertEqual(bem.read_package(self.path)[0], manifest)
+        for key, value in (('render_queue', True), ('render_queue', 3000.0),
+                           ('render_queue', 5001), ('shader_passes', {'DepthOnly': 0}),
+                           ('shader_passes', {'DepthOnly ': False})):
+            invalid = {**overrides, key: value}
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                bem_v15.validate_material_overrides(invalid, skip_validation=True)
+        manifest['required_capabilities'].remove(bem_v15.RENDER_STATE_CAPABILITY)
+        with self.assertRaisesRegex(ValueError, 'material-render-state-v1'):
+            bem.write_package(self.path, manifest, self.b.payloads)
+
     def test_root_offset_bounds_and_path(self):
         for offset in (
             {'path': 'root', 'translation': [0, 0.3, 0]},

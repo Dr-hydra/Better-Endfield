@@ -553,7 +553,7 @@ bool BuildBemCompositionPart(const J& plan,const J& defaults,const std::filesyst
         for(const auto& s:c.sources) for(const auto& cap:s.manifest.at("required_capabilities")) {
             const auto name=cap.get<std::string>();
             if(name!="fixed-appearances" && name!="texture-slots" && name!="body-parameters" && name!="mesh-position-deltas" &&
-                name!="material-overrides-v1" && name!="root-offset-v1" && name!="dynamic-drivers-v1") caps.insert(name);
+                name!="material-overrides-v1" && name!=kMaterialRenderStateCapability && name!="root-offset-v1" && name!="dynamic-drivers-v1") caps.insert(name);
         }
         manifest["required_capabilities"]=caps;
         uint64_t worstBytes=0,worstTextures=0;bool budgetExact=true;

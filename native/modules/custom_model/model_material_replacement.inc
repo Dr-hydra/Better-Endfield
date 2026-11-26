@@ -10,6 +10,7 @@ struct CacheMaterialState {
     std::vector<CacheTextureProperty> textures;
     std::vector<CacheKeywordProperty> keywords;
     uint8_t depth_pass=0;
+    BemMaterialOverrides render_state;
 };
 struct RendererMaterialReplacementSnapshot {
     StrongReference controller,group,map;
@@ -143,7 +144,8 @@ bool CacheHasProperty(void* material,int32_t id,bool& has) {
     uint8_t value=0;void* args[]{&id};if (!InvokeValue(Contract("cache.has_property"),material,args,value)) return false;
     has=value!=0;return true;
 }
-bool CaptureCacheMaterialState(void* material,const RendererMaterialReplacementSnapshot& properties,CacheMaterialState& state) {
+bool CaptureCacheMaterialState(void* material,const RendererMaterialReplacementSnapshot& properties,
+    const BemMaterialOverrides* overrides,CacheMaterialState& state) {
     if (!state.material.Set(material)) return false;
     std::vector<int32_t> float_ids;
     for (const auto& property:properties.floats) float_ids.push_back(property.first);
@@ -170,6 +172,19 @@ bool CaptureCacheMaterialState(void* material,const RendererMaterialReplacementS
     }
     if (properties.depth_control) {
         void* args[]{NewString("DepthOnly")};if (!InvokeValue(Contract("cache.get_pass"),material,args,state.depth_pass)) return false;
+    }
+    if (overrides && overrides->render_queue) {
+        int32_t queue = 0;
+        if (!InvokeValue(Contract("material.get_raw_render_queue"), material, nullptr, queue)) return false;
+        state.render_state.render_queue = queue;
+    }
+    if (overrides) {
+        for (const auto& [pass, enabled] : overrides->shader_passes) {
+            uint8_t original = 0;
+            void* args[]{NewString(pass.c_str())};
+            if (!args[0] || !InvokeValue(Contract("cache.get_pass"), material, args, original)) return false;
+            state.render_state.shader_passes.emplace_back(pass, original != 0);
+        }
     }
     return true;
 }
@@ -224,14 +239,20 @@ bool ApplyRendererMaterialReplacement(const PreparedBinding& binding,RendererMat
     for (int i=0;i<ArrayLength(copies);++i) {
         void* copy=ArrayValue(copies,i);if (!copy) return false;
         if (seen.insert(copy).second) {
-            CacheMaterialState state;if (!CaptureCacheMaterialState(copy,properties,state)) return false;
+            const auto* overrides = static_cast<size_t>(i) < binding.material_overrides.size()
+                ? &binding.material_overrides[i] : nullptr;
+            CacheMaterialState state;
+            if (!CaptureCacheMaterialState(copy,properties,overrides,state)) return false;
             properties.previous.push_back(std::move(state));
         }
     }
     seen.clear();
     for (int i=0;i<ArrayLength(copies);++i) {
         void* copy=ArrayValue(copies,i);
-        if (seen.insert(copy).second && !ReplayCacheMaterialProperties(copy,ArrayValue(binding.custom_materials,i),properties)) return false;
+        if (!seen.insert(copy).second) continue;
+        if (!ReplayCacheMaterialProperties(copy,ArrayValue(binding.custom_materials,i),properties)) return false;
+        if (static_cast<size_t>(i) < binding.material_overrides.size() &&
+            !ApplyMaterialRenderState(copy, binding.material_overrides[i])) return false;
     }
     return true;
 }
@@ -246,6 +267,7 @@ bool RestoreRendererMaterialReplacement(RendererMaterialCacheSnapshot& snapshot)
         for (const auto& property:state.textures) {auto id=property.id;void* args[]{&id,property.value.Get()};remember(InvokeVoid(Contract("material.set_texture_by_id"),material,args));}
         for (const auto& property:state.keywords) {void* args[]{property.name.Get()};remember(InvokeVoid(Contract(property.enabled?"material.enable_keyword":"material.disable_keyword"),material,args));}
         if (properties.depth_control) {uint8_t enabled=state.depth_pass;void* args[]{NewString("DepthOnly"),&enabled};remember(InvokeVoid(Contract("cache.set_pass"),material,args));}
+        remember(ApplyMaterialRenderState(material, state.render_state));
     }
     remember(WriteMaterialCacheObject(snapshot.info.Get(),api.replacements,snapshot.replacements.Get()));
     remember(WriteMaterialCacheBool(snapshot.info.Get(),api.replacing,snapshot.replacing));

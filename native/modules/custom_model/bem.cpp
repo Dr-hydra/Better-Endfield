@@ -44,6 +44,24 @@ uint32_t U(const J& j) {
 std::string S(const J& j,size_t limit=256) {
     auto s=j.get<std::string>(); Check(!s.empty() && s.size()<=limit && s.find('\0')==s.npos,"Invalid string"); return s;
 }
+void ReadMaterialRenderState(const J& overrides, BemMaterialOverrides* out = nullptr) {
+    if (overrides.contains("render_queue")) {
+        const auto& value = overrides.at("render_queue");
+        Check(value.is_number_integer() &&
+              (value.is_number_unsigned() ? value.get<uint64_t>() <= 5000 :
+               value.get<int64_t>() >= -1 && value.get<int64_t>() <= 5000),
+              "render_queue must be an integer from -1 to 5000");
+        if (out) out->render_queue = value.get<int32_t>();
+    }
+    if (overrides.contains("shader_passes")) {
+        const auto& passes = overrides.at("shader_passes");
+        Check(passes.is_object() && passes.size() <= kMaxMaterialPassOverrides, "Invalid shader_passes");
+        for (auto it = passes.begin(); it != passes.end(); ++it) {
+            Check(ValidMaterialPassName(it.key()) && it.value().is_boolean(), "Invalid shader pass name or state");
+            if (out) out->shader_passes.emplace_back(it.key(), it.value().get<bool>());
+        }
+    }
+}
 std::string Id(const J& j) {
     auto s=S(j,96); Check(std::all_of(s.begin(),s.end(),[](unsigned char c){return
         (c>='A'&&c<='Z')||(c>='a'&&c<='z')||(c>='0'&&c<='9')||c=='_'||c=='-'||c=='.';}),"Invalid stable ID");
@@ -346,7 +364,7 @@ struct Container {
                 for (const auto& cap : manifest["required_capabilities"]) {
                     // Both the documented capability names and the early prototype spellings
                     // are honoured here; Metadata() keeps validating against the documented set.
-                    if (cap == "material-overrides-v1" || cap == "root-offset-v1" || cap == "dynamic-drivers-v1")
+                    if (cap == "material-overrides-v1" || cap == kMaterialRenderStateCapability || cap == "root-offset-v1" || cap == "dynamic-drivers-v1")
                         minor = std::max<uint16_t>(minor, 5);
                     else if (cap == "multi-resource-targets" || cap == "static-meshes" ||
                              cap == "multi-resource-v1" || cap == "static-mesh-v1")
@@ -467,7 +485,7 @@ struct Container {
         if(minor>=2) caps.insert({"texture-slots","resource-bone-aliases"});
         if(minor>=3) caps.insert({"body-parameters","mesh-position-deltas"});
         if(minor>=4) caps.insert({"multi-resource-targets","static-meshes"});
-        if(minor>=5) caps.insert({"material-overrides-v1", "root-offset-v1", "dynamic-drivers-v1"});
+        if(minor>=5) caps.insert({"material-overrides-v1", kMaterialRenderStateCapability, "root-offset-v1", "dynamic-drivers-v1"});
         bool composable=false,fixed=false,keepTextureCapability=false,slotCapability=false,aliasCapability=false;
         std::set<std::string> declared;
         for(const auto& c:m.at("required_capabilities")) {auto cap=S(c);Validate(caps.contains(cap),"Unsupported required capability");
@@ -625,6 +643,15 @@ struct Container {
                 if(minor) {Check(U(d.at("indices"))<directory.size(),"Missing draw index payload");
                     Check(U(d.at("count"))>0,"Invalid draw index count"); Validate(U(d.at("count"))%3==0,"Invalid draw index count");}
                 if(minor) {++candidateCount;if(d.contains("when")) Condition(d.at("when"),optionChoices);}
+                if (d.contains("material_overrides")) {
+                    const auto& overrides = d.at("material_overrides");
+                    if (overrides.contains("render_queue") || overrides.contains("shader_passes")) {
+                        Check(minor >= 5 && declared.contains("material-overrides-v1") &&
+                              declared.contains(kMaterialRenderStateCapability),
+                              "Draw render state requires material-overrides-v1 and material-render-state-v1");
+                        ReadMaterialRenderState(overrides);
+                    }
+                }
                 Check(d.at("textures").is_array(),"Invalid draw textures");
                 TextureRefs(d.at("textures"),"Missing texture reference");
             }
@@ -1258,6 +1285,7 @@ struct Container {
                 if(d.contains("material_overrides")) {
                     const auto& ov=d.at("material_overrides");
                     Check(ov.is_object(),"material_overrides must be an object");
+                    ReadMaterialRenderState(ov, &overrides);
                     if(ov.contains("floats")) {
                         const auto& fl=ov.at("floats"); Check(fl.is_object(),"floats must be an object");
                         Validate(fl.size()<=(skip_validation?128u:32u),"Too many float overrides");

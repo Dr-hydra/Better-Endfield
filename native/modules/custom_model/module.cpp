@@ -523,6 +523,9 @@ MethodContract g_methods[]{
     {"material.set_vector", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetVector","System.String|UnityEngine.Vector4","System.Void",2},false},
     {"material.disable_keyword", {"UnityEngine.CoreModule.dll","UnityEngine","Material","DisableKeyword","System.String","System.Void",1},false},
     {"material.enable_keyword", {"UnityEngine.CoreModule.dll","UnityEngine","Material","EnableKeyword","System.String","System.Void",1},false},
+    {"material.get_raw_render_queue", {"UnityEngine.CoreModule.dll","UnityEngine","Material","get_rawRenderQueue",nullptr,"System.Int32",0},false},
+    {"material.get_render_queue", {"UnityEngine.CoreModule.dll","UnityEngine","Material","get_renderQueue",nullptr,"System.Int32",0},false},
+    {"material.set_render_queue", {"UnityEngine.CoreModule.dll","UnityEngine","Material","set_renderQueue","System.Int32","System.Void",1},false},
     {"cache.has_property", {"UnityEngine.CoreModule.dll","UnityEngine","Material","HasProperty","System.Int32","System.Boolean",1},false},
     {"cache.get_float", {"UnityEngine.CoreModule.dll","UnityEngine","Material","GetFloat","System.Int32","System.Single",1},false},
     {"cache.set_float", {"UnityEngine.CoreModule.dll","UnityEngine","Material","SetFloat","System.Int32|System.Single","System.Void",2},false},
@@ -2338,9 +2341,31 @@ bool MaterialCopyCompatible(void* source,void* copy) {
 // 256 draws, so the summary reports one line per component instead of one per
 // material: every extra line used to cost a log-file open (see
 // worktree/audit/bem15-performance-2026-10-25.md section 11).
+bool SetMaterialRenderQueue(void* material, int32_t queue) {
+    void* args[]{&queue};
+    int32_t actual = 0;
+    return InvokeVoid(Contract("material.set_render_queue"), material, args) &&
+           (queue == -1 || (InvokeValue(Contract("material.get_render_queue"), material, nullptr, actual) &&
+                            actual == queue));
+}
+
+bool SetMaterialPass(void* material, const std::string& pass, bool enabled) {
+    uint8_t state = enabled;
+    void* args[]{NewString(pass.c_str()), &state};
+    return args[0] && InvokeVoid(Contract("cache.set_pass"), material, args);
+}
+
+bool ApplyMaterialRenderState(void* material, const BemMaterialOverrides& overrides) {
+    if (overrides.render_queue && !SetMaterialRenderQueue(material, *overrides.render_queue)) return false;
+    for (const auto& [pass, enabled] : overrides.shader_passes)
+        if (!SetMaterialPass(material, pass, enabled)) return false;
+    return true;
+}
+
 size_t OverridePropertyCount(const BemMaterialOverrides& p) {
     return p.floats.size() + p.colors.size() + p.vectors.size() +
-           p.disable_keywords.size() + p.enable_keywords.size();
+           p.disable_keywords.size() + p.enable_keywords.size() +
+           p.render_queue.has_value() + p.shader_passes.size();
 }
 bool ApplyMaterialOverrides(void* material, const BemMaterialOverrides& p, bool skip_validation = false) {
     if (!material) return false;
@@ -2379,7 +2404,7 @@ bool ApplyMaterialOverrides(void* material, const BemMaterialOverrides& p, bool 
             if (!skip_validation) return false;
         }
     }
-    return true;
+    return ApplyMaterialRenderState(material, p);
 }
 bool CopyMaterials(PreparedBinding& binding,bool skip_validation=false) {
     if (!binding.original_materials) binding.original_materials=Invoke(Contract("renderer.get_shared_materials"),binding.renderer,nullptr);

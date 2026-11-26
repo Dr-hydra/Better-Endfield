@@ -11,7 +11,9 @@ from pathlib import PurePosixPath
 import bem_v1 as bem
 import bem_v14
 
-CAPABILITIES = ('material-overrides-v1', 'root-offset-v1', 'dynamic-drivers-v1')
+RENDER_STATE_CAPABILITY = 'material-render-state-v1'
+RENDER_STATE_KEYS = {'render_queue', 'shader_passes'}
+CAPABILITIES = ('material-overrides-v1', 'root-offset-v1', 'dynamic-drivers-v1', RENDER_STATE_CAPABILITY)
 
 PROP_RE = re.compile(r'^_[a-zA-Z0-9_]{1,95}$')
 KEYWORD_RE = re.compile(r'^[A-Z0-9_]{2,96}$')
@@ -74,9 +76,21 @@ def used(m):
 
 def validate_material_overrides(overrides, skip_validation=False):
     bem.require(isinstance(overrides, dict), 'material_overrides must be an object')
-    allowed_keys = {'floats', 'colors', 'vectors', 'disable_keywords', 'enable_keywords'}
+    allowed_keys = {'floats', 'colors', 'vectors', 'disable_keywords', 'enable_keywords'} | RENDER_STATE_KEYS
     if not skip_validation:
         bem.require(set(overrides.keys()) <= allowed_keys, 'Invalid keys in material_overrides')
+
+    if 'render_queue' in overrides:
+        queue = overrides['render_queue']
+        bem.require(type(queue) is int and -1 <= queue <= 5000,
+                    'render_queue must be an integer from -1 to 5000')
+    if 'shader_passes' in overrides:
+        passes = overrides['shader_passes']
+        bem.require(isinstance(passes, dict) and len(passes) <= 16, 'Invalid shader_passes')
+        for name, enabled in passes.items():
+            bem.require(isinstance(name, str) and 1 <= len(name) <= 96 and
+                        name == name.strip(' ') and all(' ' <= c <= '~' for c in name) and
+                        type(enabled) is bool, 'Invalid shader pass name or state')
 
     max_floats = 128 if skip_validation else 32
     max_colors = 64 if skip_validation else 16
@@ -281,7 +295,11 @@ def validate_manifest(m, payload_count, minor=None, skip_validation=False):
         for draw in mesh.get('draws', []):
             if 'material_overrides' in draw:
                 has_overrides = True
-                validate_material_overrides(draw['material_overrides'], skip_validation=skip_validation)
+                overrides = draw['material_overrides']
+                validate_material_overrides(overrides, skip_validation=skip_validation)
+                if RENDER_STATE_KEYS.intersection(overrides):
+                    bem.require(RENDER_STATE_CAPABILITY in caps and 'material-overrides-v1' in caps,
+                                'Draw render state requires material-overrides-v1 and material-render-state-v1')
 
     if has_overrides and not skip_validation:
         bem.require('material-overrides-v1' in caps, 'material_overrides requires material-overrides-v1 capability')

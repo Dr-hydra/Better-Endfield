@@ -13,7 +13,7 @@ Reference implementations: writers and validators are `tools/CustomModel/bem_v1.
 | 1.2 | `texture_slots`, resource-specific bone aliases, 32-byte uncompressed skinning, and higher resource limits | Add `texture-slots` and/or `resource-bone-aliases` as used |
 | 1.3 | Continuous parameters, `parameters` + `mesh_deformations` | `body-parameters`, `mesh-position-deltas` |
 | 1.4 | Explicit resource/platform targets and static MeshRenderer meshes; see the linked extension | `multi-resource-targets`; `static-meshes` when used |
-| 1.5 | Material property and keyword overrides, root bone offset, dynamic clock drivers; see sections 12 and 13 | Add `material-overrides-v1`, `root-offset-v1`, `dynamic-drivers-v1` as used |
+| 1.5 | Material property and keyword overrides, root bone offset, dynamic clock drivers; see sections 12 and 13 | Add `material-overrides-v1`, `root-offset-v1` and `dynamic-drivers-v1` as used. Add `material-render-state-v1` for render state overrides |
 
 - Writers choose the **lowest version that can express the package**. A package without newer features remains readable by older runtimes. Newer content in an older header is rejected.
 - Readers apply the limits and semantics for the header version. The current development runtime accepts 1.0–1.5. The ZIP container in section 14 is version independent.
@@ -418,6 +418,25 @@ Add `root_offset` at the root level of `manifest.json`:
   - Length bound: $\sqrt{x^2 + y^2 + z^2} \le 0.2$ meters.
   - Relaxed to 1.0 meter and clamped automatically when "Skip Validation" is active.
 
+### 12.1 Per-draw render state (material-render-state-v1)
+
+When a draw's `material_overrides` contains `render_queue` or `shader_passes`, declare both `material-overrides-v1` and `material-render-state-v1` in `required_capabilities`. The loader must support this BEM 1.5 capability.
+
+- `render_queue` accepts the integer `-1` or any integer from `0` to `5000`. Use `-1` to restore the shader's default queue. Omitting the field inherits the donor material's queue.
+- `shader_passes` maps up to 16 pass names to booleans. Use `true` to enable a pass and `false` to disable it. Match the shader's pass name using 1–96 printable ASCII characters with no leading or trailing spaces. Omitted passes inherit the material's state.
+
+This fragment configures the material for one draw.
+
+```json
+{
+  "material_overrides": {
+    "render_queue": 3000,
+    "shader_passes": { "DepthOnly": false }
+  }
+}
+```
+
+The runtime applies the state to the draw's material copy and reapplies it when the game rebuilds its replacement material cache. The visual result depends on the native shader and the passes the game uses. Package loading and option switching were verified on Windows. Android in-game behavior remains unverified.
 
 ## 13. BEM 1.5 Dynamic Clock Drivers & Material Modulation (dynamic-drivers-v1)
 
